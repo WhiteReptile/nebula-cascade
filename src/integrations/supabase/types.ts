@@ -14,11 +14,55 @@ export type Database = {
   }
   public: {
     Tables: {
+      gems: {
+        Row: {
+          color_hex: string
+          created_at: string | null
+          division: Database["public"]["Enums"]["gem_division"]
+          id: string
+          metadata: Json | null
+          name: string
+          owner_player_id: string | null
+          owner_wallet: string | null
+          token_id: number
+        }
+        Insert: {
+          color_hex: string
+          created_at?: string | null
+          division: Database["public"]["Enums"]["gem_division"]
+          id?: string
+          metadata?: Json | null
+          name: string
+          owner_player_id?: string | null
+          owner_wallet?: string | null
+          token_id: number
+        }
+        Update: {
+          color_hex?: string
+          created_at?: string | null
+          division?: Database["public"]["Enums"]["gem_division"]
+          id?: string
+          metadata?: Json | null
+          name?: string
+          owner_player_id?: string | null
+          owner_wallet?: string | null
+          token_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gems_owner_player_id_fkey"
+            columns: ["owner_player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leaderboard: {
         Row: {
           best_score: number
           created_at: string
-          division: Database["public"]["Enums"]["pearl_division"]
+          division: Database["public"]["Enums"]["gem_division"]
           id: string
           matches_played: number
           period: string
@@ -31,7 +75,7 @@ export type Database = {
         Insert: {
           best_score?: number
           created_at?: string
-          division?: Database["public"]["Enums"]["pearl_division"]
+          division?: Database["public"]["Enums"]["gem_division"]
           id?: string
           matches_played?: number
           period: string
@@ -44,7 +88,7 @@ export type Database = {
         Update: {
           best_score?: number
           created_at?: string
-          division?: Database["public"]["Enums"]["pearl_division"]
+          division?: Database["public"]["Enums"]["gem_division"]
           id?: string
           matches_played?: number
           period?: string
@@ -120,46 +164,81 @@ export type Database = {
           },
         ]
       }
+      player_energy: {
+        Row: {
+          energy: number | null
+          id: string
+          last_reset_at: string | null
+          max_energy: number | null
+          player_id: string
+        }
+        Insert: {
+          energy?: number | null
+          id?: string
+          last_reset_at?: string | null
+          max_energy?: number | null
+          player_id: string
+        }
+        Update: {
+          energy?: number | null
+          id?: string
+          last_reset_at?: string | null
+          max_energy?: number | null
+          player_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_energy_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: true
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       players: {
         Row: {
           created_at: string
           display_name: string
-          division: Database["public"]["Enums"]["pearl_division"]
+          division: Database["public"]["Enums"]["gem_division"]
           division_points: number
           id: string
           is_banned: boolean
           total_matches: number
           updated_at: string
           user_id: string
+          wallet_address: string | null
         }
         Insert: {
           created_at?: string
           display_name?: string
-          division?: Database["public"]["Enums"]["pearl_division"]
+          division?: Database["public"]["Enums"]["gem_division"]
           division_points?: number
           id?: string
           is_banned?: boolean
           total_matches?: number
           updated_at?: string
           user_id: string
+          wallet_address?: string | null
         }
         Update: {
           created_at?: string
           display_name?: string
-          division?: Database["public"]["Enums"]["pearl_division"]
+          division?: Database["public"]["Enums"]["gem_division"]
           division_points?: number
           id?: string
           is_banned?: boolean
           total_matches?: number
           updated_at?: string
           user_id?: string
+          wallet_address?: string | null
         }
         Relationships: []
       }
       reward_payouts: {
         Row: {
           created_at: string
-          division: Database["public"]["Enums"]["pearl_division"]
+          division: Database["public"]["Enums"]["gem_division"]
           exported_at: string | null
           id: string
           payout_method: Database["public"]["Enums"]["payout_method"] | null
@@ -171,7 +250,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          division: Database["public"]["Enums"]["pearl_division"]
+          division: Database["public"]["Enums"]["gem_division"]
           exported_at?: string | null
           id?: string
           payout_method?: Database["public"]["Enums"]["payout_method"] | null
@@ -183,7 +262,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          division?: Database["public"]["Enums"]["pearl_division"]
+          division?: Database["public"]["Enums"]["gem_division"]
           exported_at?: string | null
           id?: string
           payout_method?: Database["public"]["Enums"]["payout_method"] | null
@@ -267,14 +346,9 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      gem_division: "gem_v" | "gem_iv" | "gem_iii" | "gem_ii" | "gem_i"
       payout_method: "stripe" | "coinbase" | "circle" | "thirdweb"
       payout_status: "pending" | "approved" | "exported" | "paid"
-      pearl_division:
-        | "pearl_v"
-        | "pearl_iv"
-        | "pearl_iii"
-        | "pearl_ii"
-        | "pearl_i"
       reward_period_status: "open" | "validating" | "finalized"
     }
     CompositeTypes: {
@@ -404,15 +478,9 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      gem_division: ["gem_v", "gem_iv", "gem_iii", "gem_ii", "gem_i"],
       payout_method: ["stripe", "coinbase", "circle", "thirdweb"],
       payout_status: ["pending", "approved", "exported", "paid"],
-      pearl_division: [
-        "pearl_v",
-        "pearl_iv",
-        "pearl_iii",
-        "pearl_ii",
-        "pearl_i",
-      ],
       reward_period_status: ["open", "validating", "finalized"],
     },
   },

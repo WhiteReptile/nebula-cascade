@@ -12,7 +12,6 @@ export const COLORS = [
   { color: 0xff3344, colorCSS: '#ff3344', element: 'fire' },        // Red — Fire
   { color: 0x3388ff, colorCSS: '#3388ff', element: 'water' },       // Blue — Water
   { color: 0x888899, colorCSS: '#888899', element: 'shadow' },      // Grey — Shadow
-  { color: 0x1a1a2e, colorCSS: '#1a1a2e', element: 'void' },       // Black — Void
 ];
 
 // All formations are fully connected (each orb adjacent to at least one other), minimum 3 orbs
