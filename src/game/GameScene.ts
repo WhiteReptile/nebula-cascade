@@ -17,6 +17,18 @@ interface OrbState {
   wobblePhase: number;
   wobbleAmp: number;
   glowPulse: number;
+  // Landing bounce
+  landBounce: number;
+  landBounceVel: number;
+}
+
+// Per-orb free-fall jitter for active piece
+interface FallingOrbJitter {
+  dx: number;
+  dy: number;
+  vx: number;
+  vy: number;
+  phase: number;
 }
 
 export class GameScene extends Phaser.Scene {
@@ -48,6 +60,8 @@ export class GameScene extends Phaser.Scene {
   private bounceVel = 0;
   // Snap animation
   private snapScale = 1;
+  // Free-fall jitter per orb in active piece
+  private fallingJitter: FallingOrbJitter[] = [];
 
   constructor() {
     super({ key: 'GameScene' });
@@ -111,11 +125,24 @@ export class GameScene extends Phaser.Scene {
     this.emitHUD();
   }
 
+  private initJitter(cellCount: number) {
+    this.fallingJitter = [];
+    for (let i = 0; i < cellCount; i++) {
+      this.fallingJitter.push({
+        dx: 0, dy: 0,
+        vx: (Math.random() - 0.5) * 0.3,
+        vy: (Math.random() - 0.5) * 0.2,
+        phase: Math.random() * Math.PI * 2,
+      });
+    }
+  }
+
   private spawnPiece() {
     const def = this.nextPieceDef || randomOrbPiece();
     this.nextPieceDef = randomOrbPiece();
     this.activePiece = { def, rotation: 0, row: 0, col: Math.floor(COLS / 2) - 1 };
     this.snapScale = 1;
+    this.initJitter(def.shapes[0].length);
     if (!this.isValid(this.activePiece)) {
       this.gameOver = true;
       gameEvents.emit('gameover', this.score);
@@ -208,6 +235,8 @@ export class GameScene extends Phaser.Scene {
           wobblePhase: Math.random() * Math.PI * 2,
           wobbleAmp: 3 + Math.random() * 2,
           glowPulse: Math.random() * Math.PI * 2,
+          landBounce: -4,
+          landBounceVel: 0,
         };
       }
     }
@@ -393,6 +422,38 @@ export class GameScene extends Phaser.Scene {
       if (this.snapScale < 1.005) this.snapScale = 1;
     }
 
+    // Free-fall jitter physics for active piece orbs
+    for (const j of this.fallingJitter) {
+      j.phase += delta * 0.005;
+      // Gentle spring back to center + subtle random drift
+      j.vx += -j.dx * 0.05 + Math.sin(j.phase * 1.7) * 0.04;
+      j.vy += -j.dy * 0.04 + Math.cos(j.phase * 2.1) * 0.03;
+      j.vx *= 0.92;
+      j.vy *= 0.92;
+      j.dx += j.vx;
+      j.dy += j.vy;
+      // Clamp to keep it subtle
+      const maxDrift = 2.5;
+      j.dx = Math.max(-maxDrift, Math.min(maxDrift, j.dx));
+      j.dy = Math.max(-maxDrift, Math.min(maxDrift, j.dy));
+    }
+
+    // Landing bounce for placed orbs
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const orb = this.grid[r][c];
+        if (orb && orb.landBounce !== 0) {
+          orb.landBounceVel += -orb.landBounce * 0.25;
+          orb.landBounceVel *= 0.82;
+          orb.landBounce += orb.landBounceVel;
+          if (Math.abs(orb.landBounce) < 0.1 && Math.abs(orb.landBounceVel) < 0.1) {
+            orb.landBounce = 0;
+            orb.landBounceVel = 0;
+          }
+        }
+      }
+    }
+
     // Drop
     this.dropTimer += dt;
     if (this.dropTimer >= this.dropInterval) {
@@ -508,7 +569,7 @@ export class GameScene extends Phaser.Scene {
         if (orb) {
           const wobble = Math.sin(this.globalTime * 2.5 + orb.wobblePhase) * orb.wobbleAmp * 0.3;
           const px = ox + c * CELL + CELL / 2;
-          const py = oy + r * CELL + CELL / 2 + wobble;
+          const py = oy + r * CELL + CELL / 2 + wobble + orb.landBounce;
           const glowPulse = 0.85 + Math.sin(this.globalTime * 1.8 + orb.glowPulse) * 0.15;
           this.drawOrb(this.gridGraphics, px, py, orbRadius * this.snapScale, orb.color, glowPulse, this.globalTime * 2 + orb.wobblePhase);
         }
@@ -539,11 +600,13 @@ export class GameScene extends Phaser.Scene {
         }
       }
 
-      // Active orbs with bounce
-      for (const [r, c] of cells) {
-        const px = ox + (this.activePiece.col + c) * CELL + CELL / 2 + this.bounceOffset;
-        const py = oy + (this.activePiece.row + r) * CELL + CELL / 2;
-        this.drawOrb(this.pieceGraphics, px, py, orbRadius, clr, 1, this.globalTime * 3);
+      // Active orbs with bounce + free-fall jitter
+      for (let i = 0; i < cells.length; i++) {
+        const [r, c] = cells[i];
+        const jitter = this.fallingJitter[i] || { dx: 0, dy: 0 };
+        const px = ox + (this.activePiece.col + c) * CELL + CELL / 2 + this.bounceOffset + jitter.dx;
+        const py = oy + (this.activePiece.row + r) * CELL + CELL / 2 + jitter.dy;
+        this.drawOrb(this.pieceGraphics, px, py, orbRadius, clr, 1, this.globalTime * 3 + (jitter.dx || 0));
       }
 
       // Connection lines between orbs (energy links)
@@ -552,10 +615,12 @@ export class GameScene extends Phaser.Scene {
         for (let i = 0; i < cells.length - 1; i++) {
           const [r1, c1] = cells[i];
           const [r2, c2] = cells[i + 1];
-          const x1 = ox + (this.activePiece.col + c1) * CELL + CELL / 2 + this.bounceOffset;
-          const y1 = oy + (this.activePiece.row + r1) * CELL + CELL / 2;
-          const x2 = ox + (this.activePiece.col + c2) * CELL + CELL / 2 + this.bounceOffset;
-          const y2 = oy + (this.activePiece.row + r2) * CELL + CELL / 2;
+          const j1 = this.fallingJitter[i] || { dx: 0, dy: 0 };
+          const j2 = this.fallingJitter[i + 1] || { dx: 0, dy: 0 };
+          const x1 = ox + (this.activePiece.col + c1) * CELL + CELL / 2 + this.bounceOffset + j1.dx;
+          const y1 = oy + (this.activePiece.row + r1) * CELL + CELL / 2 + j1.dy;
+          const x2 = ox + (this.activePiece.col + c2) * CELL + CELL / 2 + this.bounceOffset + j2.dx;
+          const y2 = oy + (this.activePiece.row + r2) * CELL + CELL / 2 + j2.dy;
           this.pieceGraphics.lineBetween(x1, y1, x2, y2);
         }
       }
