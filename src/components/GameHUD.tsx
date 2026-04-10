@@ -148,12 +148,17 @@ const GameHUD = () => {
           <div
             className="text-5xl font-black font-mono tracking-wider"
             style={{
-              color: chainColor,
-              textShadow: `0 0 ${chainGlowSize}px ${chainColor}, 0 0 ${chainGlowSize * 2}px ${chainColor}40`,
+              color: triColorActive ? undefined : chainColor ?? '#3388ff',
+              background: triColorActive ? 'linear-gradient(90deg, #ffdd00, #ff3344, #3388ff)' : undefined,
+              WebkitBackgroundClip: triColorActive ? 'text' : undefined,
+              WebkitTextFillColor: triColorActive ? 'transparent' : undefined,
+              textShadow: triColorActive
+                ? `0 0 ${chainGlowSize}px #ffdd00, 0 0 ${chainGlowSize}px #ff3344, 0 0 ${chainGlowSize}px #3388ff`
+                : `0 0 ${chainGlowSize}px ${chainColor}, 0 0 ${chainGlowSize * 2}px ${chainColor}40`,
               transform: `scale(${1 + chainCombo * 0.15})`,
             }}
           >
-            CHAIN x{chainCombo}!
+            {chainLabel} x{chainCombo}!
           </div>
         </div>
       )}
