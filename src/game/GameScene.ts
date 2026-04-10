@@ -422,6 +422,38 @@ export class GameScene extends Phaser.Scene {
       if (this.snapScale < 1.005) this.snapScale = 1;
     }
 
+    // Free-fall jitter physics for active piece orbs
+    for (const j of this.fallingJitter) {
+      j.phase += delta * 0.005;
+      // Gentle spring back to center + subtle random drift
+      j.vx += -j.dx * 0.05 + Math.sin(j.phase * 1.7) * 0.04;
+      j.vy += -j.dy * 0.04 + Math.cos(j.phase * 2.1) * 0.03;
+      j.vx *= 0.92;
+      j.vy *= 0.92;
+      j.dx += j.vx;
+      j.dy += j.vy;
+      // Clamp to keep it subtle
+      const maxDrift = 2.5;
+      j.dx = Math.max(-maxDrift, Math.min(maxDrift, j.dx));
+      j.dy = Math.max(-maxDrift, Math.min(maxDrift, j.dy));
+    }
+
+    // Landing bounce for placed orbs
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const orb = this.grid[r][c];
+        if (orb && orb.landBounce !== 0) {
+          orb.landBounceVel += -orb.landBounce * 0.25;
+          orb.landBounceVel *= 0.82;
+          orb.landBounce += orb.landBounceVel;
+          if (Math.abs(orb.landBounce) < 0.1 && Math.abs(orb.landBounceVel) < 0.1) {
+            orb.landBounce = 0;
+            orb.landBounceVel = 0;
+          }
+        }
+      }
+    }
+
     // Drop
     this.dropTimer += dt;
     if (this.dropTimer >= this.dropInterval) {
