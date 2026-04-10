@@ -445,20 +445,20 @@ export class GameScene extends Phaser.Scene {
       if (this.snapScale < 1.005) this.snapScale = 1;
     }
 
-    // Free-fall jitter physics for active piece orbs
+    // Free-fall jitter physics — orbs wobble, drift, and feel gravity-affected
     for (const j of this.fallingJitter) {
-      j.phase += delta * 0.005;
-      // Gentle spring back to center + subtle random drift
-      j.vx += -j.dx * 0.05 + Math.sin(j.phase * 1.7) * 0.04;
-      j.vy += -j.dy * 0.04 + Math.cos(j.phase * 2.1) * 0.03;
-      j.vx *= 0.92;
-      j.vy *= 0.92;
+      j.phase += delta * 0.006;
+      // Spring back to formation center + organic drift + gravity pull
+      j.vx += -j.dx * 0.06 + Math.sin(j.phase * 2.3) * 0.08 + (Math.random() - 0.5) * 0.06;
+      j.vy += -j.dy * 0.04 + Math.cos(j.phase * 1.9) * 0.06 + 0.03; // slight downward gravity bias
+      j.vx *= 0.90;
+      j.vy *= 0.90;
       j.dx += j.vx;
       j.dy += j.vy;
-      // Clamp to keep it subtle
-      const maxDrift = 2.5;
-      j.dx = Math.max(-maxDrift, Math.min(maxDrift, j.dx));
-      j.dy = Math.max(-maxDrift, Math.min(maxDrift, j.dy));
+      // Soft collision: clamp but allow more range for alive feel
+      const maxDrift = 4;
+      if (Math.abs(j.dx) > maxDrift) { j.dx = Math.sign(j.dx) * maxDrift; j.vx *= -0.4; }
+      if (Math.abs(j.dy) > maxDrift) { j.dy = Math.sign(j.dy) * maxDrift; j.vy *= -0.3; }
     }
 
     // Landing bounce for placed orbs
