@@ -26,6 +26,10 @@ const GameHUD = () => {
     const onChainCombo = (step: number) => {
       setChainCombo(step);
       setChainVisible(true);
+      setTriColorActive(false);
+    };
+    const onTriColor = () => {
+      setTriColorActive(true);
     };
 
     gameEvents.on('hud', onHUD);

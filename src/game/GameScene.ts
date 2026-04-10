@@ -392,6 +392,129 @@ export class GameScene extends Phaser.Scene {
     return null;
   }
 
+  /** Find tri-color combo: 3 adjacent full rows each a different dominant color, OR connected cluster of 6+ orbs with all 3 colors */
+  private findTriColorMatch(): { cells: [number, number][]; dominantColor: number } | null {
+    const YELLOW = 0xffdd00, RED = 0xff3344, BLUE = 0x3388ff;
+    const allColors = [YELLOW, RED, BLUE];
+
+    // Strategy 1: 3 consecutive full rows, each with a different dominant color
+    const fullRows: number[] = [];
+    for (let r = 0; r < ROWS; r++) {
+      if (this.grid[r].every(c => c !== null)) fullRows.push(r);
+    }
+    for (let i = 0; i < fullRows.length - 2; i++) {
+      if (fullRows[i + 1] !== fullRows[i] + 1 || fullRows[i + 2] !== fullRows[i] + 2) continue;
+      const rows3 = [fullRows[i], fullRows[i + 1], fullRows[i + 2]];
+      const dominants = rows3.map(r => {
+        const colors = this.grid[r].map(c => c!.color);
+        return this.mode(colors)!;
+      });
+      const uniqueDominants = new Set(dominants);
+      if (uniqueDominants.size === 3 && allColors.every(c => uniqueDominants.has(c))) {
+        const cells: [number, number][] = [];
+        for (const r of rows3) {
+          for (let c = 0; c < COLS; c++) cells.push([r, c]);
+        }
+        return { cells, dominantColor: YELLOW };
+      }
+    }
+
+    // Strategy 2: connected cluster of 6+ orbs containing all 3 colors
+    const visited = Array.from({ length: ROWS }, () => Array(COLS).fill(false));
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        if (visited[r][c] || !this.grid[r][c]) continue;
+        const queue: [number, number][] = [[r, c]];
+        const cluster: [number, number][] = [];
+        const colorSet = new Set<number>();
+        visited[r][c] = true;
+        while (queue.length > 0) {
+          const [cr, cc] = queue.shift()!;
+          cluster.push([cr, cc]);
+          colorSet.add(this.grid[cr][cc]!.color);
+          for (const [dr, dc] of [[0,1],[0,-1],[1,0],[-1,0]] as [number,number][]) {
+            const nr = cr + dr, nc = cc + dc;
+            if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && !visited[nr][nc] && this.grid[nr][nc]) {
+              visited[nr][nc] = true;
+              queue.push([nr, nc]);
+            }
+          }
+        }
+        if (cluster.length >= 6 && colorSet.size === 3 && allColors.every(clr => colorSet.has(clr))) {
+          return { cells: cluster, dominantColor: YELLOW };
+        }
+      }
+    }
+    return null;
+  }
+
+  /** Tri-color fusion VFX — swirling RGB energy then explosion */
+  private triColorFusionVFX(cells: [number, number][], chainStep: number) {
+    const scale = 1 + chainStep * 0.5;
+    const colors = [0xffdd00, 0xff3344, 0x3388ff];
+    let sumX = 0, sumY = 0;
+    for (const [r, c] of cells) {
+      sumX += this.offsetX + c * CELL + CELL / 2;
+      sumY += this.offsetY + r * CELL + CELL / 2;
+    }
+    const cx = sumX / cells.length;
+    const cy = sumY / cells.length;
+
+    // Swirling RGB rings — 3 color-coded spiral arms
+    for (let ci = 0; ci < 3; ci++) {
+      const ringCount = Math.floor(25 * scale);
+      for (let i = 0; i < ringCount; i++) {
+        const angle = (ci / 3) * Math.PI * 2 + (i / ringCount) * Math.PI * 2;
+        const dist = 40 + i * 3 + Math.random() * 30;
+        const speed = 2 + Math.random() * 3;
+        this.particles.push({
+          x: cx + Math.cos(angle) * dist, y: cy + Math.sin(angle) * dist,
+          vx: -Math.cos(angle) * speed + Math.sin(angle) * 1.5,
+          vy: -Math.sin(angle) * speed - Math.cos(angle) * 1.5,
+          life: 30 + Math.random() * 15, maxLife: 45,
+          color: colors[ci], size: (3 + Math.random() * 3) * Math.min(scale, 2),
+        });
+      }
+    }
+
+    // Central fusion burst
+    const burstCount = Math.floor(50 * scale);
+    for (let i = 0; i < burstCount; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = (2 + Math.random() * 5) * Math.min(scale, 2);
+      this.particles.push({
+        x: cx, y: cy,
+        vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+        life: 25 + Math.random() * 20, maxLife: 45,
+        color: colors[Math.floor(Math.random() * 3)], size: (3 + Math.random() * 5) * Math.min(scale, 2),
+      });
+    }
+
+    // Per-cell colored sparks spiraling inward
+    for (const [r, c] of cells) {
+      const orb = this.grid[r][c];
+      if (!orb) continue;
+      const px = this.offsetX + c * CELL + CELL / 2;
+      const py = this.offsetY + r * CELL + CELL / 2;
+      const dirX = cx - px, dirY = cy - py;
+      const len = Math.sqrt(dirX * dirX + dirY * dirY) || 1;
+      for (let i = 0; i < 2; i++) {
+        this.particles.push({
+          x: px, y: py,
+          vx: (dirX / len) * 4 + (Math.random() - 0.5) * 2,
+          vy: (dirY / len) * 4 + (Math.random() - 0.5) * 2,
+          life: 20 + Math.random() * 10, maxLife: 30,
+          color: orb.color, size: 2 + Math.random() * 2,
+        });
+      }
+    }
+
+    this.shakeAmount = Math.min(10 * (1 + chainStep * 0.4), 25);
+    this.flashAlpha = Math.min(0.35 * (1 + chainStep * 0.3), 0.9);
+    this.slowMo = true;
+    this.slowMoTimer = 30 + chainStep * 10;
+  }
+
   /** Find 3+ consecutive same-color full rows */
   private findLineMatch(): { rows: number[]; cosmicWipe: boolean } | null {
     const fullRows: number[] = [];
