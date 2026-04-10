@@ -207,7 +207,12 @@ const GameHUD = () => {
               </button>
             </div>
             {!isLoggedIn && (
-              <div className="text-[10px] text-white/30 mt-3 font-mono">Sign in to track your scores</div>
+              <button
+                onClick={() => navigate('/auth')}
+                className="text-[10px] text-white/40 mt-3 font-mono hover:text-white/60 transition-colors underline"
+              >
+                Sign in to track your scores
+              </button>
             )}
           </div>
         </div>
