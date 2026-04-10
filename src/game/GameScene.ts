@@ -125,11 +125,24 @@ export class GameScene extends Phaser.Scene {
     this.emitHUD();
   }
 
+  private initJitter(cellCount: number) {
+    this.fallingJitter = [];
+    for (let i = 0; i < cellCount; i++) {
+      this.fallingJitter.push({
+        dx: 0, dy: 0,
+        vx: (Math.random() - 0.5) * 0.3,
+        vy: (Math.random() - 0.5) * 0.2,
+        phase: Math.random() * Math.PI * 2,
+      });
+    }
+  }
+
   private spawnPiece() {
     const def = this.nextPieceDef || randomOrbPiece();
     this.nextPieceDef = randomOrbPiece();
     this.activePiece = { def, rotation: 0, row: 0, col: Math.floor(COLS / 2) - 1 };
     this.snapScale = 1;
+    this.initJitter(def.shapes[0].length);
     if (!this.isValid(this.activePiece)) {
       this.gameOver = true;
       gameEvents.emit('gameover', this.score);
@@ -222,6 +235,8 @@ export class GameScene extends Phaser.Scene {
           wobblePhase: Math.random() * Math.PI * 2,
           wobbleAmp: 3 + Math.random() * 2,
           glowPulse: Math.random() * Math.PI * 2,
+          landBounce: -4,
+          landBounceVel: 0,
         };
       }
     }
