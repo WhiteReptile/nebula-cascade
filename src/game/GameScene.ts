@@ -440,12 +440,14 @@ export class GameScene extends Phaser.Scene {
         }
       }
 
+      // Visual interpolation: use fallAccum for smooth sub-cell offset
+      const visualYOffset = this.fallAccum * CELL;
       const looseness = Math.min(this.fallAge / 3.0, 1);
       for (let i = 0; i < cells.length; i++) {
         const [r, c] = cells[i];
         const fo = this.fallingOrbs[i] || { dx: 0, dy: 0 };
         const px = ox + (this.activePiece.col + c) * CELL + CELL / 2 + this.bounceOffset + fo.dx;
-        const py = oy + (this.activePiece.row + r) * CELL + CELL / 2 + fo.dy;
+        const py = oy + (this.activePiece.row + r) * CELL + CELL / 2 + visualYOffset + fo.dy;
         drawOrb(this.pieceGraphics, px, py, orbRadius, clr, 1, this.globalTime * 3 + fo.dx);
       }
 
