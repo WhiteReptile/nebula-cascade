@@ -46,6 +46,8 @@ export class GameScene extends Phaser.Scene {
   private score = 0;
   private level = 1;
   private combo = 0;
+  private chainStep = 0;        // current chain depth in resolveChains
+  private chainResolving = false; // true while chain loop is active
   private gameOver = false;
   private paused = false;
   private gridGraphics!: Phaser.GameObjects.Graphics;
