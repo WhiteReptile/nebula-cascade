@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { gameEvents } from '../game/GameScene';
+import { gameEvents } from '../game/events';
 import { PieceDef } from '../game/pieces';
 import { logMatch } from '@/lib/matchLogger';
 import DivisionBadge from './DivisionBadge';
-import { supabase } from '@/integrations/supabase/client';
-import type { Division } from '@/lib/divisionSystem';
+import { usePlayerProfile } from '@/hooks/usePlayerProfile';
 
 const GameHUD = () => {
   const navigate = useNavigate();
+  const { playerDivision, isLoggedIn } = usePlayerProfile();
   const [score, setScore] = useState(0);
   const [level, setLevel] = useState(1);
   const [combo, setCombo] = useState(0);
@@ -18,26 +18,6 @@ const GameHUD = () => {
   const [chainCombo, setChainCombo] = useState(0);
   const [chainVisible, setChainVisible] = useState(false);
   const [triColorActive, setTriColorActive] = useState(false);
-  const [playerDivision, setPlayerDivision] = useState<Division | null>(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
-  // Check auth and load division
-  useEffect(() => {
-    const loadPlayer = async () => {
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData?.user) return;
-      setIsLoggedIn(true);
-      const { data: player } = await supabase
-        .from('players')
-        .select('division')
-        .eq('user_id', userData.user.id)
-        .single();
-      if (player) setPlayerDivision(player.division as Division);
-    };
-    loadPlayer();
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => loadPlayer());
-    return () => subscription.unsubscribe();
-  }, []);
 
   useEffect(() => {
     const onHUD = (data: { score: number; level: number; combo: number }) => {
@@ -227,7 +207,12 @@ const GameHUD = () => {
               </button>
             </div>
             {!isLoggedIn && (
-              <div className="text-[10px] text-white/30 mt-3 font-mono">Sign in to track your scores</div>
+              <button
+                onClick={() => navigate('/auth')}
+                className="text-[10px] text-white/40 mt-3 font-mono hover:text-white/60 transition-colors underline"
+              >
+                Sign in to track your scores
+              </button>
             )}
           </div>
         </div>
