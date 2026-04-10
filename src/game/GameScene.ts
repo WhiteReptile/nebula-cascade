@@ -125,6 +125,8 @@ export class GameScene extends Phaser.Scene {
     this.flashAlpha = 0;
     this.bounceOffset = 0;
     this.bounceVel = 0;
+    this.fallSpeed = 0;
+    this.fallAccum = 0;
     this.nextPieceDef = randomOrbPiece();
     this.spawnPiece();
     this.emitHUD();
@@ -147,6 +149,8 @@ export class GameScene extends Phaser.Scene {
     this.nextPieceDef = randomOrbPiece();
     this.activePiece = { def, rotation: 0, row: 0, col: Math.floor(COLS / 2) - 1 };
     this.snapScale = 1;
+    this.fallSpeed = 0;
+    this.fallAccum = 0;
     this.initJitter(def.shapes[0].length);
     if (!this.isValid(this.activePiece)) {
       this.gameOver = true;
