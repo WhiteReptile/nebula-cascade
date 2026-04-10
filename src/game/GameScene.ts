@@ -729,8 +729,8 @@ export class GameScene extends Phaser.Scene {
       }
     }
 
-    // Moon gravity free fall
-    if (this.activePiece) {
+    // Moon gravity free fall (skip while chain is resolving)
+    if (this.activePiece && !this.chainResolving) {
       const levelBoost = 1 + (this.level - 1) * 0.025; // very gentle scaling
       this.fallSpeed = Math.min(this.fallSpeed + this.GRAVITY * levelBoost, this.MAX_FALL_SPEED);
       this.fallSpeed *= 0.992; // drag for floaty feel
