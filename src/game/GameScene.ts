@@ -569,7 +569,7 @@ export class GameScene extends Phaser.Scene {
         if (orb) {
           const wobble = Math.sin(this.globalTime * 2.5 + orb.wobblePhase) * orb.wobbleAmp * 0.3;
           const px = ox + c * CELL + CELL / 2;
-          const py = oy + r * CELL + CELL / 2 + wobble;
+          const py = oy + r * CELL + CELL / 2 + wobble + orb.landBounce;
           const glowPulse = 0.85 + Math.sin(this.globalTime * 1.8 + orb.glowPulse) * 0.15;
           this.drawOrb(this.gridGraphics, px, py, orbRadius * this.snapScale, orb.color, glowPulse, this.globalTime * 2 + orb.wobblePhase);
         }
@@ -600,11 +600,13 @@ export class GameScene extends Phaser.Scene {
         }
       }
 
-      // Active orbs with bounce
-      for (const [r, c] of cells) {
-        const px = ox + (this.activePiece.col + c) * CELL + CELL / 2 + this.bounceOffset;
-        const py = oy + (this.activePiece.row + r) * CELL + CELL / 2;
-        this.drawOrb(this.pieceGraphics, px, py, orbRadius, clr, 1, this.globalTime * 3);
+      // Active orbs with bounce + free-fall jitter
+      for (let i = 0; i < cells.length; i++) {
+        const [r, c] = cells[i];
+        const jitter = this.fallingJitter[i] || { dx: 0, dy: 0 };
+        const px = ox + (this.activePiece.col + c) * CELL + CELL / 2 + this.bounceOffset + jitter.dx;
+        const py = oy + (this.activePiece.row + r) * CELL + CELL / 2 + jitter.dy;
+        this.drawOrb(this.pieceGraphics, px, py, orbRadius, clr, 1, this.globalTime * 3 + (jitter.dx || 0));
       }
 
       // Connection lines between orbs (energy links)
