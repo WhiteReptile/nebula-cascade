@@ -37,6 +37,11 @@ export class GameScene extends Phaser.Scene {
   private nextPieceDef: PieceDef | null = null;
   private dropTimer = 0;
   private dropInterval = 800;
+  // Gravity-based free fall
+  private fallSpeed = 0;        // current fall speed in pixels
+  private fallAccum = 0;        // accumulated sub-cell fall distance
+  private readonly GRAVITY = 0.04; // acceleration per frame (cells/frame^2)
+  private readonly MAX_FALL_SPEED = 1.2; // max cells per frame
   private score = 0;
   private level = 1;
   private combo = 0;
