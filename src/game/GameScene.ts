@@ -136,6 +136,11 @@ export class GameScene extends Phaser.Scene {
     this.fallSpeed = 0;
     this.fallAccum = 0;
     this.fallAge = 0;
+    this.matchStartedAt = new Date();
+    this.matchMaxCombo = 0;
+    this.matchComboPoints = 0;
+    this.matchOmniColorCount = 0;
+    this.matchLinesCleared = 0;
     this.nextPieceDef = randomOrbPiece();
     this.spawnPiece();
     this.emitHUD();
