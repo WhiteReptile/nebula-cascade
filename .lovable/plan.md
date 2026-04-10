@@ -1,38 +1,57 @@
 
 
-## Plan: Fix Playability — Slower Moon Gravity & Smooth Loosening
+## Plan: 4x4 Reorganization, Chain Reactions, and Combo System
 
-### Problem
-The game feels too fast and stiff. Gravity is not slow enough, and the loosening system needs better tuning for a visible but controlled transition from rigid formation to independent orbs.
+### Overview
+Transform the 4x4 block destruction from a simple clear into a dynamic mechanic: orbs burst outward, reorganize into new formations, then the board is re-checked for chain reactions with escalating VFX and scoring.
 
-### Changes (all in `src/game/GameScene.ts`)
+### Changes
 
-**1. Drastically reduce gravity and terminal speed**
-- `GRAVITY`: 0.012 → **0.003** (4x slower acceleration)
-- `MAX_FALL_SPEED`: 0.55 → **0.18** (3x slower terminal velocity)
-- `levelBoost` multiplier: 0.12 → **0.05** per level (gentler scaling)
-- Add a **drag factor** (0.992) applied to `fallSpeed` each frame so acceleration feels floaty, not linear
+**1. Rework `checkBlockDestruction()` in `GameScene.ts`**
+- Instead of nullifying destroyed cells, collect their color and positions
+- After implosion VFX, redistribute the 16 orbs into new random compact connected formations nearby (within the same column region)
+- Placement algorithm: pick random connected shapes from `FORMATIONS_LIST`, place them in empty cells near the original block area, falling to the lowest available rows
+- If no valid placement exists for remaining orbs, they simply disappear (prevents gridlock)
 
-**2. Extend loosening duration and make it visible**
-- `LOOSEN_DURATION`: 3.0s → **5.0s** (more time as a tight group before drifting)
-- First 1.5s: formation stays fully rigid (looseness effectively 0)
-- Use an eased curve (e.g. smoothstep) so loosening accelerates gradually, not linearly
-- Increase `maxDrift` range at full looseness: 7px → **10px** for more visible separation
+**2. Add chain reaction loop in `lockPiece()`**
+- Replace the current single `checkBlockDestruction()` + `checkLines()` with a `resolveChains()` method
+- `resolveChains()` runs a loop:
+  1. Check for 4x4 blocks → if found, trigger implosion VFX, reorganize orbs, increment chain counter
+  2. Check for 3-line same-color clears → if found, trigger line VFX, clear rows, increment chain counter
+  3. Apply gravity collapse after each step
+  4. Repeat from step 1 until no more matches found
+- Use a frame-delayed queue (setTimeout-style or accumulator) so each chain step plays out visibly with a brief pause between explosions
 
-**3. Improve per-orb physics feel**
-- Reduce spring strength slightly so orbs feel softer
-- Add a subtle downward drift bias that scales with looseness (mimicking individual gravity)
-- Increase wobble amplitude slightly at high looseness for more "alive" feel
-- Keep damping high enough to prevent chaos
+**3. Combo scoring system**
+- Track `chainStep` counter (resets each lockPiece)
+- Score multipliers: step 1 = 1x, step 2 = 2.5x, step 3+ = exponential (step^1.8)
+- Formula: `baseScore * multiplier * level`
+- Base scores: 4x4 block = 800pts, 3-line clear = rows² × 100
 
-**4. Ensure controls stay responsive**
-- No changes to movement/rotation logic — these remain instant grid-snaps
-- On move/rotate, reset orb visual offsets partially (lerp toward 0) so the formation "snaps back together" briefly, then loosens again — reinforcing the organic feel
+**4. Escalating VFX per chain step**
+- Scale particle count: `baseCount * (1 + chainStep * 0.5)`
+- Scale shake: `baseShake * (1 + chainStep * 0.4)`
+- Scale flash alpha: `min(baseFlash * (1 + chainStep * 0.3), 0.9)`
+- Scale slowMo duration: `baseSlowMo + chainStep * 10` frames
+
+**5. Visible combo counter in HUD (`GameHUD.tsx`)**
+- Add `chainCombo` state, listen for new `'chainCombo'` event from GameScene
+- Display a prominent animated counter (e.g. "CHAIN x3!") center-screen that fades after 2s
+- Style with escalating glow intensity matching the chain step
+
+**6. Orb reorganization algorithm (detail)**
+- Collect all destroyed orb colors (all same color for a 4x4)
+- Generate 4-5 small connected formations (2-3 orbs each) from a subset of `FORMATIONS_LIST`
+- Place them in empty cells near the original block's column range, stacking from bottom up
+- Each placed orb gets a fresh `OrbState` with landing bounce
+- Run gravity collapse after placement to ensure no floating orbs
+
+### Files Modified
+- `src/game/GameScene.ts` — chain loop, reorganization, escalating VFX, combo event emission
+- `src/components/GameHUD.tsx` — chain combo counter display
 
 ### What stays the same
-- All formations (3+ orbs, fully connected)
-- 3-color palette (Yellow, Red, Blue)
-- Line clearing: only 3+ consecutive same-color full rows
-- 5-line cosmic chain effect
-- Force drop (Z key), VFX, HUD
+- All existing rules (3-color, connected formations, 3-line same-color clears, 5-line cosmic wipe)
+- Moon gravity and loosening physics
+- All controls and existing VFX for line clears
 
