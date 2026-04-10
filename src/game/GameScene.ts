@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { randomOrbPiece, COLS, ROWS, CELL, PieceDef, FORMATIONS_LIST } from './pieces';
+import { randomOrbPiece, COLS, ROWS, CELL, PieceDef, FORMATIONS_LIST, COLORS } from './pieces';
 
 // Event bus for React HUD
 export const gameEvents = new Phaser.Events.EventEmitter();
@@ -398,12 +398,11 @@ export class GameScene extends Phaser.Scene {
     return null;
   }
 
-  /** Find tri-color combo: 3 adjacent full rows each a different dominant color, OR connected cluster of 6+ orbs with all 3 colors */
+  /** Find omni-color combo: 3 adjacent full rows each a different dominant color (need 3+ unique), OR connected cluster of 30+ orbs with all 5 colors (6+ each) */
   private findTriColorMatch(): { cells: [number, number][]; dominantColor: number } | null {
-    const YELLOW = 0xffdd00, RED = 0xff3344, BLUE = 0x3388ff;
-    const allColors = [YELLOW, RED, BLUE];
+    const allColors = COLORS.map(c => c.color); // all 5 element colors
 
-    // Strategy 1: 3 consecutive full rows, each with a different dominant color
+    // Strategy 1: 3 consecutive full rows, each with a different dominant color — need at least 3 unique dominants
     const fullRows: number[] = [];
     for (let r = 0; r < ROWS; r++) {
       if (this.grid[r].every(c => c !== null)) fullRows.push(r);
@@ -416,16 +415,23 @@ export class GameScene extends Phaser.Scene {
         return this.mode(colors)!;
       });
       const uniqueDominants = new Set(dominants);
-      if (uniqueDominants.size === 3 && allColors.every(c => uniqueDominants.has(c))) {
+      // Need all 3 rows to have different dominants AND collectively contain at least 4 of the 5 colors
+      if (uniqueDominants.size === 3) {
+        const allCellColors = new Set<number>();
         const cells: [number, number][] = [];
         for (const r of rows3) {
-          for (let c = 0; c < COLS; c++) cells.push([r, c]);
+          for (let c = 0; c < COLS; c++) {
+            cells.push([r, c]);
+            allCellColors.add(this.grid[r][c]!.color);
+          }
         }
-        return { cells, dominantColor: YELLOW };
+        if (allCellColors.size >= 4) {
+          return { cells, dominantColor: allColors[0] };
+        }
       }
     }
 
-    // Strategy 2: connected cluster of 6+ orbs containing all 3 colors
+    // Strategy 2: connected cluster of 30+ orbs containing all 5 colors with at least 6 of each
     const visited = Array.from({ length: ROWS }, () => Array(COLS).fill(false));
     for (let r = 0; r < ROWS; r++) {
       for (let c = 0; c < COLS; c++) {
@@ -446,14 +452,14 @@ export class GameScene extends Phaser.Scene {
             }
           }
         }
-        // Require 24+ orbs with at least 7 of each color
+        // Require 30+ orbs with all 5 colors present, at least 6 of each
         const colorCounts = new Map<number, number>();
         for (const [cr2, cc2] of cluster) {
           const clr = this.grid[cr2][cc2]!.color;
           colorCounts.set(clr, (colorCounts.get(clr) || 0) + 1);
         }
-        if (cluster.length >= 24 && colorSet.size === 3 && allColors.every(clr => (colorCounts.get(clr) || 0) >= 7)) {
-          return { cells: cluster, dominantColor: YELLOW };
+        if (cluster.length >= 30 && colorSet.size >= 5 && allColors.every(clr => (colorCounts.get(clr) || 0) >= 6)) {
+          return { cells: cluster, dominantColor: allColors[0] };
         }
       }
     }
@@ -463,7 +469,7 @@ export class GameScene extends Phaser.Scene {
   /** Tri-color fusion VFX — swirling RGB energy then explosion */
   private triColorFusionVFX(cells: [number, number][], chainStep: number) {
     const scale = 1 + chainStep * 0.5;
-    const colors = [0xffdd00, 0xff3344, 0x3388ff];
+    const colors = COLORS.map(c => c.color);
     let sumX = 0, sumY = 0;
     for (const [r, c] of cells) {
       sumX += this.offsetX + c * CELL + CELL / 2;
@@ -473,10 +479,10 @@ export class GameScene extends Phaser.Scene {
     const cy = sumY / cells.length;
 
     // Swirling RGB rings — 3 color-coded spiral arms
-    for (let ci = 0; ci < 3; ci++) {
+    for (let ci = 0; ci < colors.length; ci++) {
       const ringCount = Math.floor(25 * scale);
       for (let i = 0; i < ringCount; i++) {
-        const angle = (ci / 3) * Math.PI * 2 + (i / ringCount) * Math.PI * 2;
+        const angle = (ci / colors.length) * Math.PI * 2 + (i / ringCount) * Math.PI * 2;
         const dist = 40 + i * 3 + Math.random() * 30;
         const speed = 2 + Math.random() * 3;
         this.particles.push({
@@ -498,7 +504,7 @@ export class GameScene extends Phaser.Scene {
         x: cx, y: cy,
         vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
         life: 25 + Math.random() * 20, maxLife: 45,
-        color: colors[Math.floor(Math.random() * 3)], size: (3 + Math.random() * 5) * Math.min(scale, 2),
+        color: colors[Math.floor(Math.random() * colors.length)], size: (3 + Math.random() * 5) * Math.min(scale, 2),
       });
     }
 
