@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Division } from '@/lib/divisionSystem';
 
 const GameHUD = () => {
+  const navigate = useNavigate();
   const [score, setScore] = useState(0);
   const [level, setLevel] = useState(1);
   const [combo, setCombo] = useState(0);
@@ -17,6 +18,26 @@ const GameHUD = () => {
   const [chainCombo, setChainCombo] = useState(0);
   const [chainVisible, setChainVisible] = useState(false);
   const [triColorActive, setTriColorActive] = useState(false);
+  const [playerDivision, setPlayerDivision] = useState<Division | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  // Check auth and load division
+  useEffect(() => {
+    const loadPlayer = async () => {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData?.user) return;
+      setIsLoggedIn(true);
+      const { data: player } = await supabase
+        .from('players')
+        .select('division')
+        .eq('user_id', userData.user.id)
+        .single();
+      if (player) setPlayerDivision(player.division as Division);
+    };
+    loadPlayer();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => loadPlayer());
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     const onHUD = (data: { score: number; level: number; combo: number }) => {
@@ -36,6 +57,9 @@ const GameHUD = () => {
     const onTriColor = () => {
       setTriColorActive(true);
     };
+    const onMatchEnd = (data: any) => {
+      logMatch(data).catch(console.error);
+    };
 
     gameEvents.on('hud', onHUD);
     gameEvents.on('nextPiece', onNext);
@@ -44,6 +68,7 @@ const GameHUD = () => {
     gameEvents.on('restart', onRestart);
     gameEvents.on('chainCombo', onChainCombo);
     gameEvents.on('triColor', onTriColor);
+    gameEvents.on('matchEnd', onMatchEnd);
 
     return () => {
       gameEvents.off('hud', onHUD);
@@ -53,6 +78,7 @@ const GameHUD = () => {
       gameEvents.off('restart', onRestart);
       gameEvents.off('chainCombo', onChainCombo);
       gameEvents.off('triColor', onTriColor);
+      gameEvents.off('matchEnd', onMatchEnd);
     };
   }, []);
 
