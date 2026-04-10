@@ -103,3 +103,37 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+/* PS2 Menu Effects */
+.menu-title-glow {
+  text-shadow: 0 0 20px rgba(102, 255, 238, 0.5), 0 0 40px rgba(102, 255, 238, 0.2);
+  animation: menuGlow 3s ease-in-out infinite;
+}
+
+.menu-item-glow {
+  text-shadow: 0 0 15px rgba(102, 255, 238, 0.6), 0 0 30px rgba(102, 255, 238, 0.3);
+}
+
+.menu-hero-breathe {
+  animation: heroBreathe 4s ease-in-out infinite;
+}
+
+.menu-scanlines {
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.06) 2px,
+    rgba(0, 0, 0, 0.06) 4px
+  );
+}
+
+@keyframes menuGlow {
+  0%, 100% { text-shadow: 0 0 20px rgba(102,255,238,0.5), 0 0 40px rgba(102,255,238,0.2); }
+  50% { text-shadow: 0 0 30px rgba(102,255,238,0.8), 0 0 60px rgba(102,255,238,0.4); }
+}
+
+@keyframes heroBreathe {
+  0%, 100% { transform: scale(0.98); }
+  50% { transform: scale(1.02); }
+}
