@@ -486,16 +486,23 @@ export class GameScene extends Phaser.Scene {
       }
     }
 
-    // Drop
-    this.dropTimer += dt;
-    if (this.dropTimer >= this.dropInterval) {
-      this.dropTimer = 0;
-      if (this.activePiece) {
+    // Gravity-based free fall
+    if (this.activePiece) {
+      // Accelerate with gravity, capped at max speed
+      const levelBoost = 1 + (this.level - 1) * 0.15;
+      this.fallSpeed = Math.min(this.fallSpeed + this.GRAVITY * levelBoost, this.MAX_FALL_SPEED);
+      this.fallAccum += this.fallSpeed;
+
+      // Move down by whole cells when accumulated enough
+      while (this.fallAccum >= 1) {
+        this.fallAccum -= 1;
         const test = { ...this.activePiece, row: this.activePiece.row + 1 };
         if (this.isValid(test)) {
           this.activePiece = test;
         } else {
+          this.fallAccum = 0;
           this.lockPiece();
+          break;
         }
       }
     }
