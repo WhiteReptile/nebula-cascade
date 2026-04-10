@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { randomOrbPiece, COLS, ROWS, CELL, PieceDef, FORMATIONS_LIST } from './pieces';
+import { randomOrbPiece, COLS, ROWS, CELL, PieceDef, FORMATIONS_LIST, COLORS } from './pieces';
 
 // Event bus for React HUD
 export const gameEvents = new Phaser.Events.EventEmitter();
@@ -398,12 +398,11 @@ export class GameScene extends Phaser.Scene {
     return null;
   }
 
-  /** Find tri-color combo: 3 adjacent full rows each a different dominant color, OR connected cluster of 6+ orbs with all 3 colors */
+  /** Find omni-color combo: 3 adjacent full rows each a different dominant color (need 3+ unique), OR connected cluster of 30+ orbs with all 5 colors (6+ each) */
   private findTriColorMatch(): { cells: [number, number][]; dominantColor: number } | null {
-    const YELLOW = 0xffdd00, RED = 0xff3344, BLUE = 0x3388ff;
-    const allColors = [YELLOW, RED, BLUE];
+    const allColors = COLORS.map(c => c.color); // all 5 element colors
 
-    // Strategy 1: 3 consecutive full rows, each with a different dominant color
+    // Strategy 1: 3 consecutive full rows, each with a different dominant color — need at least 3 unique dominants
     const fullRows: number[] = [];
     for (let r = 0; r < ROWS; r++) {
       if (this.grid[r].every(c => c !== null)) fullRows.push(r);
@@ -416,16 +415,23 @@ export class GameScene extends Phaser.Scene {
         return this.mode(colors)!;
       });
       const uniqueDominants = new Set(dominants);
-      if (uniqueDominants.size === 3 && allColors.every(c => uniqueDominants.has(c))) {
+      // Need all 3 rows to have different dominants AND collectively contain at least 4 of the 5 colors
+      if (uniqueDominants.size === 3) {
+        const allCellColors = new Set<number>();
         const cells: [number, number][] = [];
         for (const r of rows3) {
-          for (let c = 0; c < COLS; c++) cells.push([r, c]);
+          for (let c = 0; c < COLS; c++) {
+            cells.push([r, c]);
+            allCellColors.add(this.grid[r][c]!.color);
+          }
         }
-        return { cells, dominantColor: YELLOW };
+        if (allCellColors.size >= 4) {
+          return { cells, dominantColor: allColors[0] };
+        }
       }
     }
 
-    // Strategy 2: connected cluster of 6+ orbs containing all 3 colors
+    // Strategy 2: connected cluster of 30+ orbs containing all 5 colors with at least 6 of each
     const visited = Array.from({ length: ROWS }, () => Array(COLS).fill(false));
     for (let r = 0; r < ROWS; r++) {
       for (let c = 0; c < COLS; c++) {
@@ -446,14 +452,14 @@ export class GameScene extends Phaser.Scene {
             }
           }
         }
-        // Require 24+ orbs with at least 7 of each color
+        // Require 30+ orbs with all 5 colors present, at least 6 of each
         const colorCounts = new Map<number, number>();
         for (const [cr2, cc2] of cluster) {
           const clr = this.grid[cr2][cc2]!.color;
           colorCounts.set(clr, (colorCounts.get(clr) || 0) + 1);
         }
-        if (cluster.length >= 24 && colorSet.size === 3 && allColors.every(clr => (colorCounts.get(clr) || 0) >= 7)) {
-          return { cells: cluster, dominantColor: YELLOW };
+        if (cluster.length >= 30 && colorSet.size >= 5 && allColors.every(clr => (colorCounts.get(clr) || 0) >= 6)) {
+          return { cells: cluster, dominantColor: allColors[0] };
         }
       }
     }
@@ -463,7 +469,7 @@ export class GameScene extends Phaser.Scene {
   /** Tri-color fusion VFX — swirling RGB energy then explosion */
   private triColorFusionVFX(cells: [number, number][], chainStep: number) {
     const scale = 1 + chainStep * 0.5;
-    const colors = [0xffdd00, 0xff3344, 0x3388ff];
+    const colors = COLORS.map(c => c.color);
     let sumX = 0, sumY = 0;
     for (const [r, c] of cells) {
       sumX += this.offsetX + c * CELL + CELL / 2;
@@ -473,10 +479,10 @@ export class GameScene extends Phaser.Scene {
     const cy = sumY / cells.length;
 
     // Swirling RGB rings — 3 color-coded spiral arms
-    for (let ci = 0; ci < 3; ci++) {
+    for (let ci = 0; ci < colors.length; ci++) {
       const ringCount = Math.floor(25 * scale);
       for (let i = 0; i < ringCount; i++) {
-        const angle = (ci / 3) * Math.PI * 2 + (i / ringCount) * Math.PI * 2;
+        const angle = (ci / colors.length) * Math.PI * 2 + (i / ringCount) * Math.PI * 2;
         const dist = 40 + i * 3 + Math.random() * 30;
         const speed = 2 + Math.random() * 3;
         this.particles.push({
@@ -498,7 +504,7 @@ export class GameScene extends Phaser.Scene {
         x: cx, y: cy,
         vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
         life: 25 + Math.random() * 20, maxLife: 45,
-        color: colors[Math.floor(Math.random() * 3)], size: (3 + Math.random() * 5) * Math.min(scale, 2),
+        color: colors[Math.floor(Math.random() * colors.length)], size: (3 + Math.random() * 5) * Math.min(scale, 2),
       });
     }
 
@@ -964,26 +970,106 @@ export class GameScene extends Phaser.Scene {
   }
 
   private drawOrb(g: Phaser.GameObjects.Graphics, cx: number, cy: number, radius: number, color: number, alpha: number, phase: number) {
-    // Outer bloom glow — brighter and wider
-    g.fillStyle(color, alpha * 0.12);
-    g.fillCircle(cx, cy, radius * 2.2);
-    g.fillStyle(color, alpha * 0.22);
-    g.fillCircle(cx, cy, radius * 1.7);
-    g.fillStyle(color, alpha * 0.35);
-    g.fillCircle(cx, cy, radius * 1.35);
-    // Core — vivid
-    g.fillStyle(color, alpha * 0.95);
-    g.fillCircle(cx, cy, radius);
-    // Inner bright core
-    g.fillStyle(0xffffff, alpha * 0.18);
-    g.fillCircle(cx, cy, radius * 0.55);
-    // Specular highlights
-    const hlX = cx - radius * 0.25;
-    const hlY = cy - radius * 0.3 + Math.sin(phase) * 1.5;
-    g.fillStyle(0xffffff, alpha * 0.5);
-    g.fillCircle(hlX, hlY, radius * 0.4);
-    g.fillStyle(0xffffff, alpha * 0.65);
-    g.fillCircle(cx - radius * 0.15, cy - radius * 0.35, radius * 0.18);
+    const FIRE = 0xff3344, WATER = 0x3388ff, ELEC = 0xffdd00, SHADOW = 0x888899, VOID = 0x1a1a2e;
+
+    if (color === FIRE) {
+      // 🔥 Fire — flickering warm glow, orange-red outer, bright yellow core
+      const flicker = 0.9 + Math.sin(phase * 4.5) * 0.1;
+      g.fillStyle(0xff6600, alpha * 0.10 * flicker);
+      g.fillCircle(cx, cy, radius * 2.4);
+      g.fillStyle(0xff4400, alpha * 0.20 * flicker);
+      g.fillCircle(cx + Math.sin(phase * 3) * 1.5, cy - 1, radius * 1.7);
+      g.fillStyle(color, alpha * 0.40);
+      g.fillCircle(cx, cy, radius * 1.3);
+      g.fillStyle(color, alpha * 0.95);
+      g.fillCircle(cx, cy, radius);
+      g.fillStyle(0xff8800, alpha * 0.45);
+      g.fillCircle(cx, cy, radius * 0.6);
+      g.fillStyle(0xffcc33, alpha * 0.55);
+      g.fillCircle(cx, cy - radius * 0.15, radius * 0.3);
+      // Flame tips
+      g.fillStyle(0xff6600, alpha * 0.3);
+      g.fillCircle(cx + Math.sin(phase * 5) * 3, cy - radius * 0.8, radius * 0.25);
+    } else if (color === WATER) {
+      // 💧 Water — smooth ripple, cool blue outer, white inner shimmer
+      const ripple = Math.sin(phase * 2) * 0.08;
+      g.fillStyle(0x1155cc, alpha * 0.10);
+      g.fillCircle(cx, cy, radius * 2.2);
+      g.fillStyle(0x2266dd, alpha * 0.18);
+      g.fillCircle(cx, cy, radius * 1.7 + ripple * radius);
+      g.fillStyle(color, alpha * 0.35);
+      g.fillCircle(cx, cy, radius * 1.3);
+      g.fillStyle(color, alpha * 0.92);
+      g.fillCircle(cx, cy, radius);
+      // Water shimmer
+      g.fillStyle(0x66bbff, alpha * 0.35);
+      g.fillCircle(cx - radius * 0.2, cy - radius * 0.15, radius * 0.5);
+      g.fillStyle(0xcceeFF, alpha * 0.5);
+      g.fillCircle(cx - radius * 0.25, cy - radius * 0.3, radius * 0.22);
+      // Ripple ring
+      g.lineStyle(1, 0x88ccff, alpha * 0.15);
+      g.strokeCircle(cx, cy, radius * (1.4 + Math.sin(phase * 1.5) * 0.15));
+    } else if (color === ELEC) {
+      // ⚡ Electricity — sharp flashes, jittery, bright white-yellow
+      const jitter = (Math.sin(phase * 12) > 0.5 ? 1 : 0) * 0.15;
+      g.fillStyle(0xffff66, alpha * (0.12 + jitter));
+      g.fillCircle(cx, cy, radius * 2.3);
+      g.fillStyle(0xffee00, alpha * 0.25);
+      g.fillCircle(cx, cy, radius * 1.6);
+      g.fillStyle(color, alpha * 0.38);
+      g.fillCircle(cx, cy, radius * 1.25);
+      g.fillStyle(color, alpha * 0.95);
+      g.fillCircle(cx, cy, radius);
+      // Electric core — white hot
+      g.fillStyle(0xffffff, alpha * 0.4);
+      g.fillCircle(cx, cy, radius * 0.45);
+      // Spark lines (2 random-ish bolts)
+      g.lineStyle(1.5, 0xffffff, alpha * (0.4 + jitter * 2));
+      const a1 = phase * 3;
+      g.lineBetween(cx, cy, cx + Math.cos(a1) * radius * 1.1, cy + Math.sin(a1) * radius * 1.1);
+      const a2 = phase * 3 + 2.1;
+      g.lineBetween(cx, cy, cx + Math.cos(a2) * radius * 0.9, cy + Math.sin(a2) * radius * 0.9);
+    } else if (color === SHADOW) {
+      // 🌫️ Shadow — smoky, muted, soft grey with purple hints
+      g.fillStyle(0x555566, alpha * 0.08);
+      g.fillCircle(cx, cy, radius * 2.0);
+      g.fillStyle(0x666677, alpha * 0.15);
+      g.fillCircle(cx + Math.sin(phase) * 1.5, cy + Math.cos(phase * 0.7) * 1, radius * 1.5);
+      g.fillStyle(color, alpha * 0.30);
+      g.fillCircle(cx, cy, radius * 1.2);
+      g.fillStyle(color, alpha * 0.85);
+      g.fillCircle(cx, cy, radius);
+      // Smoky wisps — purple tinge
+      g.fillStyle(0x9977aa, alpha * 0.2);
+      g.fillCircle(cx + Math.sin(phase * 1.3) * 3, cy - 2, radius * 0.5);
+      g.fillStyle(0xaaaabb, alpha * 0.25);
+      g.fillCircle(cx - radius * 0.15, cy - radius * 0.25, radius * 0.3);
+    } else if (color === VOID) {
+      // 🕳️ Void — dark absorbing aura, inverted glow, subtle dark purple edge
+      g.fillStyle(0x0a0a1e, alpha * 0.15);
+      g.fillCircle(cx, cy, radius * 2.2);
+      g.fillStyle(0x110022, alpha * 0.25);
+      g.fillCircle(cx, cy, radius * 1.6);
+      g.fillStyle(0x1a1a2e, alpha * 0.90);
+      g.fillCircle(cx, cy, radius);
+      // Dark core — almost black
+      g.fillStyle(0x050510, alpha * 0.7);
+      g.fillCircle(cx, cy, radius * 0.7);
+      // Eerie purple rim
+      g.lineStyle(1.5, 0x6633aa, alpha * 0.35);
+      g.strokeCircle(cx, cy, radius * 1.05);
+      // Subtle inner eye
+      g.fillStyle(0x4422aa, alpha * 0.2);
+      g.fillCircle(cx, cy + Math.sin(phase) * 1, radius * 0.25);
+    } else {
+      // Fallback
+      g.fillStyle(color, alpha * 0.12);
+      g.fillCircle(cx, cy, radius * 2.2);
+      g.fillStyle(color, alpha * 0.95);
+      g.fillCircle(cx, cy, radius);
+      g.fillStyle(0xffffff, alpha * 0.3);
+      g.fillCircle(cx - radius * 0.2, cy - radius * 0.3, radius * 0.3);
+    }
   }
 
   private drawAll() {
