@@ -446,13 +446,13 @@ export class GameScene extends Phaser.Scene {
             }
           }
         }
-        // Require 18+ orbs with at least 5 of each color
+        // Require 24+ orbs with at least 7 of each color
         const colorCounts = new Map<number, number>();
         for (const [cr2, cc2] of cluster) {
           const clr = this.grid[cr2][cc2]!.color;
           colorCounts.set(clr, (colorCounts.get(clr) || 0) + 1);
         }
-        if (cluster.length >= 18 && colorSet.size === 3 && allColors.every(clr => (colorCounts.get(clr) || 0) >= 5)) {
+        if (cluster.length >= 24 && colorSet.size === 3 && allColors.every(clr => (colorCounts.get(clr) || 0) >= 7)) {
           return { cells: cluster, dominantColor: YELLOW };
         }
       }
