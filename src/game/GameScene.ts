@@ -615,10 +615,12 @@ export class GameScene extends Phaser.Scene {
         for (let i = 0; i < cells.length - 1; i++) {
           const [r1, c1] = cells[i];
           const [r2, c2] = cells[i + 1];
-          const x1 = ox + (this.activePiece.col + c1) * CELL + CELL / 2 + this.bounceOffset;
-          const y1 = oy + (this.activePiece.row + r1) * CELL + CELL / 2;
-          const x2 = ox + (this.activePiece.col + c2) * CELL + CELL / 2 + this.bounceOffset;
-          const y2 = oy + (this.activePiece.row + r2) * CELL + CELL / 2;
+          const j1 = this.fallingJitter[i] || { dx: 0, dy: 0 };
+          const j2 = this.fallingJitter[i + 1] || { dx: 0, dy: 0 };
+          const x1 = ox + (this.activePiece.col + c1) * CELL + CELL / 2 + this.bounceOffset + j1.dx;
+          const y1 = oy + (this.activePiece.row + r1) * CELL + CELL / 2 + j1.dy;
+          const x2 = ox + (this.activePiece.col + c2) * CELL + CELL / 2 + this.bounceOffset + j2.dx;
+          const y2 = oy + (this.activePiece.row + r2) * CELL + CELL / 2 + j2.dy;
           this.pieceGraphics.lineBetween(x1, y1, x2, y2);
         }
       }
