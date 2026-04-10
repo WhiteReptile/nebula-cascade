@@ -330,12 +330,23 @@ export class GameScene extends Phaser.Scene {
       }
     }
 
-    // Moon gravity
+    // Moon gravity — delta-time based velocity + acceleration
     if (this.activePiece && !this.chainResolving) {
+      const dtSec = dt * 0.001; // convert ms → seconds
       const levelBoost = 1 + (this.level - 1) * 0.045;
-      this.fallSpeed = Math.min(this.fallSpeed + this.GRAVITY * levelBoost, this.MAX_FALL_SPEED);
-      this.fallSpeed *= 0.992;
-      this.fallAccum += this.fallSpeed;
+
+      // Apply gravity acceleration (pixels/s²), clamped to terminal velocity
+      this.fallSpeed = Math.min(
+        this.fallSpeed + this.GRAVITY * 1000 * levelBoost * dtSec,
+        this.MAX_FALL_SPEED * 60,
+      );
+      // Light damping for floaty feel
+      this.fallSpeed *= Math.pow(0.992, dtSec * 60);
+
+      // Accumulate sub-cell progress using velocity × dt
+      this.fallAccum += this.fallSpeed * dtSec;
+
+      // Advance whole rows when accumulator crosses 1.0
       while (this.fallAccum >= 1) {
         this.fallAccum -= 1;
         const test = { ...this.activePiece, row: this.activePiece.row + 1 };
