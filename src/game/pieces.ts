@@ -13,7 +13,7 @@ const COLORS = [
 ];
 
 // 7 orb formations
-const FORMATIONS: { name: string; shapes: number[][][][] }[] = [
+const FORMATIONS: { name: string; shapes: [number, number][][] }[] = [
   {
     name: 'Single Orb',
     shapes: [
