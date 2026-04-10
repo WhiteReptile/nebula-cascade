@@ -915,10 +915,46 @@ export class GameScene extends Phaser.Scene {
     this.particles = this.particles.filter(p => {
       p.x += p.vx;
       p.y += p.vy;
-      p.vy += 0.06; // lighter particle gravity too
+      p.vy += 0.06;
       p.vx *= 0.99;
       p.life--;
       return p.life > 0;
+    });
+
+    // Shooting stars — spawn occasionally
+    if (Math.random() < 0.008) {
+      const startX = Math.random() * w;
+      const angle = Math.PI * 0.6 + Math.random() * 0.4;
+      const speed = 4 + Math.random() * 6;
+      this.shootingStars.push({
+        x: startX, y: -10,
+        vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+        life: 60 + Math.random() * 40, maxLife: 60 + Math.random() * 40,
+        len: 30 + Math.random() * 50,
+      });
+    }
+    this.shootingStars = this.shootingStars.filter(s => {
+      s.x += s.vx; s.y += s.vy;
+      s.life--;
+      return s.life > 0 && s.y < h + 20;
+    });
+
+    // Spacecraft — spawn rarely
+    if (Math.random() < 0.003 && this.spacecraft.length < 3) {
+      const fromLeft = Math.random() > 0.5;
+      this.spacecraft.push({
+        x: fromLeft ? -30 : w + 30,
+        y: 40 + Math.random() * (h - 80),
+        vx: (fromLeft ? 1 : -1) * (0.8 + Math.random() * 1.5),
+        vy: (Math.random() - 0.5) * 0.3,
+        size: 6 + Math.random() * 8,
+        type: Math.floor(Math.random() * 3),
+        rot: fromLeft ? 0 : Math.PI,
+      });
+    }
+    this.spacecraft = this.spacecraft.filter(s => {
+      s.x += s.vx; s.y += s.vy;
+      return s.x > -60 && s.x < w + 60;
     });
 
     this.nebulaTime += dt * 0.001;
