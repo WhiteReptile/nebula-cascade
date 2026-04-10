@@ -1,117 +1,58 @@
 
 
-# Web3 Readiness: Pearls → Gems Rebrand + NFT Architecture
+# PS2-Style Main Menu — Nebula: ColdLogic
 
-## Summary
-Rename Pearls to Gems across the entire codebase, remove black/void orbs from gameplay, add wallet preparation, and build the Gems NFT-ready data layer with energy system — all without deploying any blockchain code.
+## Overview
+Add a full-screen main menu that loads before gameplay. Canvas-animated starfield background, the uploaded cosmic image centered as a hero visual, CRT scanline overlay, and three glowing menu options. PS2-era minimal aesthetic.
 
-## Database Migration
+## New Files
 
-**Migration 1: Rename division enum + add wallet + gems tables**
+### `src/components/MainMenu.tsx`
+- **Canvas background**: Animated starfield (drifting stars, 2-3 faint nebula blobs with sine motion) rendered via `<canvas>` and `requestAnimationFrame` — no Phaser dependency
+- **Hero image**: The uploaded cosmic triangles image placed center-screen as a CSS background or `<img>`, sized ~60-70% viewport width, with subtle pulse/glow animation
+- **CRT overlay**: CSS pseudo-elements for faint horizontal scanlines (repeating 2px lines at ~5% opacity) and corner vignette
+- **Title**: "NEBULA" large monospace text above menu, "COLDLOGIC" smaller beneath — white/cyan `#66ffee` glow via `text-shadow`, gentle pulse animation
+- **Menu items** below the image, vertically stacked and centered:
+  - **START** — sets `showMenu = false`, fades to game
+  - **OPTIONS** — navigates to `/options`
+  - **WALLET** — navigates to `/wallet`
+- Selected item: cyan glow + slight scale, `▶` cursor indicator
+- Keyboard support: Arrow Up/Down to navigate, Enter to select
+- Mouse hover highlights items
+- 500ms fade-out transition before entering game or navigating
 
-```sql
--- Rename enum values: pearl_* → gem_*
-ALTER TYPE pearl_division RENAME TO gem_division;
-ALTER TYPE pearl_division RENAME VALUE 'pearl_v' TO 'gem_v';
--- (repeat for iv, iii, ii, i)
+### `src/pages/Options.tsx`
+- Placeholder page matching the dark `#050510` background
+- "OPTIONS" title, "Coming Soon" text, "← Back" button to `/`
 
--- Add wallet_address to players
-ALTER TABLE players ADD COLUMN wallet_address text;
+## Modified Files
 
--- Gems NFT metadata table (prep only, 5 total supply)
-CREATE TABLE gems (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  token_id integer UNIQUE NOT NULL,          -- 1-5
-  division gem_division NOT NULL,
-  name text NOT NULL,
-  color_hex text NOT NULL,
-  owner_wallet text,                          -- future mapping
-  owner_player_id uuid REFERENCES players(id),
-  metadata jsonb DEFAULT '{}',               -- NFT marketplace traits
-  created_at timestamptz DEFAULT now()
-);
+### `src/pages/Index.tsx`
+- Add `showMenu` state (default `true`)
+- When `true`: render `<MainMenu />` with callbacks for start/options/wallet
+- START callback: trigger fade-out, then set `showMenu = false` to mount `<CosmicGame />` + `<GameHUD />`
 
--- Seed the 5 gems
-INSERT INTO gems (token_id, division, name, color_hex, metadata) VALUES
-  (1, 'gem_v',   'Ruby Gem',     '#ff3344', '{"element":"fire","tier":5}'),
-  (2, 'gem_iv',  'Topaz Gem',    '#ffdd00', '{"element":"electricity","tier":4}'),
-  (3, 'gem_iii', 'Sapphire Gem', '#3388ff', '{"element":"water","tier":3}'),
-  (4, 'gem_ii',  'Amethyst Gem', '#aa44ff', '{"element":"arcane","tier":2}'),
-  (5, 'gem_i',   'Diamond Gem',  '#66ffee', '{"element":"cosmic","tier":1}');
+### `src/App.tsx`
+- Add `/options` route → `Options.tsx`
 
--- Energy system table
-CREATE TABLE player_energy (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  player_id uuid REFERENCES players(id) NOT NULL,
-  energy integer DEFAULT 0,
-  max_energy integer DEFAULT 0,
-  last_reset_at date DEFAULT CURRENT_DATE,
-  UNIQUE(player_id)
-);
+### `src/index.css`
+- Add `@keyframes menuGlow` (pulse for title text-shadow)
+- Add `@keyframes scanline` (subtle scroll for CRT lines)
+- Add `@keyframes fadeOut` for menu transition
 
--- RLS for gems and energy tables
-```
+## Asset
+- Copy uploaded image to `src/assets/menu-hero.png` and import it in `MainMenu.tsx`
 
-## Code Changes
+## Visual Spec
+- Background: `#050510`, animated canvas stars
+- Scanlines: 2px repeating horizontal lines, 4-6% opacity
+- Title: monospace, uppercase, `letter-spacing: 0.3em`, cyan glow
+- Menu items: monospace, `letter-spacing: 0.2em`, ~1.2rem, dim white → cyan glow on select
+- Hero image: centered, max-width 65vw, subtle breathing scale animation (0.98–1.02 over 4s)
+- Fade transition: 500ms opacity 1→0 before mounting game
 
-### 1. Remove Void/Black orbs from gameplay
-- **`src/game/pieces.ts`**: Remove the void entry from `COLORS` array (index 4). Only 4 elements remain: Fire, Water, Electricity, Shadow.
-- **`src/game/rendering/orbRenderer.ts`**: Remove the `VOID` constant and its rendering branch.
-
-### 2. Rename Pearl → Gem everywhere
-- **`src/lib/divisionSystem.ts`**: Change type `Division` to use `gem_v` through `gem_i`. Update labels ("Gem V"..."Gem I"). Update colors to match new division identity:
-  - V → `#ff3344` (Red)
-  - IV → `#ffdd00` (Yellow)
-  - III → `#3388ff` (Blue)
-  - II → `#aa44ff` (Purple)
-  - I → `#66ffee` (White/Cyan)
-- **`src/components/DivisionBadge.tsx`**: No structural change, just consumes updated constants.
-- **`src/pages/Leaderboard.tsx`**, **`src/pages/AdminRewards.tsx`**, **`src/hooks/usePlayerProfile.ts`**, **`src/lib/matchLogger.ts`**: Update type references from `pearl_*` to `gem_*`.
-
-### 3. New file: `src/lib/gemSystem.ts`
-- Define `GemMetadata` interface: `tokenId`, `division`, `name`, `colorHex`, `ownerWallet`, `ownerPlayerId`, `traits`
-- `getGemsForPlayer(playerId)` — query gems table
-- `getGemMetadataForMarketplace(tokenId)` — return ERC-721-compatible metadata JSON structure
-- Constants: `TOTAL_GEM_SUPPLY = 5`, `ENERGY_PER_GEM = 2`, target chain config (`BASE_CHAIN_ID = 8453`, fallback `POLYGON_CHAIN_ID = 137`)
-
-### 4. New file: `src/lib/energySystem.ts`
-- `getPlayerEnergy(playerId)` — fetch from `player_energy`, auto-reset if `last_reset_at < today`
-- `consumeEnergy(playerId, amount)` — deduct energy (for reward match entry)
-- `calculateMaxEnergy(ownedGemCount)` — returns `ownedGemCount * 2`
-- Players with 0 gems get 0 energy (can play but can't enter reward matches)
-
-### 5. New file: `src/lib/walletSystem.ts`
-- Define supported wallet types: `metamask | coinbase_wallet | walletconnect | guest`
-- `linkWallet(userId, address, type)` — update players.wallet_address
-- `unlinkWallet(userId)` — clear wallet_address
-- `getWalletForPlayer(userId)` — read wallet_address
-- All stub implementations (no actual Web3 calls)
-
-### 6. New component: `src/components/WalletConnect.tsx`
-- UI placeholder with 4 buttons: MetaMask, Coinbase Wallet, WalletConnect, Guest
-- Each shows a toast "Coming soon — wallet connection will be available when Web3 launches"
-- Displays current wallet_address if linked
-- Accessible from a profile/settings area
-
-### 7. Update `src/lib/payoutIntegrations.ts`
-- Add `baseChainConfig` and `polygonChainConfig` objects with chain ID, RPC URL placeholders, and Thirdweb contract address placeholder
-- Update `thirdwebProvider` stub to reference Base chain config
-
-### 8. Update `src/components/GameHUD.tsx`
-- Show energy count if player owns gems
-- Add wallet icon/link to WalletConnect page
-
-### 9. Add `/wallet` route in `src/App.tsx`
-- New page `src/pages/Wallet.tsx` wrapping the WalletConnect component with player gem display
-
-## What stays the same
-- All game mechanics, scoring, speed, and difficulty unchanged
-- No blockchain calls, no contract deployments, no minting
-- Leaderboard remains server-authoritative
-- Game fully playable without wallet or gems
-
-## Files summary
-- **New**: `src/lib/gemSystem.ts`, `src/lib/energySystem.ts`, `src/lib/walletSystem.ts`, `src/components/WalletConnect.tsx`, `src/pages/Wallet.tsx`
-- **Modified**: `src/game/pieces.ts`, `src/game/rendering/orbRenderer.ts`, `src/lib/divisionSystem.ts`, `src/lib/matchLogger.ts`, `src/lib/payoutIntegrations.ts`, `src/components/GameHUD.tsx`, `src/components/DivisionBadge.tsx`, `src/pages/Leaderboard.tsx`, `src/pages/AdminRewards.tsx`, `src/hooks/usePlayerProfile.ts`, `src/App.tsx`
-- **Migration**: 1 SQL migration for enum rename, wallet column, gems table, energy table
+## Behavior
+- Menu loads first — no Phaser instance until START
+- Lightweight: canvas + CSS only, no heavy libraries
+- Fully responsive
 
