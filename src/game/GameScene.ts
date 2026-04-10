@@ -440,7 +440,13 @@ export class GameScene extends Phaser.Scene {
             }
           }
         }
-        if (cluster.length >= 6 && colorSet.size === 3 && allColors.every(clr => colorSet.has(clr))) {
+        // Require 12+ orbs with at least 3 of each color
+        const colorCounts = new Map<number, number>();
+        for (const [cr2, cc2] of cluster) {
+          const clr = this.grid[cr2][cc2]!.color;
+          colorCounts.set(clr, (colorCounts.get(clr) || 0) + 1);
+        }
+        if (cluster.length >= 12 && colorSet.size === 3 && allColors.every(clr => (colorCounts.get(clr) || 0) >= 3)) {
           return { cells: cluster, dominantColor: YELLOW };
         }
       }
