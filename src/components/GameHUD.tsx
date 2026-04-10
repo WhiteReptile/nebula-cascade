@@ -11,6 +11,7 @@ const GameHUD = () => {
   const [paused, setPaused] = useState(false);
   const [chainCombo, setChainCombo] = useState(0);
   const [chainVisible, setChainVisible] = useState(false);
+  const [triColorActive, setTriColorActive] = useState(false);
 
   useEffect(() => {
     const onHUD = (data: { score: number; level: number; combo: number }) => {
@@ -25,6 +26,10 @@ const GameHUD = () => {
     const onChainCombo = (step: number) => {
       setChainCombo(step);
       setChainVisible(true);
+      setTriColorActive(false);
+    };
+    const onTriColor = () => {
+      setTriColorActive(true);
     };
 
     gameEvents.on('hud', onHUD);
@@ -33,6 +38,7 @@ const GameHUD = () => {
     gameEvents.on('pause', onPause);
     gameEvents.on('restart', onRestart);
     gameEvents.on('chainCombo', onChainCombo);
+    gameEvents.on('triColor', onTriColor);
 
     return () => {
       gameEvents.off('hud', onHUD);
@@ -41,6 +47,7 @@ const GameHUD = () => {
       gameEvents.off('pause', onPause);
       gameEvents.off('restart', onRestart);
       gameEvents.off('chainCombo', onChainCombo);
+      gameEvents.off('triColor', onTriColor);
     };
   }, []);
 
@@ -58,7 +65,10 @@ const GameHUD = () => {
 
   // Chain glow intensity scales with combo step
   const chainGlowSize = Math.min(10 + chainCombo * 5, 40);
-  const chainColor = chainCombo >= 3 ? '#ff3344' : chainCombo >= 2 ? '#ffdd00' : '#3388ff';
+  const chainColor = triColorActive
+    ? undefined // use rainbow gradient
+    : chainCombo >= 3 ? '#ff3344' : chainCombo >= 2 ? '#ffdd00' : '#3388ff';
+  const chainLabel = triColorActive ? 'TRI-COLOR' : 'CHAIN';
 
   return (
     <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
@@ -138,12 +148,17 @@ const GameHUD = () => {
           <div
             className="text-5xl font-black font-mono tracking-wider"
             style={{
-              color: chainColor,
-              textShadow: `0 0 ${chainGlowSize}px ${chainColor}, 0 0 ${chainGlowSize * 2}px ${chainColor}40`,
+              color: triColorActive ? undefined : chainColor ?? '#3388ff',
+              background: triColorActive ? 'linear-gradient(90deg, #ffdd00, #ff3344, #3388ff)' : undefined,
+              WebkitBackgroundClip: triColorActive ? 'text' : undefined,
+              WebkitTextFillColor: triColorActive ? 'transparent' : undefined,
+              textShadow: triColorActive
+                ? `0 0 ${chainGlowSize}px #ffdd00, 0 0 ${chainGlowSize}px #ff3344, 0 0 ${chainGlowSize}px #3388ff`
+                : `0 0 ${chainGlowSize}px ${chainColor}, 0 0 ${chainGlowSize * 2}px ${chainColor}40`,
               transform: `scale(${1 + chainCombo * 0.15})`,
             }}
           >
-            CHAIN x{chainCombo}!
+            {chainLabel} x{chainCombo}!
           </div>
         </div>
       )}
