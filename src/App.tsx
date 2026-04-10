@@ -5,6 +5,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import Leaderboard from "./pages/Leaderboard.tsx";
+import AdminRewards from "./pages/AdminRewards.tsx";
 
 const queryClient = new QueryClient();
 

@@ -49,6 +49,13 @@ export class GameScene extends Phaser.Scene {
   private chainStep = 0;        // current chain depth in resolveChains
   private chainResolving = false; // true while chain loop is active
   private gameOver = false;
+
+  // Match tracking for leaderboard
+  private matchStartedAt: Date = new Date();
+  private matchMaxCombo = 0;
+  private matchComboPoints = 0;
+  private matchOmniColorCount = 0;
+  private matchLinesCleared = 0;
   private paused = false;
   private gridGraphics!: Phaser.GameObjects.Graphics;
   private pieceGraphics!: Phaser.GameObjects.Graphics;
