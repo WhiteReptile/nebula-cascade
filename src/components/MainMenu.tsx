@@ -136,31 +136,32 @@ const MainMenu = ({ onStart }: MainMenuProps) => {
         </div>
 
         {/* Decorative orb cluster — inline SVG to feel native */}
-        <div className="menu-orb-cluster my-6 select-none">
-          <svg width="120" height="60" viewBox="0 0 120 60" className="menu-hero-breathe drop-shadow-[0_0_30px_rgba(100,255,238,0.3)]">
-            {/* Fire orb */}
-            <circle cx="25" cy="30" r="12" fill="url(#fireGrad)" opacity="0.9" />
-            {/* Water orb */}
-            <circle cx="55" cy="20" r="14" fill="url(#waterGrad)" opacity="0.9" />
-            {/* Electricity orb */}
-            <circle cx="85" cy="30" r="11" fill="url(#elecGrad)" opacity="0.9" />
-            {/* Shadow orb */}
-            <circle cx="60" cy="45" r="10" fill="url(#shadowGrad)" opacity="0.7" />
-            {/* Glow cores */}
-            <circle cx="25" cy="30" r="4" fill="white" opacity="0.8" />
-            <circle cx="55" cy="20" r="5" fill="white" opacity="0.8" />
-            <circle cx="85" cy="30" r="3.5" fill="white" opacity="0.8" />
-            <circle cx="60" cy="45" r="3" fill="white" opacity="0.6" />
-            {/* Connecting tendrils */}
-            <line x1="37" y1="28" x2="43" y2="22" stroke="rgba(100,255,238,0.2)" strokeWidth="1" />
-            <line x1="67" y1="22" x2="75" y2="28" stroke="rgba(100,255,238,0.2)" strokeWidth="1" />
-            <line x1="55" y1="34" x2="58" y2="38" stroke="rgba(100,255,238,0.15)" strokeWidth="1" />
-            <defs>
-              <radialGradient id="fireGrad"><stop offset="0%" stopColor="#ff8866" /><stop offset="100%" stopColor="#ff3344" /></radialGradient>
-              <radialGradient id="waterGrad"><stop offset="0%" stopColor="#66aaff" /><stop offset="100%" stopColor="#3388ff" /></radialGradient>
-              <radialGradient id="elecGrad"><stop offset="0%" stopColor="#ffee66" /><stop offset="100%" stopColor="#ffdd00" /></radialGradient>
-              <radialGradient id="shadowGrad"><stop offset="0%" stopColor="#aaaacc" /><stop offset="100%" stopColor="#888899" /></radialGradient>
-            </defs>
+        <div className="my-6 select-none">
+          <svg width="160" height="50" viewBox="0 0 160 50" className="menu-hero-breathe drop-shadow-[0_0_30px_rgba(100,255,238,0.25)]">
+            {/* Star cluster — 5 four-pointed stars */}
+            {[
+              { cx: 30, cy: 25, size: 10, color: '#66ffee', glow: 'rgba(100,255,238,0.3)' },
+              { cx: 60, cy: 14, size: 7, color: '#aaddff', glow: 'rgba(170,221,255,0.25)' },
+              { cx: 80, cy: 30, size: 13, color: '#ffffff', glow: 'rgba(255,255,255,0.3)' },
+              { cx: 105, cy: 18, size: 6, color: '#ffee99', glow: 'rgba(255,238,153,0.2)' },
+              { cx: 130, cy: 28, size: 9, color: '#cc99ff', glow: 'rgba(204,153,255,0.25)' },
+            ].map((s, i) => (
+              <g key={i}>
+                {/* Outer glow */}
+                <circle cx={s.cx} cy={s.cy} r={s.size * 1.8} fill={s.glow} />
+                {/* 4-pointed star shape */}
+                <polygon
+                  points={`${s.cx},${s.cy - s.size} ${s.cx + s.size * 0.25},${s.cy} ${s.cx},${s.cy + s.size} ${s.cx - s.size * 0.25},${s.cy}`}
+                  fill={s.color} opacity="0.9"
+                />
+                <polygon
+                  points={`${s.cx - s.size},${s.cy} ${s.cx},${s.cy - s.size * 0.25} ${s.cx + s.size},${s.cy} ${s.cx},${s.cy + s.size * 0.25}`}
+                  fill={s.color} opacity="0.9"
+                />
+                {/* Core dot */}
+                <circle cx={s.cx} cy={s.cy} r={s.size * 0.2} fill="white" opacity="0.95" />
+              </g>
+            ))}
           </svg>
         </div>
 
