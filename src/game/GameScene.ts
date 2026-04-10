@@ -250,6 +250,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private checkLines() {
+    // Find all full rows
     const fullRows: number[] = [];
     for (let r = 0; r < ROWS; r++) {
       if (this.grid[r].every(c => c !== null)) {
@@ -261,32 +262,57 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    this.combo += fullRows.length;
-
-    // Color energy check: 3+ lines with same dominant color
-    const colorCounts: Record<number, number> = {};
-    for (const row of fullRows) {
+    // Get dominant color per full row
+    const rowDominant = (row: number): number => {
       const colors = this.grid[row].filter(c => c !== null).map(c => c!.color);
-      const dominant = this.mode(colors);
-      if (dominant !== null) {
-        colorCounts[dominant] = (colorCounts[dominant] || 0) + 1;
+      return this.mode(colors) || 0;
+    };
+
+    // Find groups of 3+ consecutive full rows that share the same dominant color
+    const rowsToDestroy: number[] = [];
+    let i = 0;
+    while (i < fullRows.length) {
+      // Collect consecutive run of full rows
+      let j = i;
+      while (j + 1 < fullRows.length && fullRows[j + 1] === fullRows[j] + 1) {
+        j++;
       }
+      const run = fullRows.slice(i, j + 1);
+
+      // Within this consecutive run, find sub-runs of 3+ same dominant color
+      let k = 0;
+      while (k < run.length) {
+        const clr = rowDominant(run[k]);
+        let end = k + 1;
+        while (end < run.length && rowDominant(run[end]) === clr) {
+          end++;
+        }
+        const sameColorRun = run.slice(k, end);
+        if (sameColorRun.length >= 3) {
+          rowsToDestroy.push(...sameColorRun);
+        }
+        k = end;
+      }
+
+      i = j + 1;
     }
 
-    let colorEnergy = false;
-    for (const count of Object.values(colorCounts)) {
-      if (count >= 3) colorEnergy = true;
+    if (rowsToDestroy.length === 0) {
+      // Full rows exist but no 3-consecutive-same-color match — do NOT destroy
+      return;
     }
 
-    // Spawn detonation particles for cleared rows
-    for (const row of fullRows) {
+    this.combo += rowsToDestroy.length;
+
+    // Spawn detonation particles for destroyed rows
+    for (const row of rowsToDestroy) {
       for (let c = 0; c < COLS; c++) {
         const orb = this.grid[row][c];
         const px = this.offsetX + c * CELL + CELL / 2;
         const py = this.offsetY + row * CELL + CELL / 2;
         const clr = orb?.color || 0xffffff;
         // Explosion burst per orb
-        for (let i = 0; i < 8; i++) {
+        for (let pi = 0; pi < 8; pi++) {
           const angle = Math.random() * Math.PI * 2;
           const speed = 2 + Math.random() * 5;
           this.particles.push({
@@ -300,27 +326,24 @@ export class GameScene extends Phaser.Scene {
           });
         }
         // Energy arc particles (horizontal streaks)
-        if (colorEnergy) {
-          for (let i = 0; i < 4; i++) {
-            this.particles.push({
-              x: px, y: py,
-              vx: (Math.random() - 0.5) * 12,
-              vy: (Math.random() - 0.5) * 2,
-              life: 30, maxLife: 30,
-              color: 0xffffff,
-              size: 1.5 + Math.random() * 2,
-            });
-          }
+        for (let pi = 0; pi < 4; pi++) {
+          this.particles.push({
+            x: px, y: py,
+            vx: (Math.random() - 0.5) * 12,
+            vy: (Math.random() - 0.5) * 2,
+            life: 30, maxLife: 30,
+            color: 0xffffff,
+            size: 1.5 + Math.random() * 2,
+          });
         }
       }
     }
 
-    if (colorEnergy) {
-      this.slowMo = true;
-      this.slowMoTimer = 35;
-      this.shakeAmount = 5;
-      this.flashAlpha = 0.4;
-    }
+    // Always trigger electric effect since we only destroy on color match
+    this.slowMo = true;
+    this.slowMoTimer = 35;
+    this.shakeAmount = 5;
+    this.flashAlpha = 0.4;
 
     // Cosmic Chain: 5+ combo
     if (this.combo >= 5) {
@@ -328,10 +351,9 @@ export class GameScene extends Phaser.Scene {
       this.shakeAmount = 18;
       this.flashAlpha = 0.8;
 
-      // Massive cosmic explosion from center
       const cx = this.offsetX + (COLS * CELL) / 2;
       const cy = this.offsetY + (ROWS * CELL) / 2;
-      for (let i = 0; i < 150; i++) {
+      for (let pi = 0; pi < 150; pi++) {
         const angle = Math.random() * Math.PI * 2;
         const speed = 3 + Math.random() * 10;
         this.particles.push({
@@ -345,9 +367,8 @@ export class GameScene extends Phaser.Scene {
         });
       }
 
-      // Black hole implosion ring
-      for (let i = 0; i < 60; i++) {
-        const angle = (i / 60) * Math.PI * 2;
+      for (let pi = 0; pi < 60; pi++) {
+        const angle = (pi / 60) * Math.PI * 2;
         const dist = 150 + Math.random() * 100;
         this.particles.push({
           x: cx + Math.cos(angle) * dist,
@@ -365,10 +386,12 @@ export class GameScene extends Phaser.Scene {
       this.slowMo = true;
       this.slowMoTimer = 50;
     } else {
-      const points = fullRows.length * fullRows.length * 100 * this.level;
+      const points = rowsToDestroy.length * rowsToDestroy.length * 100 * this.level;
       this.score += points;
 
-      for (const row of fullRows.sort((a, b) => a - b)) {
+      // Remove destroyed rows (sorted ascending), splice from bottom up
+      const sorted = [...new Set(rowsToDestroy)].sort((a, b) => a - b);
+      for (const row of sorted) {
         this.grid.splice(row, 1);
         this.grid.unshift(Array(COLS).fill(null));
       }
@@ -422,20 +445,20 @@ export class GameScene extends Phaser.Scene {
       if (this.snapScale < 1.005) this.snapScale = 1;
     }
 
-    // Free-fall jitter physics for active piece orbs
+    // Free-fall jitter physics — orbs wobble, drift, and feel gravity-affected
     for (const j of this.fallingJitter) {
-      j.phase += delta * 0.005;
-      // Gentle spring back to center + subtle random drift
-      j.vx += -j.dx * 0.05 + Math.sin(j.phase * 1.7) * 0.04;
-      j.vy += -j.dy * 0.04 + Math.cos(j.phase * 2.1) * 0.03;
-      j.vx *= 0.92;
-      j.vy *= 0.92;
+      j.phase += delta * 0.006;
+      // Spring back to formation center + organic drift + gravity pull
+      j.vx += -j.dx * 0.06 + Math.sin(j.phase * 2.3) * 0.08 + (Math.random() - 0.5) * 0.06;
+      j.vy += -j.dy * 0.04 + Math.cos(j.phase * 1.9) * 0.06 + 0.03; // slight downward gravity bias
+      j.vx *= 0.90;
+      j.vy *= 0.90;
       j.dx += j.vx;
       j.dy += j.vy;
-      // Clamp to keep it subtle
-      const maxDrift = 2.5;
-      j.dx = Math.max(-maxDrift, Math.min(maxDrift, j.dx));
-      j.dy = Math.max(-maxDrift, Math.min(maxDrift, j.dy));
+      // Soft collision: clamp but allow more range for alive feel
+      const maxDrift = 4;
+      if (Math.abs(j.dx) > maxDrift) { j.dx = Math.sign(j.dx) * maxDrift; j.vx *= -0.4; }
+      if (Math.abs(j.dy) > maxDrift) { j.dy = Math.sign(j.dy) * maxDrift; j.vy *= -0.3; }
     }
 
     // Landing bounce for placed orbs
