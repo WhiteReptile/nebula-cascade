@@ -626,7 +626,6 @@ export class GameScene extends Phaser.Scene {
       }
     }
   }
-  }
 
   private mode(arr: number[]): number | null {
     const freq: Record<number, number> = {};
