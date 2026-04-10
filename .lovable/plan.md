@@ -1,93 +1,117 @@
 
 
-# Codebase Organization Plan
+# Web3 Readiness: Pearls → Gems Rebrand + NFT Architecture
 
-## Current Issues
+## Summary
+Rename Pearls to Gems across the entire codebase, remove black/void orbs from gameplay, add wallet preparation, and build the Gems NFT-ready data layer with energy system — all without deploying any blockchain code.
 
-- **GameScene.ts is 1,348 lines** — mixes game logic, VFX particles, orb rendering, background drawing, asteroid borders, spacecraft, and chain resolution into one class
-- **App.css** contains leftover Vite boilerplate (logo spin, `.read-the-docs`) that isn't used
-- **No authentication UI** — the leaderboard and rewards system require login, but there's no sign-up/login page
-- **Flat file structure** — game components, lib utilities, and pages are loosely organized with no clear grouping
-- **GameHUD.tsx** mixes auth checks, event listeners, division loading, and rendering
+## Database Migration
 
-## Plan
+**Migration 1: Rename division enum + add wallet + gems tables**
 
-### Step 1: Split GameScene.ts into focused modules
+```sql
+-- Rename enum values: pearl_* → gem_*
+ALTER TYPE pearl_division RENAME TO gem_division;
+ALTER TYPE pearl_division RENAME VALUE 'pearl_v' TO 'gem_v';
+-- (repeat for iv, iii, ii, i)
 
-Break the monolith into separate files under `src/game/`:
+-- Add wallet_address to players
+ALTER TABLE players ADD COLUMN wallet_address text;
 
-| New File | Responsibility | ~Lines |
-|---|---|---|
-| `src/game/rendering/background.ts` | Nebulae, stars, shooting stars, spacecraft, asteroid border drawing | ~200 |
-| `src/game/rendering/orbRenderer.ts` | `drawOrb()` with all 5 elemental styles | ~110 |
-| `src/game/rendering/vfx.ts` | Particle system, block implosion, tri-color fusion, line destroy, cosmic wipe VFX | ~220 |
-| `src/game/logic/chainResolver.ts` | `resolveChains()`, `findBlockMatch()`, `findTriColorMatch()`, `findLineMatch()`, chain multiplier | ~200 |
-| `src/game/logic/orbReorganizer.ts` | `reorganizeOrbs()`, `gravityCollapse()` | ~100 |
-| `src/game/logic/fallingPhysics.ts` | Per-orb loosening physics, moon gravity fall loop | ~80 |
-| `src/game/types.ts` | Shared interfaces (`OrbState`, `FallingOrb`, `ActivePiece`, particle/spacecraft/star types) | ~50 |
-| `src/game/GameScene.ts` | Slim orchestrator — create, input, update, drawAll composing the above modules | ~400 |
+-- Gems NFT metadata table (prep only, 5 total supply)
+CREATE TABLE gems (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  token_id integer UNIQUE NOT NULL,          -- 1-5
+  division gem_division NOT NULL,
+  name text NOT NULL,
+  color_hex text NOT NULL,
+  owner_wallet text,                          -- future mapping
+  owner_player_id uuid REFERENCES players(id),
+  metadata jsonb DEFAULT '{}',               -- NFT marketplace traits
+  created_at timestamptz DEFAULT now()
+);
 
-### Step 2: Clean up unused files
+-- Seed the 5 gems
+INSERT INTO gems (token_id, division, name, color_hex, metadata) VALUES
+  (1, 'gem_v',   'Ruby Gem',     '#ff3344', '{"element":"fire","tier":5}'),
+  (2, 'gem_iv',  'Topaz Gem',    '#ffdd00', '{"element":"electricity","tier":4}'),
+  (3, 'gem_iii', 'Sapphire Gem', '#3388ff', '{"element":"water","tier":3}'),
+  (4, 'gem_ii',  'Amethyst Gem', '#aa44ff', '{"element":"arcane","tier":2}'),
+  (5, 'gem_i',   'Diamond Gem',  '#66ffee', '{"element":"cosmic","tier":1}');
 
-- Remove boilerplate from `App.css` (or delete it entirely — styles are in `index.css` and Tailwind)
-- Remove unused `src/test/example.test.ts` placeholder if empty
+-- Energy system table
+CREATE TABLE player_energy (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  player_id uuid REFERENCES players(id) NOT NULL,
+  energy integer DEFAULT 0,
+  max_energy integer DEFAULT 0,
+  last_reset_at date DEFAULT CURRENT_DATE,
+  UNIQUE(player_id)
+);
 
-### Step 3: Add authentication page
-
-- Create `src/pages/Auth.tsx` — sign-up/login form with email + password
-- Add Google OAuth button
-- Add `/auth` route in `App.tsx`
-- Redirect unauthenticated users from `/admin/rewards` to `/auth`
-- Show "Sign in" link in GameHUD when not logged in
-
-### Step 4: Organize components by feature
-
-```text
-src/
-├── components/
-│   ├── game/
-│   │   ├── CosmicGame.tsx
-│   │   ├── GameHUD.tsx
-│   │   └── DivisionBadge.tsx
-│   ├── auth/
-│   │   └── AuthForm.tsx
-│   ├── layout/
-│   │   └── NavLink.tsx
-│   └── ui/  (unchanged)
-├── game/
-│   ├── GameScene.ts
-│   ├── pieces.ts
-│   ├── types.ts
-│   ├── rendering/
-│   │   ├── background.ts
-│   │   ├── orbRenderer.ts
-│   │   └── vfx.ts
-│   └── logic/
-│       ├── chainResolver.ts
-│       ├── orbReorganizer.ts
-│       └── fallingPhysics.ts
-├── lib/
-│   ├── divisionSystem.ts
-│   ├── matchLogger.ts
-│   ├── payoutIntegrations.ts
-│   └── utils.ts
-├── pages/
-│   ├── Auth.tsx
-│   ├── Index.tsx
-│   ├── Leaderboard.tsx
-│   ├── AdminRewards.tsx
-│   └── NotFound.tsx
+-- RLS for gems and energy tables
 ```
 
-### Step 5: Extract GameHUD concerns
+## Code Changes
 
-- Move auth/division loading logic into a custom hook `src/hooks/usePlayerProfile.ts`
-- Keep `GameHUD.tsx` focused on rendering only
+### 1. Remove Void/Black orbs from gameplay
+- **`src/game/pieces.ts`**: Remove the void entry from `COLORS` array (index 4). Only 4 elements remain: Fire, Water, Electricity, Shadow.
+- **`src/game/rendering/orbRenderer.ts`**: Remove the `VOID` constant and its rendering branch.
 
-### What stays the same
+### 2. Rename Pearl → Gem everywhere
+- **`src/lib/divisionSystem.ts`**: Change type `Division` to use `gem_v` through `gem_i`. Update labels ("Gem V"..."Gem I"). Update colors to match new division identity:
+  - V → `#ff3344` (Red)
+  - IV → `#ffdd00` (Yellow)
+  - III → `#3388ff` (Blue)
+  - II → `#aa44ff` (Purple)
+  - I → `#66ffee` (White/Cyan)
+- **`src/components/DivisionBadge.tsx`**: No structural change, just consumes updated constants.
+- **`src/pages/Leaderboard.tsx`**, **`src/pages/AdminRewards.tsx`**, **`src/hooks/usePlayerProfile.ts`**, **`src/lib/matchLogger.ts`**: Update type references from `pearl_*` to `gem_*`.
 
-- All game mechanics, scoring, difficulty, and visual effects remain identical
-- Database schema and RLS policies unchanged
-- All existing routes continue working
-- Supabase client and types files untouched
+### 3. New file: `src/lib/gemSystem.ts`
+- Define `GemMetadata` interface: `tokenId`, `division`, `name`, `colorHex`, `ownerWallet`, `ownerPlayerId`, `traits`
+- `getGemsForPlayer(playerId)` — query gems table
+- `getGemMetadataForMarketplace(tokenId)` — return ERC-721-compatible metadata JSON structure
+- Constants: `TOTAL_GEM_SUPPLY = 5`, `ENERGY_PER_GEM = 2`, target chain config (`BASE_CHAIN_ID = 8453`, fallback `POLYGON_CHAIN_ID = 137`)
+
+### 4. New file: `src/lib/energySystem.ts`
+- `getPlayerEnergy(playerId)` — fetch from `player_energy`, auto-reset if `last_reset_at < today`
+- `consumeEnergy(playerId, amount)` — deduct energy (for reward match entry)
+- `calculateMaxEnergy(ownedGemCount)` — returns `ownedGemCount * 2`
+- Players with 0 gems get 0 energy (can play but can't enter reward matches)
+
+### 5. New file: `src/lib/walletSystem.ts`
+- Define supported wallet types: `metamask | coinbase_wallet | walletconnect | guest`
+- `linkWallet(userId, address, type)` — update players.wallet_address
+- `unlinkWallet(userId)` — clear wallet_address
+- `getWalletForPlayer(userId)` — read wallet_address
+- All stub implementations (no actual Web3 calls)
+
+### 6. New component: `src/components/WalletConnect.tsx`
+- UI placeholder with 4 buttons: MetaMask, Coinbase Wallet, WalletConnect, Guest
+- Each shows a toast "Coming soon — wallet connection will be available when Web3 launches"
+- Displays current wallet_address if linked
+- Accessible from a profile/settings area
+
+### 7. Update `src/lib/payoutIntegrations.ts`
+- Add `baseChainConfig` and `polygonChainConfig` objects with chain ID, RPC URL placeholders, and Thirdweb contract address placeholder
+- Update `thirdwebProvider` stub to reference Base chain config
+
+### 8. Update `src/components/GameHUD.tsx`
+- Show energy count if player owns gems
+- Add wallet icon/link to WalletConnect page
+
+### 9. Add `/wallet` route in `src/App.tsx`
+- New page `src/pages/Wallet.tsx` wrapping the WalletConnect component with player gem display
+
+## What stays the same
+- All game mechanics, scoring, speed, and difficulty unchanged
+- No blockchain calls, no contract deployments, no minting
+- Leaderboard remains server-authoritative
+- Game fully playable without wallet or gems
+
+## Files summary
+- **New**: `src/lib/gemSystem.ts`, `src/lib/energySystem.ts`, `src/lib/walletSystem.ts`, `src/components/WalletConnect.tsx`, `src/pages/Wallet.tsx`
+- **Modified**: `src/game/pieces.ts`, `src/game/rendering/orbRenderer.ts`, `src/lib/divisionSystem.ts`, `src/lib/matchLogger.ts`, `src/lib/payoutIntegrations.ts`, `src/components/GameHUD.tsx`, `src/components/DivisionBadge.tsx`, `src/pages/Leaderboard.tsx`, `src/pages/AdminRewards.tsx`, `src/hooks/usePlayerProfile.ts`, `src/App.tsx`
+- **Migration**: 1 SQL migration for enum rename, wallet column, gems table, energy table
 
