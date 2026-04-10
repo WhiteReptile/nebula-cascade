@@ -65,7 +65,10 @@ const GameHUD = () => {
 
   // Chain glow intensity scales with combo step
   const chainGlowSize = Math.min(10 + chainCombo * 5, 40);
-  const chainColor = chainCombo >= 3 ? '#ff3344' : chainCombo >= 2 ? '#ffdd00' : '#3388ff';
+  const chainColor = triColorActive
+    ? undefined // use rainbow gradient
+    : chainCombo >= 3 ? '#ff3344' : chainCombo >= 2 ? '#ffdd00' : '#3388ff';
+  const chainLabel = triColorActive ? 'TRI-COLOR' : 'CHAIN';
 
   return (
     <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
