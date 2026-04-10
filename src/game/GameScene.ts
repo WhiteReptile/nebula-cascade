@@ -270,9 +270,136 @@ export class GameScene extends Phaser.Scene {
       }
     }
     this.snapScale = 1.15;
+    this.checkBlockDestruction(); // 4x4 same-color block check
     this.checkLines();
     this.spawnPiece();
     this.emitHUD();
+  }
+
+  /** Detect and destroy any 4x4 same-color rectangle on the grid */
+  private checkBlockDestruction() {
+    const destroyed = new Set<string>();
+
+    for (let r = 0; r <= ROWS - 4; r++) {
+      for (let c = 0; c <= COLS - 4; c++) {
+        const refOrb = this.grid[r][c];
+        if (!refOrb) continue;
+        const color = refOrb.color;
+
+        let allMatch = true;
+        for (let dr = 0; dr < 4 && allMatch; dr++) {
+          for (let dc = 0; dc < 4 && allMatch; dc++) {
+            const orb = this.grid[r + dr][c + dc];
+            if (!orb || orb.color !== color) allMatch = false;
+          }
+        }
+
+        if (allMatch) {
+          for (let dr = 0; dr < 4; dr++) {
+            for (let dc = 0; dc < 4; dc++) {
+              destroyed.add(`${r + dr},${c + dc}`);
+            }
+          }
+        }
+      }
+    }
+
+    if (destroyed.size === 0) return;
+
+    // Calculate center of the destroyed block for implosion VFX
+    let sumX = 0, sumY = 0;
+    const cells: [number, number][] = [];
+    destroyed.forEach(key => {
+      const [r, c] = key.split(',').map(Number);
+      cells.push([r, c]);
+      sumX += this.offsetX + c * CELL + CELL / 2;
+      sumY += this.offsetY + r * CELL + CELL / 2;
+    });
+    const cx = sumX / cells.length;
+    const cy = sumY / cells.length;
+    const blockColor = this.grid[cells[0][0]][cells[0][1]]!.color;
+
+    // --- Implosion VFX: inward-rushing particles ---
+    // Ring of particles imploding toward center
+    for (let i = 0; i < 40; i++) {
+      const angle = (i / 40) * Math.PI * 2;
+      const dist = 80 + Math.random() * 50;
+      this.particles.push({
+        x: cx + Math.cos(angle) * dist,
+        y: cy + Math.sin(angle) * dist,
+        vx: -Math.cos(angle) * (4 + Math.random() * 3),
+        vy: -Math.sin(angle) * (4 + Math.random() * 3),
+        life: 25 + Math.random() * 10,
+        maxLife: 35,
+        color: blockColor,
+        size: 3 + Math.random() * 3,
+      });
+    }
+
+    // Central bright flash particles (cube burst)
+    for (let i = 0; i < 30; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 1 + Math.random() * 2;
+      this.particles.push({
+        x: cx, y: cy,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        life: 20 + Math.random() * 15,
+        maxLife: 35,
+        color: 0xffffff,
+        size: 2 + Math.random() * 4,
+      });
+    }
+
+    // Per-cell inward sparks
+    for (const [r, c] of cells) {
+      const px = this.offsetX + c * CELL + CELL / 2;
+      const py = this.offsetY + r * CELL + CELL / 2;
+      const dirX = cx - px;
+      const dirY = cy - py;
+      const len = Math.sqrt(dirX * dirX + dirY * dirY) || 1;
+      for (let i = 0; i < 3; i++) {
+        this.particles.push({
+          x: px, y: py,
+          vx: (dirX / len) * (3 + Math.random() * 2) + (Math.random() - 0.5),
+          vy: (dirY / len) * (3 + Math.random() * 2) + (Math.random() - 0.5),
+          life: 18 + Math.random() * 12,
+          maxLife: 30,
+          color: blockColor,
+          size: 2 + Math.random() * 2,
+        });
+      }
+    }
+
+    // Compact flash + shake (less than line clear)
+    this.shakeAmount = 6;
+    this.flashAlpha = 0.25;
+    this.slowMo = true;
+    this.slowMoTimer = 20;
+
+    // Score bonus
+    this.score += destroyed.size * 50 * this.level;
+
+    // Remove destroyed cells and let above cells fall
+    for (const [r, c] of cells) {
+      this.grid[r][c] = null;
+    }
+
+    // Gravity collapse: pull orbs down to fill gaps (column by column)
+    for (let c = 0; c < COLS; c++) {
+      let writeRow = ROWS - 1;
+      for (let r = ROWS - 1; r >= 0; r--) {
+        if (this.grid[r][c] !== null) {
+          if (r !== writeRow) {
+            this.grid[writeRow][c] = this.grid[r][c];
+            this.grid[r][c] = null;
+          }
+          writeRow--;
+        }
+      }
+    }
+
+    this.level = Math.floor(this.score / 2000) + 1;
   }
 
   private checkLines() {
@@ -475,7 +602,7 @@ export class GameScene extends Phaser.Scene {
 
     // Moon gravity free fall
     if (this.activePiece) {
-      const levelBoost = 1 + (this.level - 1) * 0.05;
+      const levelBoost = 1 + (this.level - 1) * 0.025; // very gentle scaling
       this.fallSpeed = Math.min(this.fallSpeed + this.GRAVITY * levelBoost, this.MAX_FALL_SPEED);
       this.fallSpeed *= 0.992; // drag for floaty feel
       this.fallAccum += this.fallSpeed;
