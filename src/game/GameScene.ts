@@ -17,6 +17,18 @@ interface OrbState {
   wobblePhase: number;
   wobbleAmp: number;
   glowPulse: number;
+  // Landing bounce
+  landBounce: number;
+  landBounceVel: number;
+}
+
+// Per-orb free-fall jitter for active piece
+interface FallingOrbJitter {
+  dx: number;
+  dy: number;
+  vx: number;
+  vy: number;
+  phase: number;
 }
 
 export class GameScene extends Phaser.Scene {
@@ -48,6 +60,8 @@ export class GameScene extends Phaser.Scene {
   private bounceVel = 0;
   // Snap animation
   private snapScale = 1;
+  // Free-fall jitter per orb in active piece
+  private fallingJitter: FallingOrbJitter[] = [];
 
   constructor() {
     super({ key: 'GameScene' });

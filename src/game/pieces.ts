@@ -12,7 +12,7 @@ const COLORS = [
   { color: 0x3388ff, colorCSS: '#3388ff' }, // Blue
 ];
 
-// 7 orb formations
+// 7 orb formations — all clean, easy to place
 const FORMATIONS: { name: string; shapes: [number, number][][] }[] = [
   {
     name: 'Single Orb',
@@ -45,8 +45,8 @@ const FORMATIONS: { name: string; shapes: [number, number][][] }[] = [
     name: 'Curved Trio',
     shapes: [
       [[0,0],[0,1],[1,1]],
+      [[0,0],[1,0],[1,-1]],
       [[0,0],[1,0],[1,1]],
-      [[0,0],[1,0],[1,1]],  // mirrored via rotation
       [[0,0],[0,1],[1,0]],
     ],
   },
@@ -60,31 +60,28 @@ const FORMATIONS: { name: string; shapes: [number, number][][] }[] = [
     ],
   },
   {
-    name: 'Mini Cluster',
+    name: 'Soft Hook',
     shapes: [
-      [[0,1],[1,0],[1,2],[2,1]],  // diamond
-      [[0,1],[1,0],[1,2],[2,1]],
-      [[0,1],[1,0],[1,2],[2,1]],
-      [[0,1],[1,0],[1,2],[2,1]],
+      [[0,0],[1,0],[1,1]],   // down then right
+      [[0,0],[0,1],[1,0]],   // right then down-left
+      [[0,0],[0,1],[1,1]],   // right then down
+      [[0,0],[1,0],[1,-1]],  // down then left
     ],
   },
   {
-    name: 'Broken Cross',
+    name: 'Wide Arc',
     shapes: [
-      [[0,1],[1,0],[1,1],[2,1]],  // missing right
-      [[0,0],[0,1],[1,1],[0,2]],  // missing bottom
-      [[0,0],[1,0],[1,1],[2,0]],  // missing left
-      [[1,0],[1,1],[1,2],[0,1]],  // top
+      [[0,0],[0,1],[0,2],[1,2]],  // flat then down
+      [[0,0],[1,0],[2,0],[2,-1]], // down then left
+      [[0,0],[1,0],[1,1],[1,2]],  // down then flat right
+      [[0,0],[0,1],[0,2],[1,0]],  // flat then down-left
     ],
   },
 ];
 
-// Generate all piece defs: each formation × each color = 21 possible pieces
-// At spawn time we pick a random formation + random color
 export const FORMATIONS_LIST = FORMATIONS;
 export const COLORS_LIST = COLORS;
 
-// For backward compat, export a flat PIECES array (one per formation, default yellow)
 export const PIECES: PieceDef[] = FORMATIONS.map(f => ({
   name: f.name,
   color: COLORS[0].color,
