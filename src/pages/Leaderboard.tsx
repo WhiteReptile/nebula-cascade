@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { DIVISION_LABELS, DIVISION_COLORS, getCurrentPeriod, type Division } from '@/lib/divisionSystem';
 import DivisionBadge from '@/components/DivisionBadge';
 
-const DIVISIONS: Division[] = ['pearl_i', 'pearl_ii', 'pearl_iii', 'pearl_iv', 'pearl_v'];
+const DIVISIONS: Division[] = ['gem_i', 'gem_ii', 'gem_iii', 'gem_iv', 'gem_v'];
 
 interface LeaderboardEntry {
   id: string;
@@ -19,7 +19,7 @@ interface LeaderboardEntry {
 
 const Leaderboard = () => {
   const navigate = useNavigate();
-  const [activeDivision, setActiveDivision] = useState<Division>('pearl_v');
+  const [activeDivision, setActiveDivision] = useState<Division>('gem_v');
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const period = getCurrentPeriod();

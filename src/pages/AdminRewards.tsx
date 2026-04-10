@@ -63,7 +63,7 @@ const AdminRewards = () => {
     // Update period status
     await supabase.from('reward_periods').update({ status: 'validating' }).eq('id', periodId);
 
-    const divisions: Division[] = ['pearl_i', 'pearl_ii', 'pearl_iii', 'pearl_iv', 'pearl_v'];
+    const divisions: Division[] = ['gem_i', 'gem_ii', 'gem_iii', 'gem_iv', 'gem_v'];
 
     for (const div of divisions) {
       const { data: topPlayers } = await supabase

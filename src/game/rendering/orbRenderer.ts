@@ -1,4 +1,4 @@
-const FIRE = 0xff3344, WATER = 0x3388ff, ELEC = 0xffdd00, SHADOW = 0x888899, VOID = 0x1a1a2e;
+const FIRE = 0xff3344, WATER = 0x3388ff, ELEC = 0xffdd00, SHADOW = 0x888899;
 
 export function drawOrb(
   g: Phaser.GameObjects.Graphics,
@@ -71,19 +71,6 @@ export function drawOrb(
     g.fillCircle(cx + Math.sin(phase * 1.3) * 3, cy - 2, radius * 0.5);
     g.fillStyle(0xaaaabb, alpha * 0.25);
     g.fillCircle(cx - radius * 0.15, cy - radius * 0.25, radius * 0.3);
-  } else if (color === VOID) {
-    g.fillStyle(0x0a0a1e, alpha * 0.15);
-    g.fillCircle(cx, cy, radius * 2.2);
-    g.fillStyle(0x110022, alpha * 0.25);
-    g.fillCircle(cx, cy, radius * 1.6);
-    g.fillStyle(0x1a1a2e, alpha * 0.90);
-    g.fillCircle(cx, cy, radius);
-    g.fillStyle(0x050510, alpha * 0.7);
-    g.fillCircle(cx, cy, radius * 0.7);
-    g.lineStyle(1.5, 0x6633aa, alpha * 0.35);
-    g.strokeCircle(cx, cy, radius * 1.05);
-    g.fillStyle(0x4422aa, alpha * 0.2);
-    g.fillCircle(cx, cy + Math.sin(phase) * 1, radius * 0.25);
   } else {
     g.fillStyle(color, alpha * 0.12);
     g.fillCircle(cx, cy, radius * 2.2);

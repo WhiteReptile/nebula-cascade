@@ -43,10 +43,25 @@ export const circleProvider: PayoutProvider = {
 export const thirdwebProvider: PayoutProvider = {
   name: 'Thirdweb',
   async preparePayout(data) {
-    // Future: Use Thirdweb SDK for NFT/token payouts
-    console.log('[Thirdweb stub] Prepare payout:', data);
-    return { ready: false, reference: 'thirdweb_not_configured' };
+    // Future: Use Thirdweb SDK on Base chain for NFT/token payouts
+    console.log('[Thirdweb stub] Prepare payout on Base:', data);
+    return { ready: false, reference: 'thirdweb_base_not_configured' };
   },
+};
+
+// Chain configuration — Base (primary), Polygon (fallback)
+export const baseChainConfig = {
+  chainId: 8453,
+  name: 'Base',
+  rpcUrl: '', // placeholder — set when deploying
+  thirdwebContractAddress: '', // placeholder
+};
+
+export const polygonChainConfig = {
+  chainId: 137,
+  name: 'Polygon',
+  rpcUrl: '', // placeholder
+  thirdwebContractAddress: '', // placeholder
 };
 
 export const PROVIDERS: Record<string, PayoutProvider> = {
