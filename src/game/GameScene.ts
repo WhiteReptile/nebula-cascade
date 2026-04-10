@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { randomOrbPiece, COLS, ROWS, CELL, PieceDef } from './pieces';
+import { randomOrbPiece, COLS, ROWS, CELL, PieceDef, FORMATIONS_LIST } from './pieces';
 
 // Event bus for React HUD
 export const gameEvents = new Phaser.Events.EventEmitter();
