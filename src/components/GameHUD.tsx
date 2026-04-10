@@ -38,6 +38,7 @@ const GameHUD = () => {
     gameEvents.on('pause', onPause);
     gameEvents.on('restart', onRestart);
     gameEvents.on('chainCombo', onChainCombo);
+    gameEvents.on('triColor', onTriColor);
 
     return () => {
       gameEvents.off('hud', onHUD);
@@ -46,6 +47,7 @@ const GameHUD = () => {
       gameEvents.off('pause', onPause);
       gameEvents.off('restart', onRestart);
       gameEvents.off('chainCombo', onChainCombo);
+      gameEvents.off('triColor', onTriColor);
     };
   }, []);
 
