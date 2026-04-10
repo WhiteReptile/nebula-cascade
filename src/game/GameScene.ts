@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { randomOrbPiece, COLS, ROWS, CELL, PieceDef } from './pieces';
+import { randomOrbPiece, COLS, ROWS, CELL, PieceDef, FORMATIONS_LIST } from './pieces';
 
 // Event bus for React HUD
 export const gameEvents = new Phaser.Events.EventEmitter();
@@ -46,6 +46,8 @@ export class GameScene extends Phaser.Scene {
   private score = 0;
   private level = 1;
   private combo = 0;
+  private chainStep = 0;        // current chain depth in resolveChains
+  private chainResolving = false; // true while chain loop is active
   private gameOver = false;
   private paused = false;
   private gridGraphics!: Phaser.GameObjects.Graphics;
@@ -270,22 +272,86 @@ export class GameScene extends Phaser.Scene {
       }
     }
     this.snapScale = 1.15;
-    this.checkBlockDestruction(); // 4x4 same-color block check
-    this.checkLines();
+    this.chainStep = 0;
+    this.chainResolving = true;
+    this.resolveChains();
+  }
+
+  /** Chain reaction loop: check 4x4 blocks and 3-line clears repeatedly until no more matches */
+  private resolveChains() {
+    let foundMatch = false;
+
+    // 1. Check 4x4 blocks
+    const blockResult = this.findBlockMatch();
+    if (blockResult) {
+      foundMatch = true;
+      this.chainStep++;
+      const mult = this.getChainMultiplier(this.chainStep);
+      const baseScore = 800;
+      this.score += Math.floor(baseScore * mult * this.level);
+      this.blockImplosionVFX(blockResult.cells, blockResult.color, this.chainStep);
+      this.reorganizeOrbs(blockResult.cells, blockResult.color);
+      this.gravityCollapse();
+      gameEvents.emit('chainCombo', this.chainStep);
+      this.emitHUD();
+      // Delay next chain check so VFX plays out
+      this.time.delayedCall(350 + this.chainStep * 50, () => this.resolveChains());
+      return;
+    }
+
+    // 2. Check 3-line same-color clears
+    const lineResult = this.findLineMatch();
+    if (lineResult) {
+      foundMatch = true;
+      this.chainStep++;
+      const mult = this.getChainMultiplier(this.chainStep);
+
+      if (lineResult.cosmicWipe) {
+        // 5-line cosmic combo — wipe board
+        this.score += Math.floor(5000 * mult * this.level);
+        this.cosmicWipeVFX(this.chainStep);
+        this.grid = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
+        this.combo = 0;
+      } else {
+        const baseScore = lineResult.rows.length * lineResult.rows.length * 100;
+        this.score += Math.floor(baseScore * mult * this.level);
+        this.lineDestroyVFX(lineResult.rows, this.chainStep);
+        // Remove rows
+        const sorted = [...new Set(lineResult.rows)].sort((a, b) => a - b);
+        for (const row of sorted) {
+          this.grid.splice(row, 1);
+          this.grid.unshift(Array(COLS).fill(null));
+        }
+        this.combo += lineResult.rows.length;
+      }
+
+      gameEvents.emit('chainCombo', this.chainStep);
+      this.emitHUD();
+      this.time.delayedCall(400 + this.chainStep * 50, () => this.resolveChains());
+      return;
+    }
+
+    // No more matches — end chain
+    this.chainResolving = false;
+    if (this.chainStep === 0) this.combo = 0;
+    this.level = Math.floor(this.score / 2000) + 1;
     this.spawnPiece();
     this.emitHUD();
   }
 
-  /** Detect and destroy any 4x4 same-color rectangle on the grid */
-  private checkBlockDestruction() {
-    const destroyed = new Set<string>();
+  private getChainMultiplier(step: number): number {
+    if (step <= 1) return 1;
+    if (step === 2) return 2.5;
+    return Math.pow(step, 1.8);
+  }
 
+  /** Find first 4x4 same-color block on the grid */
+  private findBlockMatch(): { cells: [number, number][]; color: number } | null {
     for (let r = 0; r <= ROWS - 4; r++) {
       for (let c = 0; c <= COLS - 4; c++) {
         const refOrb = this.grid[r][c];
         if (!refOrb) continue;
         const color = refOrb.color;
-
         let allMatch = true;
         for (let dr = 0; dr < 4 && allMatch; dr++) {
           for (let dc = 0; dc < 4 && allMatch; dc++) {
@@ -293,126 +359,27 @@ export class GameScene extends Phaser.Scene {
             if (!orb || orb.color !== color) allMatch = false;
           }
         }
-
         if (allMatch) {
+          const cells: [number, number][] = [];
           for (let dr = 0; dr < 4; dr++) {
             for (let dc = 0; dc < 4; dc++) {
-              destroyed.add(`${r + dr},${c + dc}`);
+              cells.push([r + dr, c + dc]);
             }
           }
+          return { cells, color };
         }
       }
     }
-
-    if (destroyed.size === 0) return;
-
-    // Calculate center of the destroyed block for implosion VFX
-    let sumX = 0, sumY = 0;
-    const cells: [number, number][] = [];
-    destroyed.forEach(key => {
-      const [r, c] = key.split(',').map(Number);
-      cells.push([r, c]);
-      sumX += this.offsetX + c * CELL + CELL / 2;
-      sumY += this.offsetY + r * CELL + CELL / 2;
-    });
-    const cx = sumX / cells.length;
-    const cy = sumY / cells.length;
-    const blockColor = this.grid[cells[0][0]][cells[0][1]]!.color;
-
-    // --- Implosion VFX: inward-rushing particles ---
-    // Ring of particles imploding toward center
-    for (let i = 0; i < 40; i++) {
-      const angle = (i / 40) * Math.PI * 2;
-      const dist = 80 + Math.random() * 50;
-      this.particles.push({
-        x: cx + Math.cos(angle) * dist,
-        y: cy + Math.sin(angle) * dist,
-        vx: -Math.cos(angle) * (4 + Math.random() * 3),
-        vy: -Math.sin(angle) * (4 + Math.random() * 3),
-        life: 25 + Math.random() * 10,
-        maxLife: 35,
-        color: blockColor,
-        size: 3 + Math.random() * 3,
-      });
-    }
-
-    // Central bright flash particles (cube burst)
-    for (let i = 0; i < 30; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      const speed = 1 + Math.random() * 2;
-      this.particles.push({
-        x: cx, y: cy,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed,
-        life: 20 + Math.random() * 15,
-        maxLife: 35,
-        color: 0xffffff,
-        size: 2 + Math.random() * 4,
-      });
-    }
-
-    // Per-cell inward sparks
-    for (const [r, c] of cells) {
-      const px = this.offsetX + c * CELL + CELL / 2;
-      const py = this.offsetY + r * CELL + CELL / 2;
-      const dirX = cx - px;
-      const dirY = cy - py;
-      const len = Math.sqrt(dirX * dirX + dirY * dirY) || 1;
-      for (let i = 0; i < 3; i++) {
-        this.particles.push({
-          x: px, y: py,
-          vx: (dirX / len) * (3 + Math.random() * 2) + (Math.random() - 0.5),
-          vy: (dirY / len) * (3 + Math.random() * 2) + (Math.random() - 0.5),
-          life: 18 + Math.random() * 12,
-          maxLife: 30,
-          color: blockColor,
-          size: 2 + Math.random() * 2,
-        });
-      }
-    }
-
-    // Compact flash + shake (less than line clear)
-    this.shakeAmount = 6;
-    this.flashAlpha = 0.25;
-    this.slowMo = true;
-    this.slowMoTimer = 20;
-
-    // Score bonus
-    this.score += destroyed.size * 50 * this.level;
-
-    // Remove destroyed cells and let above cells fall
-    for (const [r, c] of cells) {
-      this.grid[r][c] = null;
-    }
-
-    // Gravity collapse: pull orbs down to fill gaps (column by column)
-    for (let c = 0; c < COLS; c++) {
-      let writeRow = ROWS - 1;
-      for (let r = ROWS - 1; r >= 0; r--) {
-        if (this.grid[r][c] !== null) {
-          if (r !== writeRow) {
-            this.grid[writeRow][c] = this.grid[r][c];
-            this.grid[r][c] = null;
-          }
-          writeRow--;
-        }
-      }
-    }
-
-    this.level = Math.floor(this.score / 2000) + 1;
+    return null;
   }
 
-  private checkLines() {
+  /** Find 3+ consecutive same-color full rows */
+  private findLineMatch(): { rows: number[]; cosmicWipe: boolean } | null {
     const fullRows: number[] = [];
     for (let r = 0; r < ROWS; r++) {
-      if (this.grid[r].every(c => c !== null)) {
-        fullRows.push(r);
-      }
+      if (this.grid[r].every(c => c !== null)) fullRows.push(r);
     }
-    if (fullRows.length === 0) {
-      this.combo = 0;
-      return;
-    }
+    if (fullRows.length === 0) return null;
 
     const rowDominant = (row: number): number => {
       const colors = this.grid[row].filter(c => c !== null).map(c => c!.color);
@@ -425,7 +392,6 @@ export class GameScene extends Phaser.Scene {
       let j = i;
       while (j + 1 < fullRows.length && fullRows[j + 1] === fullRows[j] + 1) j++;
       const run = fullRows.slice(i, j + 1);
-
       let k = 0;
       while (k < run.length) {
         const clr = rowDominant(run[k]);
@@ -438,17 +404,84 @@ export class GameScene extends Phaser.Scene {
       i = j + 1;
     }
 
-    if (rowsToDestroy.length === 0) return;
+    if (rowsToDestroy.length === 0) return null;
 
-    this.combo += rowsToDestroy.length;
+    const totalCombo = this.combo + rowsToDestroy.length;
+    return { rows: rowsToDestroy, cosmicWipe: totalCombo >= 5 };
+  }
 
-    for (const row of rowsToDestroy) {
+  /** Implosion VFX for 4x4 block with chain escalation */
+  private blockImplosionVFX(cells: [number, number][], color: number, chainStep: number) {
+    const scale = 1 + chainStep * 0.5;
+    let sumX = 0, sumY = 0;
+    for (const [r, c] of cells) {
+      sumX += this.offsetX + c * CELL + CELL / 2;
+      sumY += this.offsetY + r * CELL + CELL / 2;
+    }
+    const cx = sumX / cells.length;
+    const cy = sumY / cells.length;
+
+    // Inward-rushing ring
+    const ringCount = Math.floor(40 * scale);
+    for (let i = 0; i < ringCount; i++) {
+      const angle = (i / ringCount) * Math.PI * 2;
+      const dist = 80 + Math.random() * 50;
+      this.particles.push({
+        x: cx + Math.cos(angle) * dist, y: cy + Math.sin(angle) * dist,
+        vx: -Math.cos(angle) * (4 + Math.random() * 3),
+        vy: -Math.sin(angle) * (4 + Math.random() * 3),
+        life: 25 + Math.random() * 10, maxLife: 35,
+        color, size: (3 + Math.random() * 3) * Math.min(scale, 2),
+      });
+    }
+
+    // Central cube burst
+    const burstCount = Math.floor(30 * scale);
+    for (let i = 0; i < burstCount; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = (1 + Math.random() * 2) * Math.min(scale, 1.5);
+      this.particles.push({
+        x: cx, y: cy,
+        vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+        life: 20 + Math.random() * 15, maxLife: 35,
+        color: 0xffffff, size: (2 + Math.random() * 4) * Math.min(scale, 2),
+      });
+    }
+
+    // Per-cell inward sparks
+    for (const [r, c] of cells) {
+      const px = this.offsetX + c * CELL + CELL / 2;
+      const py = this.offsetY + r * CELL + CELL / 2;
+      const dirX = cx - px, dirY = cy - py;
+      const len = Math.sqrt(dirX * dirX + dirY * dirY) || 1;
+      for (let i = 0; i < 3; i++) {
+        this.particles.push({
+          x: px, y: py,
+          vx: (dirX / len) * (3 + Math.random() * 2) + (Math.random() - 0.5),
+          vy: (dirY / len) * (3 + Math.random() * 2) + (Math.random() - 0.5),
+          life: 18 + Math.random() * 12, maxLife: 30,
+          color, size: 2 + Math.random() * 2,
+        });
+      }
+    }
+
+    this.shakeAmount = Math.min(6 * (1 + chainStep * 0.4), 20);
+    this.flashAlpha = Math.min(0.25 * (1 + chainStep * 0.3), 0.9);
+    this.slowMo = true;
+    this.slowMoTimer = 20 + chainStep * 10;
+  }
+
+  /** Line destruction VFX with chain escalation */
+  private lineDestroyVFX(rows: number[], chainStep: number) {
+    const scale = 1 + chainStep * 0.5;
+    for (const row of rows) {
       for (let c = 0; c < COLS; c++) {
         const orb = this.grid[row][c];
         const px = this.offsetX + c * CELL + CELL / 2;
         const py = this.offsetY + row * CELL + CELL / 2;
         const clr = orb?.color || 0xffffff;
-        for (let pi = 0; pi < 8; pi++) {
+        const pCount = Math.floor(8 * scale);
+        for (let pi = 0; pi < pCount; pi++) {
           const angle = Math.random() * Math.PI * 2;
           const speed = 2 + Math.random() * 5;
           this.particles.push({ x: px, y: py, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed - 2, life: 45 + Math.random() * 25, maxLife: 70, color: clr, size: 3 + Math.random() * 3 });
@@ -458,44 +491,140 @@ export class GameScene extends Phaser.Scene {
         }
       }
     }
-
+    this.shakeAmount = Math.min(5 * (1 + chainStep * 0.4), 20);
+    this.flashAlpha = Math.min(0.4 * (1 + chainStep * 0.3), 0.9);
     this.slowMo = true;
-    this.slowMoTimer = 35;
-    this.shakeAmount = 5;
-    this.flashAlpha = 0.4;
+    this.slowMoTimer = 35 + chainStep * 10;
+  }
 
-    if (this.combo >= 5) {
-      this.score += 5000 * this.level;
-      this.shakeAmount = 18;
-      this.flashAlpha = 0.8;
-      const cx = this.offsetX + (COLS * CELL) / 2;
-      const cy = this.offsetY + (ROWS * CELL) / 2;
-      for (let pi = 0; pi < 150; pi++) {
-        const angle = Math.random() * Math.PI * 2;
-        const speed = 3 + Math.random() * 10;
-        this.particles.push({ x: cx, y: cy, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, life: 70 + Math.random() * 50, maxLife: 120, color: [0xffdd00, 0xff3344, 0x3388ff, 0xffffff][Math.floor(Math.random() * 4)], size: 4 + Math.random() * 6 });
-      }
-      for (let pi = 0; pi < 60; pi++) {
-        const angle = (pi / 60) * Math.PI * 2;
-        const dist = 150 + Math.random() * 100;
-        this.particles.push({ x: cx + Math.cos(angle) * dist, y: cy + Math.sin(angle) * dist, vx: -Math.cos(angle) * 4, vy: -Math.sin(angle) * 4, life: 40, maxLife: 40, color: 0xffffff, size: 2 + Math.random() * 3 });
-      }
-      this.grid = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
-      this.combo = 0;
-      this.slowMo = true;
-      this.slowMoTimer = 50;
-    } else {
-      const points = rowsToDestroy.length * rowsToDestroy.length * 100 * this.level;
-      this.score += points;
-      const sorted = [...new Set(rowsToDestroy)].sort((a, b) => a - b);
-      for (const row of sorted) {
-        this.grid.splice(row, 1);
-        this.grid.unshift(Array(COLS).fill(null));
-      }
+  /** Cosmic wipe VFX (5-line combo) with chain escalation */
+  private cosmicWipeVFX(chainStep: number) {
+    const scale = 1 + chainStep * 0.3;
+    this.shakeAmount = Math.min(18 * scale, 30);
+    this.flashAlpha = Math.min(0.8 * scale, 1);
+    const cx = this.offsetX + (COLS * CELL) / 2;
+    const cy = this.offsetY + (ROWS * CELL) / 2;
+    const pCount = Math.floor(150 * scale);
+    for (let pi = 0; pi < pCount; pi++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 3 + Math.random() * 10;
+      this.particles.push({ x: cx, y: cy, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, life: 70 + Math.random() * 50, maxLife: 120, color: [0xffdd00, 0xff3344, 0x3388ff, 0xffffff][Math.floor(Math.random() * 4)], size: 4 + Math.random() * 6 });
+    }
+    for (let pi = 0; pi < 60; pi++) {
+      const angle = (pi / 60) * Math.PI * 2;
+      const dist = 150 + Math.random() * 100;
+      this.particles.push({ x: cx + Math.cos(angle) * dist, y: cy + Math.sin(angle) * dist, vx: -Math.cos(angle) * 4, vy: -Math.sin(angle) * 4, life: 40, maxLife: 40, color: 0xffffff, size: 2 + Math.random() * 3 });
+    }
+    this.slowMo = true;
+    this.slowMoTimer = 50 + chainStep * 10;
+  }
+
+  /** Reorganize destroyed 4x4 block orbs into new small connected formations */
+  private reorganizeOrbs(destroyedCells: [number, number][], color: number) {
+    // Clear destroyed cells
+    for (const [r, c] of destroyedCells) {
+      this.grid[r][c] = null;
     }
 
-    this.level = Math.floor(this.score / 2000) + 1;
-    this.emitHUD();
+    // We have 16 orbs to redistribute. Create small formations (2-4 orbs each)
+    let remaining = 16;
+    const smallShapes: [number, number][][] = [
+      [[0,0],[0,1]],              // horizontal pair
+      [[0,0],[1,0]],              // vertical pair
+      [[0,0],[0,1],[1,0]],        // L trio
+      [[0,0],[0,1],[0,2]],        // horizontal triple
+      [[0,0],[1,0],[2,0]],        // vertical triple
+      [[0,0],[0,1],[1,1]],        // bent trio
+    ];
+
+    // Determine the column range of the destroyed block
+    let minCol = COLS, maxCol = 0, maxRow = 0;
+    for (const [r, c] of destroyedCells) {
+      if (c < minCol) minCol = c;
+      if (c > maxCol) maxCol = c;
+      if (r > maxRow) maxRow = r;
+    }
+
+    // Try to place small formations in empty cells near the original area
+    const placedCells: [number, number][] = [];
+    let attempts = 0;
+    while (remaining > 0 && attempts < 100) {
+      attempts++;
+      // Pick a random small shape
+      const shape = smallShapes[Math.floor(Math.random() * smallShapes.length)];
+      if (shape.length > remaining) continue;
+
+      // Try random positions near the destroyed area
+      const tryCol = minCol + Math.floor(Math.random() * (maxCol - minCol + 3)) - 1;
+      const tryRow = Math.floor(Math.random() * ROWS);
+
+      // Check if shape fits
+      let fits = true;
+      const positions: [number, number][] = [];
+      for (const [dr, dc] of shape) {
+        const nr = tryRow + dr;
+        const nc = tryCol + dc;
+        if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS || this.grid[nr][nc] !== null) {
+          fits = false;
+          break;
+        }
+        positions.push([nr, nc]);
+      }
+
+      if (fits) {
+        for (const [pr, pc] of positions) {
+          this.grid[pr][pc] = {
+            color,
+            wobblePhase: Math.random() * Math.PI * 2,
+            wobbleAmp: 3 + Math.random() * 2,
+            glowPulse: Math.random() * Math.PI * 2,
+            landBounce: -4 - Math.random() * 3,
+            landBounceVel: 0,
+          };
+          placedCells.push([pr, pc]);
+          remaining--;
+        }
+      }
+    }
+    // Any remaining orbs that couldn't be placed just disappear (prevents gridlock)
+
+    // Burst VFX: orbs flying outward from center then settling
+    const cx = this.offsetX + ((minCol + maxCol) / 2) * CELL + CELL / 2;
+    const cy = this.offsetY + (maxRow - 2) * CELL + CELL / 2;
+    for (const [pr, pc] of placedCells) {
+      const px = this.offsetX + pc * CELL + CELL / 2;
+      const py = this.offsetY + pr * CELL + CELL / 2;
+      for (let i = 0; i < 3; i++) {
+        const angle = Math.atan2(py - cy, px - cx) + (Math.random() - 0.5) * 0.5;
+        const speed = 2 + Math.random() * 3;
+        this.particles.push({
+          x: cx, y: cy,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          life: 20 + Math.random() * 10, maxLife: 30,
+          color, size: 2 + Math.random() * 2,
+        });
+      }
+    }
+  }
+
+  /** Pull all orbs down to fill gaps column by column */
+  private gravityCollapse() {
+    for (let c = 0; c < COLS; c++) {
+      let writeRow = ROWS - 1;
+      for (let r = ROWS - 1; r >= 0; r--) {
+        if (this.grid[r][c] !== null) {
+          if (r !== writeRow) {
+            this.grid[writeRow][c] = this.grid[r][c];
+            this.grid[r][c] = null;
+            // Add landing bounce to collapsed orbs
+            this.grid[writeRow][c]!.landBounce = -3 - Math.random() * 2;
+            this.grid[writeRow][c]!.landBounceVel = 0;
+          }
+          writeRow--;
+        }
+      }
+    }
   }
 
   private mode(arr: number[]): number | null {
@@ -600,8 +729,8 @@ export class GameScene extends Phaser.Scene {
       }
     }
 
-    // Moon gravity free fall
-    if (this.activePiece) {
+    // Moon gravity free fall (skip while chain is resolving)
+    if (this.activePiece && !this.chainResolving) {
       const levelBoost = 1 + (this.level - 1) * 0.025; // very gentle scaling
       this.fallSpeed = Math.min(this.fallSpeed + this.GRAVITY * levelBoost, this.MAX_FALL_SPEED);
       this.fallSpeed *= 0.992; // drag for floaty feel

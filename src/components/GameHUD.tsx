@@ -9,6 +9,8 @@ const GameHUD = () => {
   const [nextPiece, setNextPiece] = useState<PieceDef | null>(null);
   const [gameOverScore, setGameOverScore] = useState<number | null>(null);
   const [paused, setPaused] = useState(false);
+  const [chainCombo, setChainCombo] = useState(0);
+  const [chainVisible, setChainVisible] = useState(false);
 
   useEffect(() => {
     const onHUD = (data: { score: number; level: number; combo: number }) => {
@@ -20,12 +22,17 @@ const GameHUD = () => {
     const onGameOver = (finalScore: number) => setGameOverScore(finalScore);
     const onPause = (p: boolean) => setPaused(p);
     const onRestart = () => setGameOverScore(null);
+    const onChainCombo = (step: number) => {
+      setChainCombo(step);
+      setChainVisible(true);
+    };
 
     gameEvents.on('hud', onHUD);
     gameEvents.on('nextPiece', onNext);
     gameEvents.on('gameover', onGameOver);
     gameEvents.on('pause', onPause);
     gameEvents.on('restart', onRestart);
+    gameEvents.on('chainCombo', onChainCombo);
 
     return () => {
       gameEvents.off('hud', onHUD);
@@ -33,13 +40,25 @@ const GameHUD = () => {
       gameEvents.off('gameover', onGameOver);
       gameEvents.off('pause', onPause);
       gameEvents.off('restart', onRestart);
+      gameEvents.off('chainCombo', onChainCombo);
     };
   }, []);
+
+  // Auto-hide chain counter after 2s
+  useEffect(() => {
+    if (!chainVisible) return;
+    const timer = setTimeout(() => setChainVisible(false), 2000);
+    return () => clearTimeout(timer);
+  }, [chainVisible, chainCombo]);
 
   const handleRestart = () => {
     setGameOverScore(null);
     gameEvents.emit('restart');
   };
+
+  // Chain glow intensity scales with combo step
+  const chainGlowSize = Math.min(10 + chainCombo * 5, 40);
+  const chainColor = chainCombo >= 3 ? '#ff3344' : chainCombo >= 2 ? '#ffdd00' : '#3388ff';
 
   return (
     <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
@@ -84,11 +103,8 @@ const GameHUD = () => {
                   const cy = 14 + r * 18;
                   return (
                     <g key={i}>
-                      {/* Outer glow */}
                       <circle cx={cx} cy={cy} r={10} fill={nextPiece.colorCSS} opacity={0.2} />
-                      {/* Main orb */}
                       <circle cx={cx} cy={cy} r={7} fill={nextPiece.colorCSS} opacity={0.85} />
-                      {/* Highlight */}
                       <circle cx={cx - 2} cy={cy - 2} r={2.5} fill="white" opacity={0.4} />
                     </g>
                   );
@@ -110,6 +126,27 @@ const GameHUD = () => {
           </div>
         </div>
       </div>
+
+      {/* Chain combo counter — center screen */}
+      {chainVisible && chainCombo >= 1 && (
+        <div
+          className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+          style={{
+            animation: 'chainPop 0.4s ease-out forwards',
+          }}
+        >
+          <div
+            className="text-5xl font-black font-mono tracking-wider"
+            style={{
+              color: chainColor,
+              textShadow: `0 0 ${chainGlowSize}px ${chainColor}, 0 0 ${chainGlowSize * 2}px ${chainColor}40`,
+              transform: `scale(${1 + chainCombo * 0.15})`,
+            }}
+          >
+            CHAIN x{chainCombo}!
+          </div>
+        </div>
+      )}
 
       {/* Game over overlay */}
       {gameOverScore !== null && (
@@ -147,6 +184,15 @@ const GameHUD = () => {
           COSMIC ORBS
         </h1>
       </div>
+
+      {/* Chain pop animation keyframes */}
+      <style>{`
+        @keyframes chainPop {
+          0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+          30% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+          100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+      `}</style>
     </div>
   );
 };
