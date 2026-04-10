@@ -39,8 +39,8 @@ export class GameScene extends Phaser.Scene {
   // Moon gravity fall system
   private fallSpeed = 0;
   private fallAccum = 0;
-  private readonly GRAVITY = 0.0009;       // 70% slower — ultra-lunar gravity
-  private readonly MAX_FALL_SPEED = 0.054; // 70% slower terminal velocity
+  private readonly GRAVITY = 0.0014;       // increased gravity — still lunar but noticeably faster
+  private readonly MAX_FALL_SPEED = 0.072; // faster terminal velocity
   private fallAge = 0;                     // frames since spawn — drives looseness
 
   private score = 0;
@@ -139,7 +139,7 @@ export class GameScene extends Phaser.Scene {
         dx: 0, dy: 0,
         vx: 0, vy: 0,
         phase: Math.random() * Math.PI * 2,
-        weight: 0.85 + Math.random() * 0.3, // each orb has slightly different mass
+        weight: 0.90 + Math.random() * 0.2, // tighter mass variation — less forgiving
       });
     }
   }
@@ -287,8 +287,9 @@ export class GameScene extends Phaser.Scene {
       foundMatch = true;
       this.chainStep++;
       const mult = this.getChainMultiplier(this.chainStep);
-      const baseScore = 800;
-      this.score += Math.floor(baseScore * mult * this.level);
+      const baseScore = 200; // reduced from 800
+      const chainScore = Math.min(Math.floor(baseScore * mult * this.level), 1000); // hard cap 1000
+      this.score += chainScore;
       this.blockImplosionVFX(blockResult.cells, blockResult.color, this.chainStep);
       this.reorganizeOrbs(blockResult.cells, blockResult.color);
       this.gravityCollapse();
@@ -305,8 +306,9 @@ export class GameScene extends Phaser.Scene {
       foundMatch = true;
       this.chainStep++;
       const mult = this.getChainMultiplier(this.chainStep);
-      const baseScore = triColorResult.cells.length * 150; // higher than single-color
-      this.score += Math.floor(baseScore * mult * this.level);
+      const baseScore = Math.min(triColorResult.cells.length * 30, 400); // reduced, capped base
+      const chainScore = Math.min(Math.floor(baseScore * mult * this.level), 1000); // hard cap 1000
+      this.score += chainScore;
       this.triColorFusionVFX(triColorResult.cells, this.chainStep);
       // Reorganize like 4x4 — redistribute some orbs
       this.reorganizeOrbs(triColorResult.cells, triColorResult.dominantColor);
@@ -326,14 +328,15 @@ export class GameScene extends Phaser.Scene {
       const mult = this.getChainMultiplier(this.chainStep);
 
       if (lineResult.cosmicWipe) {
-        // 5-line cosmic combo — wipe board
-        this.score += Math.floor(5000 * mult * this.level);
+        // 5-line cosmic combo — wipe board (capped at 1000)
+        this.score += Math.min(Math.floor(800 * mult * this.level), 1000);
         this.cosmicWipeVFX(this.chainStep);
         this.grid = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
         this.combo = 0;
       } else {
-        const baseScore = lineResult.rows.length * lineResult.rows.length * 100;
-        this.score += Math.floor(baseScore * mult * this.level);
+        const baseScore = lineResult.rows.length * 80; // linear, not squared
+        const chainScore = Math.min(Math.floor(baseScore * mult * this.level), 500); // cap at 500 for line clears
+        this.score += chainScore;
         this.lineDestroyVFX(lineResult.rows, this.chainStep);
         // Remove rows
         const sorted = [...new Set(lineResult.rows)].sort((a, b) => a - b);
@@ -358,10 +361,11 @@ export class GameScene extends Phaser.Scene {
     this.emitHUD();
   }
 
+  /** Flat/mild combo multiplier — capped, no exponential scaling */
   private getChainMultiplier(step: number): number {
     if (step <= 1) return 1;
-    if (step === 2) return 2.5;
-    return Math.pow(step, 1.8);
+    if (step === 2) return 1.2;
+    return Math.min(1.4, 1 + step * 0.15); // caps at 1.4x
   }
 
   /** Find first 4x4 same-color block on the grid */
@@ -820,8 +824,8 @@ export class GameScene extends Phaser.Scene {
 
     // --- Per-orb loosening physics ---
     this.fallAge += delta * 0.001;
-    const LOOSEN_DURATION = 5.0; // seconds to reach full looseness
-    const RIGID_PHASE = 1.5;     // seconds of fully rigid formation at spawn
+    const LOOSEN_DURATION = 6.0; // seconds to reach full looseness (slower loosening)
+    const RIGID_PHASE = 1.0;     // shorter rigid phase — must place faster
     const rawLooseness = Math.max(0, (this.fallAge - RIGID_PHASE) / (LOOSEN_DURATION - RIGID_PHASE));
     // Smoothstep easing for gradual onset
     const clamped = Math.min(rawLooseness, 1);
@@ -855,8 +859,8 @@ export class GameScene extends Phaser.Scene {
       orb.dx += orb.vx;
       orb.dy += orb.vy;
 
-      // Soft collision boundaries — max drift increases with looseness
-      const maxDrift = 2 + looseness * 8; // 2px tight → 10px loose
+      // Soft collision boundaries — tighter drift for more precise control
+      const maxDrift = 1.5 + looseness * 6; // 1.5px tight → 7.5px loose
       if (Math.abs(orb.dx) > maxDrift) { orb.dx = Math.sign(orb.dx) * maxDrift; orb.vx *= -0.5; }
       if (Math.abs(orb.dy) > maxDrift) { orb.dy = Math.sign(orb.dy) * maxDrift; orb.vy *= -0.4; }
     }
@@ -879,7 +883,7 @@ export class GameScene extends Phaser.Scene {
 
     // Moon gravity free fall (skip while chain is resolving)
     if (this.activePiece && !this.chainResolving) {
-      const levelBoost = 1 + (this.level - 1) * 0.025; // very gentle scaling
+      const levelBoost = 1 + (this.level - 1) * 0.045; // moderate level scaling
       this.fallSpeed = Math.min(this.fallSpeed + this.GRAVITY * levelBoost, this.MAX_FALL_SPEED);
       this.fallSpeed *= 0.992; // drag for floaty feel
       this.fallAccum += this.fallSpeed;
