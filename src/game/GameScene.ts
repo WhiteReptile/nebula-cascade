@@ -54,6 +54,8 @@ export class GameScene extends Phaser.Scene {
   private pieceGraphics!: Phaser.GameObjects.Graphics;
   private vfxGraphics!: Phaser.GameObjects.Graphics;
   private stars: { x: number; y: number; speed: number; alpha: number }[] = [];
+  private shootingStars: { x: number; y: number; vx: number; vy: number; life: number; maxLife: number; len: number }[] = [];
+  private spacecraft: { x: number; y: number; vx: number; vy: number; size: number; type: number; rot: number }[] = [];
   private nebulaTime = 0;
   private offsetX = 0;
   private offsetY = 0;
