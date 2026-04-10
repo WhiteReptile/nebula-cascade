@@ -177,6 +177,13 @@ export class GameScene extends Phaser.Scene {
     const test = { ...this.activePiece, row: this.activePiece.row + dr, col: this.activePiece.col + dc };
     if (this.isValid(test)) {
       this.activePiece = test;
+      // Snap orbs back together on move for readability
+      for (const orb of this.fallingOrbs) {
+        orb.dx *= 0.4;
+        orb.dy *= 0.4;
+        orb.vx *= 0.3;
+        orb.vy *= 0.3;
+      }
     }
   }
 
@@ -185,16 +192,25 @@ export class GameScene extends Phaser.Scene {
     const test = { ...this.activePiece, rotation: (this.activePiece.rotation + 1) % 4 };
     if (this.isValid(test)) {
       this.activePiece = test;
-      // Re-init orb count if rotation changes cell count
       const newCells = this.getCells(this.activePiece);
       while (this.fallingOrbs.length < newCells.length) {
         this.fallingOrbs.push({ dx: 0, dy: 0, vx: 0, vy: 0, phase: Math.random() * Math.PI * 2, weight: 0.85 + Math.random() * 0.3 });
+      }
+      // Snap orbs back together on rotate
+      for (const orb of this.fallingOrbs) {
+        orb.dx *= 0.3;
+        orb.dy *= 0.3;
+        orb.vx *= 0.2;
+        orb.vy *= 0.2;
       }
     } else {
       for (const offset of [-1, 1, -2, 2]) {
         const kicked = { ...test, col: test.col + offset };
         if (this.isValid(kicked)) {
           this.activePiece = kicked;
+          for (const orb of this.fallingOrbs) {
+            orb.dx *= 0.3; orb.dy *= 0.3; orb.vx *= 0.2; orb.vy *= 0.2;
+          }
           return;
         }
       }
@@ -399,25 +415,28 @@ export class GameScene extends Phaser.Scene {
     }
 
     // --- Per-orb loosening physics ---
-    // looseness: 0 at spawn (tight formation) → 1 after ~3 seconds (orbs drift independently)
     this.fallAge += delta * 0.001;
-    const LOOSEN_DURATION = 3.0; // seconds to reach full looseness
-    const looseness = Math.min(this.fallAge / LOOSEN_DURATION, 1);
+    const LOOSEN_DURATION = 5.0; // seconds to reach full looseness
+    const RIGID_PHASE = 1.5;     // seconds of fully rigid formation at spawn
+    const rawLooseness = Math.max(0, (this.fallAge - RIGID_PHASE) / (LOOSEN_DURATION - RIGID_PHASE));
+    // Smoothstep easing for gradual onset
+    const clamped = Math.min(rawLooseness, 1);
+    const looseness = clamped * clamped * (3 - 2 * clamped);
 
     for (const orb of this.fallingOrbs) {
       orb.phase += delta * 0.005;
 
       // Spring force pulling orb back to its grid slot — weakens with looseness
-      const springStrength = 0.12 * (1 - looseness * 0.85); // stays slightly tethered even at max
+      const springStrength = 0.08 * (1 - looseness * 0.85);
       orb.vx += -orb.dx * springStrength;
       orb.vy += -orb.dy * springStrength;
 
       // Individual micro-gravity: each orb drifts down at its own rate
-      const orbGravity = 0.015 * looseness * orb.weight;
+      const orbGravity = 0.02 * looseness * orb.weight;
       orb.vy += orbGravity;
 
       // Organic wobble — increases with looseness
-      const wobbleAmt = looseness * 0.12;
+      const wobbleAmt = looseness * 0.15;
       orb.vx += Math.sin(orb.phase * 2.1 + orb.weight * 10) * wobbleAmt;
       orb.vy += Math.cos(orb.phase * 1.7) * wobbleAmt * 0.5;
 
@@ -426,14 +445,14 @@ export class GameScene extends Phaser.Scene {
       orb.vy += (Math.random() - 0.5) * 0.02 * looseness;
 
       // Damping
-      orb.vx *= 0.88;
-      orb.vy *= 0.88;
+      orb.vx *= 0.86;
+      orb.vy *= 0.86;
 
       orb.dx += orb.vx;
       orb.dy += orb.vy;
 
       // Soft collision boundaries — max drift increases with looseness
-      const maxDrift = 2 + looseness * 5; // 2px tight → 7px loose
+      const maxDrift = 2 + looseness * 8; // 2px tight → 10px loose
       if (Math.abs(orb.dx) > maxDrift) { orb.dx = Math.sign(orb.dx) * maxDrift; orb.vx *= -0.5; }
       if (Math.abs(orb.dy) > maxDrift) { orb.dy = Math.sign(orb.dy) * maxDrift; orb.vy *= -0.4; }
     }
@@ -456,8 +475,9 @@ export class GameScene extends Phaser.Scene {
 
     // Moon gravity free fall
     if (this.activePiece) {
-      const levelBoost = 1 + (this.level - 1) * 0.12;
+      const levelBoost = 1 + (this.level - 1) * 0.05;
       this.fallSpeed = Math.min(this.fallSpeed + this.GRAVITY * levelBoost, this.MAX_FALL_SPEED);
+      this.fallSpeed *= 0.992; // drag for floaty feel
       this.fallAccum += this.fallSpeed;
 
       while (this.fallAccum >= 1) {
