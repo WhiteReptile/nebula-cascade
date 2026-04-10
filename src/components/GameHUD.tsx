@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { gameEvents } from '../game/GameScene';
 import { PieceDef } from '../game/pieces';
+import { logMatch } from '@/lib/matchLogger';
+import DivisionBadge from './DivisionBadge';
+import { supabase } from '@/integrations/supabase/client';
+import type { Division } from '@/lib/divisionSystem';
 
 const GameHUD = () => {
   const [score, setScore] = useState(0);
