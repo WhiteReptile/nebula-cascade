@@ -3,7 +3,7 @@ export interface PieceDef {
   name: string;
   color: number;      // hex tint
   colorCSS: string;   // for HUD
-  shapes: number[][][]; // rotation states, each is array of [row,col] offsets from pivot
+  shapes: [number, number][][]; // rotation states, each is array of [row,col] offsets from pivot
 }
 
 const COLORS = [
