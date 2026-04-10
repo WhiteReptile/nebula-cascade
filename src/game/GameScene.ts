@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { PIECES, COLS, ROWS, CELL, PieceDef } from './pieces';
+import { randomOrbPiece, COLS, ROWS, CELL, PieceDef } from './pieces';
 
 // Event bus for React HUD
 export const gameEvents = new Phaser.Events.EventEmitter();
@@ -11,9 +11,16 @@ interface ActivePiece {
   col: number;
 }
 
+// Wobble state per placed orb
+interface OrbState {
+  color: number;
+  wobblePhase: number;
+  wobbleAmp: number;
+  glowPulse: number;
+}
+
 export class GameScene extends Phaser.Scene {
-  private grid: (number | null)[][] = [];
-  private gridColors: (number | null)[][] = [];
+  private grid: (OrbState | null)[][] = [];
   private activePiece: ActivePiece | null = null;
   private nextPieceDef: PieceDef | null = null;
   private dropTimer = 0;
@@ -30,12 +37,17 @@ export class GameScene extends Phaser.Scene {
   private nebulaTime = 0;
   private offsetX = 0;
   private offsetY = 0;
-  private particles: { x: number; y: number; vx: number; vy: number; life: number; color: number; size: number }[] = [];
+  private particles: { x: number; y: number; vx: number; vy: number; life: number; maxLife: number; color: number; size: number }[] = [];
   private shakeAmount = 0;
   private slowMo = false;
   private slowMoTimer = 0;
-  private clearingRows: { row: number; timer: number; color: number }[] = [];
-  private forceDropTrail: { x: number; y: number; alpha: number }[] = [];
+  private globalTime = 0;
+  private flashAlpha = 0;
+  // Bounce animation for active piece
+  private bounceOffset = 0;
+  private bounceVel = 0;
+  // Snap animation
+  private snapScale = 1;
 
   constructor() {
     super({ key: 'GameScene' });
@@ -47,7 +59,6 @@ export class GameScene extends Phaser.Scene {
     this.offsetX = Math.floor((w - COLS * CELL) / 2);
     this.offsetY = Math.floor((h - ROWS * CELL) / 2);
 
-    // Stars
     this.stars = [];
     for (let i = 0; i < 200; i++) {
       this.stars.push({
@@ -65,10 +76,10 @@ export class GameScene extends Phaser.Scene {
     this.resetGame();
 
     // Input
-    this.input.keyboard?.on('keydown-LEFT', () => this.moveActive(0, -1));
-    this.input.keyboard?.on('keydown-RIGHT', () => this.moveActive(0, 1));
+    this.input.keyboard?.on('keydown-LEFT', () => { this.moveActive(0, -1); this.triggerBounce(); });
+    this.input.keyboard?.on('keydown-RIGHT', () => { this.moveActive(0, 1); this.triggerBounce(); });
     this.input.keyboard?.on('keydown-DOWN', () => this.moveActive(1, 0));
-    this.input.keyboard?.on('keydown-UP', () => this.rotateActive());
+    this.input.keyboard?.on('keydown-UP', () => { this.rotateActive(); this.triggerBounce(); });
     this.input.keyboard?.on('keydown-Z', () => this.forceDrop());
     this.input.keyboard?.on('keydown-SPACE', () => {
       this.paused = !this.paused;
@@ -78,9 +89,12 @@ export class GameScene extends Phaser.Scene {
     gameEvents.on('restart', () => this.resetGame());
   }
 
+  private triggerBounce() {
+    this.bounceVel = -2;
+  }
+
   private resetGame() {
     this.grid = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
-    this.gridColors = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
     this.score = 0;
     this.level = 1;
     this.combo = 0;
@@ -88,21 +102,20 @@ export class GameScene extends Phaser.Scene {
     this.gameOver = false;
     this.paused = false;
     this.particles = [];
-    this.clearingRows = [];
     this.shakeAmount = 0;
-    this.nextPieceDef = this.randomPiece();
+    this.flashAlpha = 0;
+    this.bounceOffset = 0;
+    this.bounceVel = 0;
+    this.nextPieceDef = randomOrbPiece();
     this.spawnPiece();
     this.emitHUD();
   }
 
-  private randomPiece(): PieceDef {
-    return PIECES[Math.floor(Math.random() * PIECES.length)];
-  }
-
   private spawnPiece() {
-    const def = this.nextPieceDef || this.randomPiece();
-    this.nextPieceDef = this.randomPiece();
+    const def = this.nextPieceDef || randomOrbPiece();
+    this.nextPieceDef = randomOrbPiece();
     this.activePiece = { def, rotation: 0, row: 0, col: Math.floor(COLS / 2) - 1 };
+    this.snapScale = 1;
     if (!this.isValid(this.activePiece)) {
       this.gameOver = true;
       gameEvents.emit('gameover', this.score);
@@ -138,7 +151,6 @@ export class GameScene extends Phaser.Scene {
     if (this.isValid(test)) {
       this.activePiece = test;
     } else {
-      // Wall kick attempts
       for (const offset of [-1, 1, -2, 2]) {
         const kicked = { ...test, col: test.col + offset };
         if (this.isValid(kicked)) {
@@ -159,27 +171,28 @@ export class GameScene extends Phaser.Scene {
         dropDist++;
       } else break;
     }
-    // Score bonus for force drop
     this.score += dropDist * 5;
 
-    // VFX: shockwave particles at landing
+    // Shockwave VFX
     const cells = this.getCells(this.activePiece);
     for (const [r, c] of cells) {
       const px = this.offsetX + (this.activePiece.col + c) * CELL + CELL / 2;
       const py = this.offsetY + (this.activePiece.row + r) * CELL + CELL / 2;
-      for (let i = 0; i < 6; i++) {
+      for (let i = 0; i < 10; i++) {
         const angle = Math.random() * Math.PI * 2;
+        const speed = 2 + Math.random() * 5;
         this.particles.push({
           x: px, y: py,
-          vx: Math.cos(angle) * (2 + Math.random() * 4),
-          vy: Math.sin(angle) * (2 + Math.random() * 4),
-          life: 30,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          life: 35, maxLife: 35,
           color: this.activePiece.def.color,
-          size: 2 + Math.random() * 3,
+          size: 3 + Math.random() * 4,
         });
       }
     }
-    this.shakeAmount = 6;
+    this.shakeAmount = 8;
+    this.flashAlpha = 0.3;
     this.lockPiece();
   }
 
@@ -190,10 +203,17 @@ export class GameScene extends Phaser.Scene {
       const nr = this.activePiece.row + r;
       const nc = this.activePiece.col + c;
       if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS) {
-        this.grid[nr][nc] = 1;
-        this.gridColors[nr][nc] = this.activePiece.def.color;
+        this.grid[nr][nc] = {
+          color: this.activePiece.def.color,
+          wobblePhase: Math.random() * Math.PI * 2,
+          wobbleAmp: 3 + Math.random() * 2,
+          glowPulse: Math.random() * Math.PI * 2,
+        };
       }
     }
+    // Snap animation
+    this.snapScale = 1.15;
+
     this.checkLines();
     this.spawnPiece();
     this.dropTimer = 0;
@@ -214,10 +234,10 @@ export class GameScene extends Phaser.Scene {
 
     this.combo += fullRows.length;
 
-    // Check color energy: if 3+ lines share same dominant color
+    // Color energy check: 3+ lines with same dominant color
     const colorCounts: Record<number, number> = {};
     for (const row of fullRows) {
-      const colors = this.gridColors[row].filter(c => c !== null) as number[];
+      const colors = this.grid[row].filter(c => c !== null).map(c => c!.color);
       const dominant = this.mode(colors);
       if (dominant !== null) {
         colorCounts[dominant] = (colorCounts[dominant] || 0) + 1;
@@ -229,75 +249,102 @@ export class GameScene extends Phaser.Scene {
       if (count >= 3) colorEnergy = true;
     }
 
-    // Spawn particles for cleared rows
+    // Spawn detonation particles for cleared rows
     for (const row of fullRows) {
       for (let c = 0; c < COLS; c++) {
+        const orb = this.grid[row][c];
         const px = this.offsetX + c * CELL + CELL / 2;
         const py = this.offsetY + row * CELL + CELL / 2;
-        const clr = this.gridColors[row][c] || 0xffffff;
-        for (let i = 0; i < 4; i++) {
+        const clr = orb?.color || 0xffffff;
+        // Explosion burst per orb
+        for (let i = 0; i < 8; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const speed = 2 + Math.random() * 5;
           this.particles.push({
             x: px, y: py,
-            vx: (Math.random() - 0.5) * 6,
-            vy: -2 - Math.random() * 4,
-            life: 40 + Math.random() * 20,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed - 2,
+            life: 45 + Math.random() * 25,
+            maxLife: 70,
             color: clr,
-            size: 2 + Math.random() * 2,
+            size: 3 + Math.random() * 3,
           });
+        }
+        // Energy arc particles (horizontal streaks)
+        if (colorEnergy) {
+          for (let i = 0; i < 4; i++) {
+            this.particles.push({
+              x: px, y: py,
+              vx: (Math.random() - 0.5) * 12,
+              vy: (Math.random() - 0.5) * 2,
+              life: 30, maxLife: 30,
+              color: 0xffffff,
+              size: 1.5 + Math.random() * 2,
+            });
+          }
         }
       }
     }
 
     if (colorEnergy) {
-      // Slow-mo effect
       this.slowMo = true;
-      this.slowMoTimer = 30;
-      this.shakeAmount = 4;
+      this.slowMoTimer = 35;
+      this.shakeAmount = 5;
+      this.flashAlpha = 0.4;
     }
 
     // Cosmic Chain: 5+ combo
     if (this.combo >= 5) {
-      // Wipe entire field!
       this.score += 5000 * this.level;
-      this.shakeAmount = 15;
+      this.shakeAmount = 18;
+      this.flashAlpha = 0.8;
 
-      // Massive explosion particles from center
+      // Massive cosmic explosion from center
       const cx = this.offsetX + (COLS * CELL) / 2;
       const cy = this.offsetY + (ROWS * CELL) / 2;
-      for (let i = 0; i < 100; i++) {
+      for (let i = 0; i < 150; i++) {
         const angle = Math.random() * Math.PI * 2;
-        const speed = 3 + Math.random() * 8;
+        const speed = 3 + Math.random() * 10;
         this.particles.push({
           x: cx, y: cy,
           vx: Math.cos(angle) * speed,
           vy: Math.sin(angle) * speed,
-          life: 60 + Math.random() * 40,
-          color: [0x00ffff, 0xff00ff, 0x00ff88, 0xffdd00][Math.floor(Math.random() * 4)],
-          size: 3 + Math.random() * 5,
+          life: 70 + Math.random() * 50,
+          maxLife: 120,
+          color: [0xffdd00, 0xff3344, 0x3388ff, 0xffffff][Math.floor(Math.random() * 4)],
+          size: 4 + Math.random() * 6,
         });
       }
 
-      // Clear entire field
+      // Black hole implosion ring
+      for (let i = 0; i < 60; i++) {
+        const angle = (i / 60) * Math.PI * 2;
+        const dist = 150 + Math.random() * 100;
+        this.particles.push({
+          x: cx + Math.cos(angle) * dist,
+          y: cy + Math.sin(angle) * dist,
+          vx: -Math.cos(angle) * 4,
+          vy: -Math.sin(angle) * 4,
+          life: 40, maxLife: 40,
+          color: 0xffffff,
+          size: 2 + Math.random() * 3,
+        });
+      }
+
       this.grid = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
-      this.gridColors = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
       this.combo = 0;
       this.slowMo = true;
-      this.slowMoTimer = 45;
+      this.slowMoTimer = 50;
     } else {
-      // Normal clear
       const points = fullRows.length * fullRows.length * 100 * this.level;
       this.score += points;
 
-      // Remove rows top to bottom
       for (const row of fullRows.sort((a, b) => a - b)) {
         this.grid.splice(row, 1);
-        this.gridColors.splice(row, 1);
         this.grid.unshift(Array(COLS).fill(null));
-        this.gridColors.unshift(Array(COLS).fill(null));
       }
     }
 
-    // Level up
     this.level = Math.floor(this.score / 2000) + 1;
     this.dropInterval = Math.max(100, 800 - (this.level - 1) * 60);
     this.emitHUD();
@@ -324,11 +371,26 @@ export class GameScene extends Phaser.Scene {
     }
 
     const dt = this.slowMo ? delta * 0.3 : delta;
+    this.globalTime += delta * 0.001;
 
-    // Slow-mo timer
     if (this.slowMo) {
       this.slowMoTimer--;
       if (this.slowMoTimer <= 0) this.slowMo = false;
+    }
+
+    // Bounce physics (spring)
+    this.bounceOffset += this.bounceVel;
+    this.bounceVel += -this.bounceOffset * 0.3; // spring
+    this.bounceVel *= 0.85; // damping
+    if (Math.abs(this.bounceOffset) < 0.05 && Math.abs(this.bounceVel) < 0.05) {
+      this.bounceOffset = 0;
+      this.bounceVel = 0;
+    }
+
+    // Snap scale decay
+    if (this.snapScale > 1) {
+      this.snapScale = 1 + (this.snapScale - 1) * 0.85;
+      if (this.snapScale < 1.005) this.snapScale = 1;
     }
 
     // Drop
@@ -346,21 +408,47 @@ export class GameScene extends Phaser.Scene {
     }
 
     // Shake decay
-    if (this.shakeAmount > 0) this.shakeAmount *= 0.9;
+    if (this.shakeAmount > 0) this.shakeAmount *= 0.88;
     if (this.shakeAmount < 0.1) this.shakeAmount = 0;
+
+    // Flash decay
+    if (this.flashAlpha > 0) this.flashAlpha *= 0.92;
+    if (this.flashAlpha < 0.01) this.flashAlpha = 0;
 
     // Particles
     this.particles = this.particles.filter(p => {
       p.x += p.vx;
       p.y += p.vy;
-      p.vy += 0.1;
+      p.vy += 0.08;
+      p.vx *= 0.99;
       p.life--;
       return p.life > 0;
     });
 
     this.nebulaTime += dt * 0.001;
-
     this.drawAll();
+  }
+
+  private drawOrb(g: Phaser.GameObjects.Graphics, cx: number, cy: number, radius: number, color: number, alpha: number, phase: number) {
+    // Outer glow
+    g.fillStyle(color, alpha * 0.15);
+    g.fillCircle(cx, cy, radius * 1.6);
+    g.fillStyle(color, alpha * 0.25);
+    g.fillCircle(cx, cy, radius * 1.3);
+
+    // Main orb body
+    g.fillStyle(color, alpha * 0.85);
+    g.fillCircle(cx, cy, radius);
+
+    // Liquid interior highlight
+    const hlX = cx - radius * 0.25;
+    const hlY = cy - radius * 0.3 + Math.sin(phase) * 1.5;
+    g.fillStyle(0xffffff, alpha * 0.35);
+    g.fillCircle(hlX, hlY, radius * 0.4);
+
+    // Small specular
+    g.fillStyle(0xffffff, alpha * 0.5);
+    g.fillCircle(cx - radius * 0.15, cy - radius * 0.35, radius * 0.15);
   }
 
   private drawAll() {
@@ -369,20 +457,19 @@ export class GameScene extends Phaser.Scene {
     const shakeX = this.shakeAmount ? (Math.random() - 0.5) * this.shakeAmount * 2 : 0;
     const shakeY = this.shakeAmount ? (Math.random() - 0.5) * this.shakeAmount * 2 : 0;
 
-    // Background
+    // === BACKGROUND ===
     this.gridGraphics.clear();
-    // Deep space gradient
-    this.gridGraphics.fillStyle(0x050510, 1);
+    this.gridGraphics.fillStyle(0x030812, 1);
     this.gridGraphics.fillRect(0, 0, w, h);
 
     // Nebula blobs
-    const nebAlpha = 0.08 + Math.sin(this.nebulaTime) * 0.03;
-    this.gridGraphics.fillStyle(0x4400aa, nebAlpha);
-    this.gridGraphics.fillCircle(w * 0.3 + Math.sin(this.nebulaTime * 0.7) * 40, h * 0.4, 200);
-    this.gridGraphics.fillStyle(0x0044aa, nebAlpha);
-    this.gridGraphics.fillCircle(w * 0.7 + Math.cos(this.nebulaTime * 0.5) * 30, h * 0.6, 180);
-    this.gridGraphics.fillStyle(0xaa0066, nebAlpha * 0.7);
-    this.gridGraphics.fillCircle(w * 0.5, h * 0.2 + Math.sin(this.nebulaTime * 0.9) * 20, 150);
+    const nebAlpha = 0.06 + Math.sin(this.nebulaTime) * 0.02;
+    this.gridGraphics.fillStyle(0x220066, nebAlpha);
+    this.gridGraphics.fillCircle(w * 0.3 + Math.sin(this.nebulaTime * 0.7) * 40, h * 0.4, 220);
+    this.gridGraphics.fillStyle(0x003366, nebAlpha);
+    this.gridGraphics.fillCircle(w * 0.7 + Math.cos(this.nebulaTime * 0.5) * 30, h * 0.6, 190);
+    this.gridGraphics.fillStyle(0x660033, nebAlpha * 0.6);
+    this.gridGraphics.fillCircle(w * 0.5, h * 0.2 + Math.sin(this.nebulaTime * 0.9) * 20, 160);
 
     // Stars
     for (const s of this.stars) {
@@ -397,11 +484,11 @@ export class GameScene extends Phaser.Scene {
     const oy = this.offsetY + shakeY;
 
     // Grid background
-    this.gridGraphics.fillStyle(0x0a0a20, 0.7);
+    this.gridGraphics.fillStyle(0x060c1a, 0.65);
     this.gridGraphics.fillRect(ox, oy, COLS * CELL, ROWS * CELL);
 
-    // Grid lines
-    this.gridGraphics.lineStyle(1, 0x222255, 0.3);
+    // Grid lines (subtle)
+    this.gridGraphics.lineStyle(1, 0x1a2244, 0.2);
     for (let r = 0; r <= ROWS; r++) {
       this.gridGraphics.lineBetween(ox, oy + r * CELL, ox + COLS * CELL, oy + r * CELL);
     }
@@ -410,30 +497,31 @@ export class GameScene extends Phaser.Scene {
     }
 
     // Grid border glow
-    this.gridGraphics.lineStyle(2, 0x4444aa, 0.6);
+    this.gridGraphics.lineStyle(2, 0x2244aa, 0.4);
     this.gridGraphics.strokeRect(ox, oy, COLS * CELL, ROWS * CELL);
 
-    // Placed blocks
+    // === PLACED ORBS ===
+    const orbRadius = CELL * 0.42;
     for (let r = 0; r < ROWS; r++) {
       for (let c = 0; c < COLS; c++) {
-        if (this.grid[r][c] !== null) {
-          const clr = this.gridColors[r][c] || 0xffffff;
-          this.gridGraphics.fillStyle(clr, 0.8);
-          this.gridGraphics.fillRect(ox + c * CELL + 1, oy + r * CELL + 1, CELL - 2, CELL - 2);
-          // Inner glow
-          this.gridGraphics.lineStyle(1, clr, 0.4);
-          this.gridGraphics.strokeRect(ox + c * CELL + 3, oy + r * CELL + 3, CELL - 6, CELL - 6);
+        const orb = this.grid[r][c];
+        if (orb) {
+          const wobble = Math.sin(this.globalTime * 2.5 + orb.wobblePhase) * orb.wobbleAmp * 0.3;
+          const px = ox + c * CELL + CELL / 2;
+          const py = oy + r * CELL + CELL / 2 + wobble;
+          const glowPulse = 0.85 + Math.sin(this.globalTime * 1.8 + orb.glowPulse) * 0.15;
+          this.drawOrb(this.gridGraphics, px, py, orbRadius * this.snapScale, orb.color, glowPulse, this.globalTime * 2 + orb.wobblePhase);
         }
       }
     }
 
-    // Active piece
+    // === ACTIVE PIECE ===
     this.pieceGraphics.clear();
     if (this.activePiece && !this.gameOver) {
       const cells = this.getCells(this.activePiece);
       const clr = this.activePiece.def.color;
 
-      // Ghost piece (drop preview)
+      // Ghost (drop preview)
       let ghostRow = this.activePiece.row;
       while (true) {
         const test = { ...this.activePiece, row: ghostRow + 1 };
@@ -442,43 +530,55 @@ export class GameScene extends Phaser.Scene {
       }
       if (ghostRow !== this.activePiece.row) {
         for (const [r, c] of cells) {
-          this.pieceGraphics.fillStyle(clr, 0.15);
-          this.pieceGraphics.fillRect(
-            ox + (this.activePiece.col + c) * CELL + 1,
-            oy + (ghostRow + r) * CELL + 1,
-            CELL - 2, CELL - 2
-          );
-          this.pieceGraphics.lineStyle(1, clr, 0.3);
-          this.pieceGraphics.strokeRect(
-            ox + (this.activePiece.col + c) * CELL + 1,
-            oy + (ghostRow + r) * CELL + 1,
-            CELL - 2, CELL - 2
-          );
+          const px = ox + (this.activePiece.col + c) * CELL + CELL / 2;
+          const py = oy + (ghostRow + r) * CELL + CELL / 2;
+          this.pieceGraphics.fillStyle(clr, 0.1);
+          this.pieceGraphics.fillCircle(px, py, orbRadius * 1.2);
+          this.pieceGraphics.lineStyle(1, clr, 0.2);
+          this.pieceGraphics.strokeCircle(px, py, orbRadius);
         }
       }
 
-      // Active piece with glow
+      // Active orbs with bounce
       for (const [r, c] of cells) {
-        const px = ox + (this.activePiece.col + c) * CELL;
-        const py = oy + (this.activePiece.row + r) * CELL;
-        // Outer glow
-        this.pieceGraphics.fillStyle(clr, 0.2);
-        this.pieceGraphics.fillRect(px - 2, py - 2, CELL + 4, CELL + 4);
-        // Block
-        this.pieceGraphics.fillStyle(clr, 0.9);
-        this.pieceGraphics.fillRect(px + 1, py + 1, CELL - 2, CELL - 2);
-        // Inner highlight
-        this.pieceGraphics.fillStyle(0xffffff, 0.15);
-        this.pieceGraphics.fillRect(px + 3, py + 3, CELL / 2 - 2, 3);
+        const px = ox + (this.activePiece.col + c) * CELL + CELL / 2 + this.bounceOffset;
+        const py = oy + (this.activePiece.row + r) * CELL + CELL / 2;
+        this.drawOrb(this.pieceGraphics, px, py, orbRadius, clr, 1, this.globalTime * 3);
+      }
+
+      // Connection lines between orbs (energy links)
+      if (cells.length > 1) {
+        this.pieceGraphics.lineStyle(1.5, clr, 0.3);
+        for (let i = 0; i < cells.length - 1; i++) {
+          const [r1, c1] = cells[i];
+          const [r2, c2] = cells[i + 1];
+          const x1 = ox + (this.activePiece.col + c1) * CELL + CELL / 2 + this.bounceOffset;
+          const y1 = oy + (this.activePiece.row + r1) * CELL + CELL / 2;
+          const x2 = ox + (this.activePiece.col + c2) * CELL + CELL / 2 + this.bounceOffset;
+          const y2 = oy + (this.activePiece.row + r2) * CELL + CELL / 2;
+          this.pieceGraphics.lineBetween(x1, y1, x2, y2);
+        }
       }
     }
 
-    // Particles
+    // === PARTICLES ===
     this.vfxGraphics.clear();
     for (const p of this.particles) {
-      const alpha = Math.min(1, p.life / 20);
+      const t = p.life / p.maxLife;
+      const alpha = Math.min(1, t * 2);
+      const sz = p.size * t;
+      // Glow
+      this.vfxGraphics.fillStyle(p.color, alpha * 0.3);
+      this.vfxGraphics.fillCircle(p.x + shakeX, p.y + shakeY, sz * 2);
+      // Core
       this.vfxGraphics.fillStyle(p.color, alpha);
-      this.vfxGraphics.fillCircle(p.x + shakeX, p.y + shakeY, p.size * (p.life / 40));
+      this.vfxGraphics.fillCircle(p.x + shakeX, p.y + shakeY, sz);
+    }
+
+    // === FLASH OVERLAY ===
+    if (this.flashAlpha > 0) {
+      this.vfxGraphics.fillStyle(0xffffff, this.flashAlpha);
+      this.vfxGraphics.fillRect(0, 0, w, h);
     }
   }
 }
