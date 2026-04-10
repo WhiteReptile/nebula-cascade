@@ -1,8 +1,14 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { gameEvents } from '../game/GameScene';
 import { PieceDef } from '../game/pieces';
+import { logMatch } from '@/lib/matchLogger';
+import DivisionBadge from './DivisionBadge';
+import { supabase } from '@/integrations/supabase/client';
+import type { Division } from '@/lib/divisionSystem';
 
 const GameHUD = () => {
+  const navigate = useNavigate();
   const [score, setScore] = useState(0);
   const [level, setLevel] = useState(1);
   const [combo, setCombo] = useState(0);
@@ -12,6 +18,26 @@ const GameHUD = () => {
   const [chainCombo, setChainCombo] = useState(0);
   const [chainVisible, setChainVisible] = useState(false);
   const [triColorActive, setTriColorActive] = useState(false);
+  const [playerDivision, setPlayerDivision] = useState<Division | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  // Check auth and load division
+  useEffect(() => {
+    const loadPlayer = async () => {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData?.user) return;
+      setIsLoggedIn(true);
+      const { data: player } = await supabase
+        .from('players')
+        .select('division')
+        .eq('user_id', userData.user.id)
+        .single();
+      if (player) setPlayerDivision(player.division as Division);
+    };
+    loadPlayer();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => loadPlayer());
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     const onHUD = (data: { score: number; level: number; combo: number }) => {
@@ -31,6 +57,9 @@ const GameHUD = () => {
     const onTriColor = () => {
       setTriColorActive(true);
     };
+    const onMatchEnd = (data: any) => {
+      logMatch(data).catch(console.error);
+    };
 
     gameEvents.on('hud', onHUD);
     gameEvents.on('nextPiece', onNext);
@@ -39,6 +68,7 @@ const GameHUD = () => {
     gameEvents.on('restart', onRestart);
     gameEvents.on('chainCombo', onChainCombo);
     gameEvents.on('triColor', onTriColor);
+    gameEvents.on('matchEnd', onMatchEnd);
 
     return () => {
       gameEvents.off('hud', onHUD);
@@ -48,6 +78,7 @@ const GameHUD = () => {
       gameEvents.off('restart', onRestart);
       gameEvents.off('chainCombo', onChainCombo);
       gameEvents.off('triColor', onTriColor);
+      gameEvents.off('matchEnd', onMatchEnd);
     };
   }, []);
 
@@ -90,6 +121,12 @@ const GameHUD = () => {
             <div className="text-xl font-bold text-red-300" style={{ textShadow: '0 0 10px #ff3344' }}>
               x{combo}
             </div>
+          </div>
+        )}
+        {playerDivision && (
+          <div className="rounded-lg border border-white/10 bg-black/60 px-4 py-3 backdrop-blur-sm">
+            <div className="text-[10px] uppercase tracking-widest text-white/40 mb-1">Division</div>
+            <DivisionBadge division={playerDivision} size="md" />
           </div>
         )}
       </div>
@@ -173,13 +210,25 @@ const GameHUD = () => {
             <div className="text-lg text-yellow-300 font-mono mb-6">
               Final Score: {gameOverScore.toLocaleString()}
             </div>
-            <button
-              onClick={handleRestart}
-              className="rounded-lg border border-yellow-500/50 bg-yellow-500/20 px-6 py-2 font-mono text-yellow-300 hover:bg-yellow-500/30 transition-colors"
-              style={{ textShadow: '0 0 8px #ffdd00' }}
-            >
-              RESTART
-            </button>
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={handleRestart}
+                className="rounded-lg border border-yellow-500/50 bg-yellow-500/20 px-6 py-2 font-mono text-yellow-300 hover:bg-yellow-500/30 transition-colors"
+                style={{ textShadow: '0 0 8px #ffdd00' }}
+              >
+                RESTART
+              </button>
+              <button
+                onClick={() => navigate('/leaderboard')}
+                className="rounded-lg border border-blue-500/50 bg-blue-500/20 px-6 py-2 font-mono text-blue-300 hover:bg-blue-500/30 transition-colors"
+                style={{ textShadow: '0 0 8px #3388ff' }}
+              >
+                LEADERBOARD
+              </button>
+            </div>
+            {!isLoggedIn && (
+              <div className="text-[10px] text-white/30 mt-3 font-mono">Sign in to track your scores</div>
+            )}
           </div>
         </div>
       )}

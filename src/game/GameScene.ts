@@ -49,6 +49,13 @@ export class GameScene extends Phaser.Scene {
   private chainStep = 0;        // current chain depth in resolveChains
   private chainResolving = false; // true while chain loop is active
   private gameOver = false;
+
+  // Match tracking for leaderboard
+  private matchStartedAt: Date = new Date();
+  private matchMaxCombo = 0;
+  private matchComboPoints = 0;
+  private matchOmniColorCount = 0;
+  private matchLinesCleared = 0;
   private paused = false;
   private gridGraphics!: Phaser.GameObjects.Graphics;
   private pieceGraphics!: Phaser.GameObjects.Graphics;
@@ -129,6 +136,11 @@ export class GameScene extends Phaser.Scene {
     this.fallSpeed = 0;
     this.fallAccum = 0;
     this.fallAge = 0;
+    this.matchStartedAt = new Date();
+    this.matchMaxCombo = 0;
+    this.matchComboPoints = 0;
+    this.matchOmniColorCount = 0;
+    this.matchLinesCleared = 0;
     this.nextPieceDef = randomOrbPiece();
     this.spawnPiece();
     this.emitHUD();
@@ -158,6 +170,15 @@ export class GameScene extends Phaser.Scene {
     if (!this.isValid(this.activePiece)) {
       this.gameOver = true;
       gameEvents.emit('gameover', this.score);
+      gameEvents.emit('matchEnd', {
+        score: this.score,
+        level: this.level,
+        maxCombo: this.matchMaxCombo,
+        comboPoints: this.matchComboPoints,
+        omniColorCount: this.matchOmniColorCount,
+        linesCleared: this.matchLinesCleared,
+        startedAt: this.matchStartedAt,
+      });
     }
     gameEvents.emit('nextPiece', this.nextPieceDef);
   }
@@ -292,6 +313,8 @@ export class GameScene extends Phaser.Scene {
       const baseScore = 200; // reduced from 800
       const chainScore = Math.min(Math.floor(baseScore * mult * this.level), 1000); // hard cap 1000
       this.score += chainScore;
+      this.matchComboPoints += chainScore;
+      this.matchMaxCombo = Math.max(this.matchMaxCombo, this.chainStep);
       this.blockImplosionVFX(blockResult.cells, blockResult.color, this.chainStep);
       this.reorganizeOrbs(blockResult.cells, blockResult.color);
       this.gravityCollapse();
@@ -311,6 +334,9 @@ export class GameScene extends Phaser.Scene {
       const baseScore = Math.min(triColorResult.cells.length * 30, 400); // reduced, capped base
       const chainScore = Math.min(Math.floor(baseScore * mult * this.level), 1000); // hard cap 1000
       this.score += chainScore;
+      this.matchComboPoints += chainScore;
+      this.matchMaxCombo = Math.max(this.matchMaxCombo, this.chainStep);
+      this.matchOmniColorCount++;
       this.triColorFusionVFX(triColorResult.cells, this.chainStep);
       // Reorganize like 4x4 — redistribute some orbs
       this.reorganizeOrbs(triColorResult.cells, triColorResult.dominantColor);
@@ -332,13 +358,18 @@ export class GameScene extends Phaser.Scene {
       if (lineResult.cosmicWipe) {
         // 5-line cosmic combo — wipe board (capped at 1000)
         this.score += Math.min(Math.floor(800 * mult * this.level), 1000);
+        this.matchComboPoints += Math.min(Math.floor(800 * mult * this.level), 1000);
+        this.matchMaxCombo = Math.max(this.matchMaxCombo, this.chainStep);
         this.cosmicWipeVFX(this.chainStep);
         this.grid = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
         this.combo = 0;
       } else {
-        const baseScore = lineResult.rows.length * 80; // linear, not squared
-        const chainScore = Math.min(Math.floor(baseScore * mult * this.level), 500); // cap at 500 for line clears
+        const baseScore = lineResult.rows.length * 80;
+        const chainScore = Math.min(Math.floor(baseScore * mult * this.level), 500);
         this.score += chainScore;
+        this.matchComboPoints += chainScore;
+        this.matchMaxCombo = Math.max(this.matchMaxCombo, this.chainStep);
+        this.matchLinesCleared += lineResult.rows.length;
         this.lineDestroyVFX(lineResult.rows, this.chainStep);
         // Remove rows
         const sorted = [...new Set(lineResult.rows)].sort((a, b) => a - b);
