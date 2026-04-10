@@ -54,6 +54,8 @@ export class GameScene extends Phaser.Scene {
   private pieceGraphics!: Phaser.GameObjects.Graphics;
   private vfxGraphics!: Phaser.GameObjects.Graphics;
   private stars: { x: number; y: number; speed: number; alpha: number }[] = [];
+  private shootingStars: { x: number; y: number; vx: number; vy: number; life: number; maxLife: number; len: number }[] = [];
+  private spacecraft: { x: number; y: number; vx: number; vy: number; size: number; type: number; rot: number }[] = [];
   private nebulaTime = 0;
   private offsetX = 0;
   private offsetY = 0;
@@ -444,13 +446,13 @@ export class GameScene extends Phaser.Scene {
             }
           }
         }
-        // Require 18+ orbs with at least 5 of each color
+        // Require 24+ orbs with at least 7 of each color
         const colorCounts = new Map<number, number>();
         for (const [cr2, cc2] of cluster) {
           const clr = this.grid[cr2][cc2]!.color;
           colorCounts.set(clr, (colorCounts.get(clr) || 0) + 1);
         }
-        if (cluster.length >= 18 && colorSet.size === 3 && allColors.every(clr => (colorCounts.get(clr) || 0) >= 5)) {
+        if (cluster.length >= 24 && colorSet.size === 3 && allColors.every(clr => (colorCounts.get(clr) || 0) >= 7)) {
           return { cells: cluster, dominantColor: YELLOW };
         }
       }
@@ -913,10 +915,48 @@ export class GameScene extends Phaser.Scene {
     this.particles = this.particles.filter(p => {
       p.x += p.vx;
       p.y += p.vy;
-      p.vy += 0.06; // lighter particle gravity too
+      p.vy += 0.06;
       p.vx *= 0.99;
       p.life--;
       return p.life > 0;
+    });
+
+    // Shooting stars — spawn occasionally
+    const sw = this.scale.width;
+    const sh = this.scale.height;
+    if (Math.random() < 0.008) {
+      const startX = Math.random() * sw;
+      const angle = Math.PI * 0.6 + Math.random() * 0.4;
+      const speed = 4 + Math.random() * 6;
+      this.shootingStars.push({
+        x: startX, y: -10,
+        vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+        life: 60 + Math.random() * 40, maxLife: 60 + Math.random() * 40,
+        len: 30 + Math.random() * 50,
+      });
+    }
+    this.shootingStars = this.shootingStars.filter(s => {
+      s.x += s.vx; s.y += s.vy;
+      s.life--;
+      return s.life > 0 && s.y < sh + 20;
+    });
+
+    // Spacecraft — spawn rarely
+    if (Math.random() < 0.003 && this.spacecraft.length < 3) {
+      const fromLeft = Math.random() > 0.5;
+      this.spacecraft.push({
+        x: fromLeft ? -30 : sw + 30,
+        y: 40 + Math.random() * (sh - 80),
+        vx: (fromLeft ? 1 : -1) * (0.8 + Math.random() * 1.5),
+        vy: (Math.random() - 0.5) * 0.3,
+        size: 6 + Math.random() * 8,
+        type: Math.floor(Math.random() * 3),
+        rot: fromLeft ? 0 : Math.PI,
+      });
+    }
+    this.spacecraft = this.spacecraft.filter(s => {
+      s.x += s.vx; s.y += s.vy;
+      return s.x > -60 && s.x < sw + 60;
     });
 
     this.nebulaTime += dt * 0.001;
@@ -999,23 +1039,107 @@ export class GameScene extends Phaser.Scene {
       }
     }
 
+    // === SHOOTING STARS ===
+    for (const ss of this.shootingStars) {
+      const t = ss.life / ss.maxLife;
+      const tailX = ss.x - (ss.vx / Math.sqrt(ss.vx * ss.vx + ss.vy * ss.vy)) * ss.len;
+      const tailY = ss.y - (ss.vy / Math.sqrt(ss.vx * ss.vx + ss.vy * ss.vy)) * ss.len;
+      this.gridGraphics.lineStyle(2.5, 0xffffff, t * 0.9);
+      this.gridGraphics.lineBetween(ss.x, ss.y, tailX, tailY);
+      this.gridGraphics.lineStyle(1.5, 0xaaddff, t * 0.5);
+      this.gridGraphics.lineBetween(ss.x, ss.y, tailX, tailY);
+      this.gridGraphics.fillStyle(0xffffff, t);
+      this.gridGraphics.fillCircle(ss.x, ss.y, 2.5);
+      this.gridGraphics.fillStyle(0xaaddff, t * 0.3);
+      this.gridGraphics.fillCircle(ss.x, ss.y, 5);
+    }
+
+    // === SPACECRAFT ===
+    for (const sc of this.spacecraft) {
+      const g = this.gridGraphics;
+      const sz = sc.size;
+      const dir = sc.vx > 0 ? 1 : -1;
+      // Body
+      g.fillStyle(0x8899aa, 0.7);
+      g.fillEllipse(sc.x, sc.y, sz * 2.5, sz * 0.8);
+      // Cockpit
+      g.fillStyle(0x66ccff, 0.8);
+      g.fillCircle(sc.x + dir * sz * 0.8, sc.y, sz * 0.35);
+      // Wings
+      g.fillStyle(0x556677, 0.6);
+      g.fillTriangle(
+        sc.x - dir * sz * 0.5, sc.y,
+        sc.x - dir * sz * 1.2, sc.y - sz * 0.9,
+        sc.x - dir * sz * 1.2, sc.y
+      );
+      g.fillTriangle(
+        sc.x - dir * sz * 0.5, sc.y,
+        sc.x - dir * sz * 1.2, sc.y + sz * 0.9,
+        sc.x - dir * sz * 1.2, sc.y
+      );
+      // Engine glow
+      g.fillStyle(0xff6633, 0.6);
+      g.fillCircle(sc.x - dir * sz * 1.1, sc.y, sz * 0.25);
+      g.fillStyle(0xffaa44, 0.3);
+      g.fillCircle(sc.x - dir * sz * 1.4, sc.y, sz * 0.4);
+    }
+
     const ox = this.offsetX + shakeX;
     const oy = this.offsetY + shakeY;
+    const gridW = COLS * CELL;
+    const gridH = ROWS * CELL;
 
     // Grid background
     this.gridGraphics.fillStyle(0x060c1a, 0.65);
-    this.gridGraphics.fillRect(ox, oy, COLS * CELL, ROWS * CELL);
+    this.gridGraphics.fillRect(ox, oy, gridW, gridH);
 
     this.gridGraphics.lineStyle(1, 0x1a2244, 0.2);
     for (let r = 0; r <= ROWS; r++) {
-      this.gridGraphics.lineBetween(ox, oy + r * CELL, ox + COLS * CELL, oy + r * CELL);
+      this.gridGraphics.lineBetween(ox, oy + r * CELL, ox + gridW, oy + r * CELL);
     }
     for (let c = 0; c <= COLS; c++) {
-      this.gridGraphics.lineBetween(ox + c * CELL, oy, ox + c * CELL, oy + ROWS * CELL);
+      this.gridGraphics.lineBetween(ox + c * CELL, oy, ox + c * CELL, oy + gridH);
     }
 
-    this.gridGraphics.lineStyle(2, 0x2244aa, 0.4);
-    this.gridGraphics.strokeRect(ox, oy, COLS * CELL, ROWS * CELL);
+    // === ASTEROID ROCK BORDER ===
+    const bw = 5; // border width
+    const rockColors = [0x4a3b2a, 0x5c4a38, 0x3d3028, 0x6b5a48, 0x554433];
+    // Draw chunky asteroid rock segments along borders
+    const segSize = 12;
+    // Use a seeded pseudo-random based on position for consistent rocks
+    for (let side = 0; side < 4; side++) {
+      const isHoriz = side < 2;
+      const len = isHoriz ? gridW : gridH;
+      const segments = Math.ceil(len / segSize);
+      for (let i = 0; i < segments; i++) {
+        const rockClr = rockColors[(i * 7 + side * 13) % rockColors.length];
+        const variation = Math.sin(i * 3.7 + side * 2.1) * 3;
+        const variation2 = Math.cos(i * 2.3 + side * 5.3) * 2;
+        let rx: number, ry: number, rw: number, rh: number;
+        if (side === 0) { // top
+          rx = ox + i * segSize; ry = oy - bw + variation; rw = segSize + 1; rh = bw + 3 + Math.abs(variation2);
+        } else if (side === 1) { // bottom
+          rx = ox + i * segSize; ry = oy + gridH - 1 + variation; rw = segSize + 1; rh = bw + 3 + Math.abs(variation2);
+        } else if (side === 2) { // left
+          rx = ox - bw + variation; ry = oy + i * segSize; rw = bw + 3 + Math.abs(variation2); rh = segSize + 1;
+        } else { // right
+          rx = ox + gridW - 1 + variation; ry = oy + i * segSize; rw = bw + 3 + Math.abs(variation2); rh = segSize + 1;
+        }
+        this.gridGraphics.fillStyle(rockClr, 0.85);
+        this.gridGraphics.fillRect(rx, ry, rw, rh);
+        // Rock texture — small bumps
+        const bumpClr = rockColors[(i * 3 + side * 7 + 2) % rockColors.length];
+        this.gridGraphics.fillStyle(bumpClr, 0.5);
+        this.gridGraphics.fillCircle(rx + rw * 0.3, ry + rh * 0.4, 2 + Math.abs(variation) * 0.3);
+      }
+    }
+    // Corner rocks (larger chunks)
+    for (const [cx, cy] of [[ox, oy], [ox + gridW, oy], [ox, oy + gridH], [ox + gridW, oy + gridH]] as [number, number][]) {
+      this.gridGraphics.fillStyle(0x4a3b2a, 0.9);
+      this.gridGraphics.fillCircle(cx, cy, 8);
+      this.gridGraphics.fillStyle(0x6b5a48, 0.6);
+      this.gridGraphics.fillCircle(cx + 2, cy - 1, 5);
+    }
 
     // === PLACED ORBS ===
     const orbRadius = CELL * 0.42;
