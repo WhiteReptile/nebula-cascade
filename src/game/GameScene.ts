@@ -461,9 +461,9 @@ export class GameScene extends Phaser.Scene {
           const j2 = this.fallingOrbs[i + 1] || { dx: 0, dy: 0 };
           this.pieceGraphics.lineBetween(
             ox + (this.activePiece.col + c1) * CELL + CELL / 2 + this.bounceOffset + j1.dx,
-            oy + (this.activePiece.row + r1) * CELL + CELL / 2 + j1.dy,
+            oy + (this.activePiece.row + r1) * CELL + CELL / 2 + visualYOffset + j1.dy,
             ox + (this.activePiece.col + c2) * CELL + CELL / 2 + this.bounceOffset + j2.dx,
-            oy + (this.activePiece.row + r2) * CELL + CELL / 2 + j2.dy,
+            oy + (this.activePiece.row + r2) * CELL + CELL / 2 + visualYOffset + j2.dy,
           );
         }
       }
