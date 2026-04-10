@@ -37,6 +37,11 @@ export class GameScene extends Phaser.Scene {
   private nextPieceDef: PieceDef | null = null;
   private dropTimer = 0;
   private dropInterval = 800;
+  // Gravity-based free fall
+  private fallSpeed = 0;        // current fall speed in pixels
+  private fallAccum = 0;        // accumulated sub-cell fall distance
+  private readonly GRAVITY = 0.04; // acceleration per frame (cells/frame^2)
+  private readonly MAX_FALL_SPEED = 1.2; // max cells per frame
   private score = 0;
   private level = 1;
   private combo = 0;
@@ -120,6 +125,8 @@ export class GameScene extends Phaser.Scene {
     this.flashAlpha = 0;
     this.bounceOffset = 0;
     this.bounceVel = 0;
+    this.fallSpeed = 0;
+    this.fallAccum = 0;
     this.nextPieceDef = randomOrbPiece();
     this.spawnPiece();
     this.emitHUD();
@@ -142,6 +149,8 @@ export class GameScene extends Phaser.Scene {
     this.nextPieceDef = randomOrbPiece();
     this.activePiece = { def, rotation: 0, row: 0, col: Math.floor(COLS / 2) - 1 };
     this.snapScale = 1;
+    this.fallSpeed = 0;
+    this.fallAccum = 0;
     this.initJitter(def.shapes[0].length);
     if (!this.isValid(this.activePiece)) {
       this.gameOver = true;
@@ -477,16 +486,23 @@ export class GameScene extends Phaser.Scene {
       }
     }
 
-    // Drop
-    this.dropTimer += dt;
-    if (this.dropTimer >= this.dropInterval) {
-      this.dropTimer = 0;
-      if (this.activePiece) {
+    // Gravity-based free fall
+    if (this.activePiece) {
+      // Accelerate with gravity, capped at max speed
+      const levelBoost = 1 + (this.level - 1) * 0.15;
+      this.fallSpeed = Math.min(this.fallSpeed + this.GRAVITY * levelBoost, this.MAX_FALL_SPEED);
+      this.fallAccum += this.fallSpeed;
+
+      // Move down by whole cells when accumulated enough
+      while (this.fallAccum >= 1) {
+        this.fallAccum -= 1;
         const test = { ...this.activePiece, row: this.activePiece.row + 1 };
         if (this.isValid(test)) {
           this.activePiece = test;
         } else {
+          this.fallAccum = 0;
           this.lockPiece();
+          break;
         }
       }
     }

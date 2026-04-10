@@ -12,7 +12,7 @@ const COLORS = [
   { color: 0x3388ff, colorCSS: '#3388ff' }, // Blue
 ];
 
-// All formations have 3+ orbs — no singles or doubles
+// All formations are fully connected (each orb adjacent to at least one other), minimum 3 orbs
 const FORMATIONS: { name: string; shapes: [number, number][][] }[] = [
   {
     name: 'Triple Line',
@@ -33,21 +33,39 @@ const FORMATIONS: { name: string; shapes: [number, number][][] }[] = [
     ],
   },
   {
-    name: 'Split Trio',
-    shapes: [
-      [[0,0],[0,1],[0,3]],
-      [[0,0],[1,0],[3,0]],
-      [[0,0],[0,2],[0,3]],
-      [[0,0],[2,0],[3,0]],
-    ],
-  },
-  {
     name: 'Soft Hook',
     shapes: [
       [[0,0],[1,0],[1,1]],
       [[0,0],[0,1],[1,0]],
       [[0,0],[0,1],[1,1]],
       [[0,0],[1,0],[1,-1]],
+    ],
+  },
+  {
+    name: 'Flat Four',
+    shapes: [
+      [[0,0],[0,1],[0,2],[0,3]],
+      [[0,0],[1,0],[2,0],[3,0]],
+      [[0,0],[0,1],[0,2],[0,3]],
+      [[0,0],[1,0],[2,0],[3,0]],
+    ],
+  },
+  {
+    name: 'Soft L',
+    shapes: [
+      [[0,0],[1,0],[2,0],[2,1]],
+      [[0,0],[0,1],[0,2],[1,0]],
+      [[0,0],[0,1],[1,1],[2,1]],
+      [[0,0],[0,1],[0,2],[1,2]],  // mirror
+    ],
+  },
+  {
+    name: 'Compact Cluster',
+    shapes: [
+      [[0,0],[0,1],[1,0],[1,1]],
+      [[0,0],[0,1],[1,0],[1,1]],
+      [[0,0],[0,1],[1,0],[1,1]],
+      [[0,0],[0,1],[1,0],[1,1]],
     ],
   },
   {
@@ -60,21 +78,12 @@ const FORMATIONS: { name: string; shapes: [number, number][][] }[] = [
     ],
   },
   {
-    name: 'Zigzag',
+    name: 'Gentle Arc 5',
     shapes: [
-      [[0,0],[0,1],[1,1],[1,2]],
-      [[0,0],[1,0],[1,-1],[2,-1]],
-      [[0,0],[0,1],[1,1],[1,2]],
-      [[0,0],[1,0],[1,-1],[2,-1]],
-    ],
-  },
-  {
-    name: 'Flat Four',
-    shapes: [
-      [[0,0],[0,1],[0,2],[0,3]],
-      [[0,0],[1,0],[2,0],[3,0]],
-      [[0,0],[0,1],[0,2],[0,3]],
-      [[0,0],[1,0],[2,0],[3,0]],
+      [[0,0],[0,1],[0,2],[0,3],[1,3]],
+      [[0,0],[1,0],[2,0],[3,0],[3,-1]],
+      [[0,0],[1,0],[1,1],[1,2],[1,3]],
+      [[0,0],[0,1],[1,0],[2,0],[3,0]],
     ],
   },
 ];
@@ -89,9 +98,22 @@ export const PIECES: PieceDef[] = FORMATIONS.map(f => ({
   shapes: f.shapes,
 }));
 
+// Color bias: 30% more likely to repeat recent color
+let lastColorIndex = -1;
+
 export function randomOrbPiece(): PieceDef {
   const formation = FORMATIONS[Math.floor(Math.random() * FORMATIONS.length)];
-  const clr = COLORS[Math.floor(Math.random() * COLORS.length)];
+
+  let colorIdx: number;
+  if (lastColorIndex >= 0 && Math.random() < 0.45) {
+    // 45% chance to repeat last color (30% boost over uniform 33%)
+    colorIdx = lastColorIndex;
+  } else {
+    colorIdx = Math.floor(Math.random() * COLORS.length);
+  }
+  lastColorIndex = colorIdx;
+  const clr = COLORS[colorIdx];
+
   return {
     name: formation.name,
     color: clr.color,
