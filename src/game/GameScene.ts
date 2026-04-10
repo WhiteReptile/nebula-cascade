@@ -39,8 +39,8 @@ export class GameScene extends Phaser.Scene {
   // Moon gravity fall system
   private fallSpeed = 0;
   private fallAccum = 0;
-  private readonly GRAVITY = 0.012;       // moon-like: ~1/3 of previous
-  private readonly MAX_FALL_SPEED = 0.55;  // slower terminal velocity
+  private readonly GRAVITY = 0.003;        // true moon gravity — very slow acceleration
+  private readonly MAX_FALL_SPEED = 0.18;  // much slower terminal velocity
   private fallAge = 0;                     // frames since spawn — drives looseness
 
   private score = 0;
