@@ -170,6 +170,15 @@ export class GameScene extends Phaser.Scene {
     if (!this.isValid(this.activePiece)) {
       this.gameOver = true;
       gameEvents.emit('gameover', this.score);
+      gameEvents.emit('matchEnd', {
+        score: this.score,
+        level: this.level,
+        maxCombo: this.matchMaxCombo,
+        comboPoints: this.matchComboPoints,
+        omniColorCount: this.matchOmniColorCount,
+        linesCleared: this.matchLinesCleared,
+        startedAt: this.matchStartedAt,
+      });
     }
     gameEvents.emit('nextPiece', this.nextPieceDef);
   }
