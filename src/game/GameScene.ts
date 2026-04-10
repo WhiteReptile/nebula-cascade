@@ -444,13 +444,13 @@ export class GameScene extends Phaser.Scene {
             }
           }
         }
-        // Require 12+ orbs with at least 3 of each color
+        // Require 18+ orbs with at least 5 of each color
         const colorCounts = new Map<number, number>();
         for (const [cr2, cc2] of cluster) {
           const clr = this.grid[cr2][cc2]!.color;
           colorCounts.set(clr, (colorCounts.get(clr) || 0) + 1);
         }
-        if (cluster.length >= 12 && colorSet.size === 3 && allColors.every(clr => (colorCounts.get(clr) || 0) >= 3)) {
+        if (cluster.length >= 18 && colorSet.size === 3 && allColors.every(clr => (colorCounts.get(clr) || 0) >= 5)) {
           return { cells: cluster, dominantColor: YELLOW };
         }
       }
@@ -924,18 +924,26 @@ export class GameScene extends Phaser.Scene {
   }
 
   private drawOrb(g: Phaser.GameObjects.Graphics, cx: number, cy: number, radius: number, color: number, alpha: number, phase: number) {
-    g.fillStyle(color, alpha * 0.15);
-    g.fillCircle(cx, cy, radius * 1.6);
-    g.fillStyle(color, alpha * 0.25);
-    g.fillCircle(cx, cy, radius * 1.3);
-    g.fillStyle(color, alpha * 0.85);
+    // Outer bloom glow — brighter and wider
+    g.fillStyle(color, alpha * 0.12);
+    g.fillCircle(cx, cy, radius * 2.2);
+    g.fillStyle(color, alpha * 0.22);
+    g.fillCircle(cx, cy, radius * 1.7);
+    g.fillStyle(color, alpha * 0.35);
+    g.fillCircle(cx, cy, radius * 1.35);
+    // Core — vivid
+    g.fillStyle(color, alpha * 0.95);
     g.fillCircle(cx, cy, radius);
+    // Inner bright core
+    g.fillStyle(0xffffff, alpha * 0.18);
+    g.fillCircle(cx, cy, radius * 0.55);
+    // Specular highlights
     const hlX = cx - radius * 0.25;
     const hlY = cy - radius * 0.3 + Math.sin(phase) * 1.5;
-    g.fillStyle(0xffffff, alpha * 0.35);
-    g.fillCircle(hlX, hlY, radius * 0.4);
     g.fillStyle(0xffffff, alpha * 0.5);
-    g.fillCircle(cx - radius * 0.15, cy - radius * 0.35, radius * 0.15);
+    g.fillCircle(hlX, hlY, radius * 0.4);
+    g.fillStyle(0xffffff, alpha * 0.65);
+    g.fillCircle(cx - radius * 0.15, cy - radius * 0.35, radius * 0.18);
   }
 
   private drawAll() {
@@ -946,23 +954,49 @@ export class GameScene extends Phaser.Scene {
 
     // === BACKGROUND ===
     this.gridGraphics.clear();
-    this.gridGraphics.fillStyle(0x030812, 1);
+    this.gridGraphics.fillStyle(0x020510, 1);
     this.gridGraphics.fillRect(0, 0, w, h);
 
-    const nebAlpha = 0.06 + Math.sin(this.nebulaTime) * 0.02;
+    // Deep space nebula clouds — richer and more varied
+    const nebAlpha = 0.08 + Math.sin(this.nebulaTime) * 0.03;
     this.gridGraphics.fillStyle(0x220066, nebAlpha);
-    this.gridGraphics.fillCircle(w * 0.3 + Math.sin(this.nebulaTime * 0.7) * 40, h * 0.4, 220);
-    this.gridGraphics.fillStyle(0x003366, nebAlpha);
-    this.gridGraphics.fillCircle(w * 0.7 + Math.cos(this.nebulaTime * 0.5) * 30, h * 0.6, 190);
-    this.gridGraphics.fillStyle(0x660033, nebAlpha * 0.6);
-    this.gridGraphics.fillCircle(w * 0.5, h * 0.2 + Math.sin(this.nebulaTime * 0.9) * 20, 160);
+    this.gridGraphics.fillCircle(w * 0.3 + Math.sin(this.nebulaTime * 0.7) * 40, h * 0.4, 260);
+    this.gridGraphics.fillStyle(0x003366, nebAlpha * 1.2);
+    this.gridGraphics.fillCircle(w * 0.7 + Math.cos(this.nebulaTime * 0.5) * 30, h * 0.6, 230);
+    this.gridGraphics.fillStyle(0x660033, nebAlpha * 0.8);
+    this.gridGraphics.fillCircle(w * 0.5, h * 0.2 + Math.sin(this.nebulaTime * 0.9) * 20, 200);
+    // Extra nebula layers
+    this.gridGraphics.fillStyle(0x110044, nebAlpha * 0.5);
+    this.gridGraphics.fillCircle(w * 0.15 + Math.cos(this.nebulaTime * 0.3) * 20, h * 0.75, 180);
+    this.gridGraphics.fillStyle(0x002244, nebAlpha * 0.6);
+    this.gridGraphics.fillCircle(w * 0.85 + Math.sin(this.nebulaTime * 0.4) * 25, h * 0.3, 170);
+    this.gridGraphics.fillStyle(0x440022, nebAlpha * 0.35);
+    this.gridGraphics.fillCircle(w * 0.6 + Math.sin(this.nebulaTime * 0.6) * 35, h * 0.85, 150);
 
+    // Distant galaxy spirals (subtle ellipses)
+    const gAlpha = 0.04 + Math.sin(this.nebulaTime * 0.2) * 0.015;
+    this.gridGraphics.fillStyle(0x8866cc, gAlpha);
+    this.gridGraphics.fillEllipse(w * 0.12, h * 0.15, 60, 25);
+    this.gridGraphics.fillStyle(0x6688aa, gAlpha * 0.8);
+    this.gridGraphics.fillEllipse(w * 0.88, h * 0.8, 45, 18);
+    this.gridGraphics.fillStyle(0xaa5577, gAlpha * 0.6);
+    this.gridGraphics.fillEllipse(w * 0.4, h * 0.92, 50, 20);
+
+    // Stars — varied sizes and colors
     for (const s of this.stars) {
       s.y += s.speed;
       if (s.y > h) { s.y = 0; s.x = Math.random() * w; }
       const twinkle = 0.5 + Math.sin(this.nebulaTime * 3 + s.x) * 0.5;
-      this.gridGraphics.fillStyle(0xffffff, s.alpha * twinkle);
-      this.gridGraphics.fillCircle(s.x, s.y, 1);
+      // Some stars have a warm or cool tint
+      const starColor = s.speed > 0.7 ? 0xaaccff : (s.speed > 0.5 ? 0xffeedd : 0xffffff);
+      const starSize = s.speed > 0.7 ? 1.5 : 1;
+      this.gridGraphics.fillStyle(starColor, s.alpha * twinkle);
+      this.gridGraphics.fillCircle(s.x, s.y, starSize);
+      // Bright stars get a subtle glow
+      if (s.speed > 0.7 && twinkle > 0.8) {
+        this.gridGraphics.fillStyle(starColor, s.alpha * twinkle * 0.15);
+        this.gridGraphics.fillCircle(s.x, s.y, 4);
+      }
     }
 
     const ox = this.offsetX + shakeX;
