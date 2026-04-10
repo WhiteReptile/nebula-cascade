@@ -123,6 +123,12 @@ const GameHUD = () => {
             </div>
           </div>
         )}
+        {playerDivision && (
+          <div className="rounded-lg border border-white/10 bg-black/60 px-4 py-3 backdrop-blur-sm">
+            <div className="text-[10px] uppercase tracking-widest text-white/40 mb-1">Division</div>
+            <DivisionBadge division={playerDivision} size="md" />
+          </div>
+        )}
       </div>
 
       {/* Right panel - Next piece */}
@@ -204,13 +210,25 @@ const GameHUD = () => {
             <div className="text-lg text-yellow-300 font-mono mb-6">
               Final Score: {gameOverScore.toLocaleString()}
             </div>
-            <button
-              onClick={handleRestart}
-              className="rounded-lg border border-yellow-500/50 bg-yellow-500/20 px-6 py-2 font-mono text-yellow-300 hover:bg-yellow-500/30 transition-colors"
-              style={{ textShadow: '0 0 8px #ffdd00' }}
-            >
-              RESTART
-            </button>
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={handleRestart}
+                className="rounded-lg border border-yellow-500/50 bg-yellow-500/20 px-6 py-2 font-mono text-yellow-300 hover:bg-yellow-500/30 transition-colors"
+                style={{ textShadow: '0 0 8px #ffdd00' }}
+              >
+                RESTART
+              </button>
+              <button
+                onClick={() => navigate('/leaderboard')}
+                className="rounded-lg border border-blue-500/50 bg-blue-500/20 px-6 py-2 font-mono text-blue-300 hover:bg-blue-500/30 transition-colors"
+                style={{ textShadow: '0 0 8px #3388ff' }}
+              >
+                LEADERBOARD
+              </button>
+            </div>
+            {!isLoggedIn && (
+              <div className="text-[10px] text-white/30 mt-3 font-mono">Sign in to track your scores</div>
+            )}
           </div>
         </div>
       )}
