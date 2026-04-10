@@ -11,6 +11,7 @@ const GameHUD = () => {
   const [paused, setPaused] = useState(false);
   const [chainCombo, setChainCombo] = useState(0);
   const [chainVisible, setChainVisible] = useState(false);
+  const [triColorActive, setTriColorActive] = useState(false);
 
   useEffect(() => {
     const onHUD = (data: { score: number; level: number; combo: number }) => {

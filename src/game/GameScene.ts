@@ -299,7 +299,26 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    // 2. Check 3-line same-color clears
+    // 2. Check tri-color combos
+    const triColorResult = this.findTriColorMatch();
+    if (triColorResult) {
+      foundMatch = true;
+      this.chainStep++;
+      const mult = this.getChainMultiplier(this.chainStep);
+      const baseScore = triColorResult.cells.length * 150; // higher than single-color
+      this.score += Math.floor(baseScore * mult * this.level);
+      this.triColorFusionVFX(triColorResult.cells, this.chainStep);
+      // Reorganize like 4x4 — redistribute some orbs
+      this.reorganizeOrbs(triColorResult.cells, triColorResult.dominantColor);
+      this.gravityCollapse();
+      gameEvents.emit('chainCombo', this.chainStep);
+      gameEvents.emit('triColor', this.chainStep);
+      this.emitHUD();
+      this.time.delayedCall(450 + this.chainStep * 50, () => this.resolveChains());
+      return;
+    }
+
+    // 3. Check 3-line same-color clears
     const lineResult = this.findLineMatch();
     if (lineResult) {
       foundMatch = true;
