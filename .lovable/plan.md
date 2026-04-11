@@ -1,37 +1,70 @@
 
 
-# Fix In-Game HUD: Larger Panels, Centered Board, Desktop-First
+# Reorganize & Clean Up the Codebase
 
-## Problem
-The game was designed with small panel sizes (10px labels, 72px next-piece preview) and the board is not centered — the Phaser canvas fills the container while HUD panels are pinned to edges with tiny fixed offsets (`left-4`, `right-4`). This was not specifically mobile-targeted, but the panels are simply undersized for desktop.
+## Overview
+Restructure the `src/components/` and `src/game/` directories into clear, logical folders so any developer (or Lovable) can navigate the project easily. No functional changes — purely organizational.
 
-## Plan
+## Current State
+Everything in `src/components/` is flat: MainMenu, GameHUD, CosmicGame, DivisionBadge, WalletConnect, NavLink all sit alongside the `ui/` folder. Game logic is already well-structured under `src/game/`.
 
-### 1. Restructure layout to center the board (`Index.tsx`)
-- Replace the current stacked `<CosmicGame /><GameHUD />` with a **3-column flexbox** layout
-- Left column: Score, Level, Combo, Division panels
-- Center column: `<CosmicGame />` with a fixed max-width container
-- Right column: Next piece, Controls panels
-- This naturally centers the board between balanced side panels
+## Proposed Structure
 
-### 2. Enlarge all HUD panels (`GameHUD.tsx`)
-- **Score panel**: label `text-[10px]` → `text-sm`, value `text-2xl` → `text-4xl`, padding `px-4 py-3` → `px-6 py-5`
-- **Level panel**: value `text-xl` → `text-3xl`, same label/padding bump
-- **Combo panel**: same scaling as Level
-- **Next piece preview**: SVG from 72×72 → 120×120, orb radii scaled up proportionally (spacing from 18 → 28 per cell)
-- **Controls panel**: label `text-[9px]` → `text-sm`, body `text-[10px]` → `text-base`, padding `px-3 py-2` → `px-5 py-4`
-- All panels get `min-w-[180px]` and stronger borders/glow for more visual personality
+```text
+src/
+├── components/
+│   ├── game/                    # Game-specific UI
+│   │   ├── CosmicGame.tsx       # Phaser wrapper
+│   │   ├── GameHUD.tsx          # In-game HUD overlay
+│   │   └── DivisionBadge.tsx    # Division rank badge
+│   ├── menu/                    # Main menu
+│   │   └── MainMenu.tsx         # Start screen
+│   ├── wallet/                  # Wallet-related UI
+│   │   └── WalletConnect.tsx    # Wallet connection panel
+│   ├── shared/                  # Reusable non-shadcn components
+│   │   └── NavLink.tsx          # Router NavLink wrapper
+│   └── ui/                     # shadcn components (untouched)
+├── game/                        # Phaser game engine (untouched)
+│   ├── logic/
+│   ├── rendering/
+│   ├── GameScene.ts
+│   ├── events.ts
+│   ├── pieces.ts
+│   └── types.ts
+├── hooks/                       # (untouched)
+├── lib/                         # (untouched)
+├── pages/                       # (untouched)
+└── integrations/                # (untouched)
+```
 
-### 3. Add personality to the Next piece box
-- Larger box with a subtle animated border glow (pulsing cyan/yellow)
-- Add a faint radial gradient backdrop behind the orb preview
-- Increase orb preview size so the piece is clearly visible
+## Changes
 
-### 4. Keep overlays as absolute (Game Over, Pause, Chain, Title)
-- These remain positioned over the full viewport — no change to their centering logic
+### 1. Move component files into subfolders
+- `CosmicGame.tsx`, `GameHUD.tsx`, `DivisionBadge.tsx` → `components/game/`
+- `MainMenu.tsx` → `components/menu/`
+- `WalletConnect.tsx` → `components/wallet/`
+- `NavLink.tsx` → `components/shared/`
 
-### 5. Files changed
-- **`src/pages/Index.tsx`** — 3-column flex layout
-- **`src/components/GameHUD.tsx`** — split into left/right panel sections rendered in the flex columns + overlay layer; all panels enlarged
-- **No changes** to `MainMenu.tsx`, `CosmicGame.tsx`, or game logic
+### 2. Update all imports
+- `src/pages/Index.tsx` — update paths to `../components/game/CosmicGame`, `../components/game/GameHUD`, `../components/menu/MainMenu`
+- `src/components/game/GameHUD.tsx` — update DivisionBadge import to `./DivisionBadge`
+- `src/pages/Wallet.tsx` — update WalletConnect import
+
+### 3. Add brief header comments to key files
+- Each moved file gets a one-line comment describing its purpose
+- `src/game/events.ts`, `src/game/types.ts`, `src/game/pieces.ts` get header comments if missing
+
+### 4. Clean up index.css
+- Add section separators and clearer comment headers for the CSS blocks (design system vars, menu effects, animations)
+
+## Files Modified
+- 6 component files moved (new paths, old deleted)
+- 3-4 page/component files updated for imports
+- `index.css` — comment cleanup only
+
+## What Stays Untouched
+- All `ui/` shadcn components
+- All game engine files (`src/game/`)
+- All lib files, hooks, pages logic, integrations
+- No visual or behavioral changes whatsoever
 
