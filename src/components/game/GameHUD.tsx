@@ -5,7 +5,7 @@ import { PieceDef } from '../../game/pieces';
 import { logMatch } from '@/lib/matchLogger';
 import DivisionBadge from './DivisionBadge';
 import { usePlayerProfile } from '@/hooks/usePlayerProfile';
-import MachineFrame from './MachineFrame';
+
 
 const GameHUD = () => {
   const navigate = useNavigate();
@@ -207,17 +207,17 @@ const GameHUD = () => {
             </button>
           </div>
 
-          {/* CENTER — Game Canvas in Machine Frame */}
-          <MachineFrame>
-            <div
-              className="relative rounded-lg overflow-hidden shrink-0"
-              style={{
-                width: 'min(78vh, 620px)',
-                height: 'min(85.8vh, 655px)',
-              }}
-              id="game-container"
-            />
-          </MachineFrame>
+          {/* CENTER — Game Canvas */}
+          <div
+            className="relative rounded-lg overflow-hidden shrink-0"
+            style={{
+              width: 'min(78vh, 620px)',
+              height: 'min(85.8vh, 655px)',
+              boxShadow: '0 0 30px rgba(102,255,238,0.1), 0 0 60px rgba(0,0,0,0.5)',
+              border: '1px solid rgba(102,255,238,0.15)',
+            }}
+            id="game-container"
+          />
 
           {/* RIGHT PANEL */}
           <div className="flex flex-col justify-between w-[160px] md:w-[200px] font-mono select-none shrink-0">
