@@ -135,35 +135,6 @@ const MainMenu = ({ onStart }: MainMenuProps) => {
           <div className="menu-divider-line mx-auto mt-4 mb-2" />
         </div>
 
-        {/* Decorative orb cluster — inline SVG to feel native */}
-        <div className="my-6 select-none">
-          <svg width="160" height="50" viewBox="0 0 160 50" className="menu-hero-breathe drop-shadow-[0_0_30px_rgba(100,255,238,0.25)]">
-            {/* Star cluster — 5 four-pointed stars */}
-            {[
-              { cx: 30, cy: 25, size: 10, color: '#66ffee', glow: 'rgba(100,255,238,0.3)' },
-              { cx: 60, cy: 14, size: 7, color: '#aaddff', glow: 'rgba(170,221,255,0.25)' },
-              { cx: 80, cy: 30, size: 13, color: '#ffffff', glow: 'rgba(255,255,255,0.3)' },
-              { cx: 105, cy: 18, size: 6, color: '#ffee99', glow: 'rgba(255,238,153,0.2)' },
-              { cx: 130, cy: 28, size: 9, color: '#cc99ff', glow: 'rgba(204,153,255,0.25)' },
-            ].map((s, i) => (
-              <g key={i}>
-                {/* Outer glow */}
-                <circle cx={s.cx} cy={s.cy} r={s.size * 1.8} fill={s.glow} />
-                {/* 4-pointed star shape */}
-                <polygon
-                  points={`${s.cx},${s.cy - s.size} ${s.cx + s.size * 0.25},${s.cy} ${s.cx},${s.cy + s.size} ${s.cx - s.size * 0.25},${s.cy}`}
-                  fill={s.color} opacity="0.9"
-                />
-                <polygon
-                  points={`${s.cx - s.size},${s.cy} ${s.cx},${s.cy - s.size * 0.25} ${s.cx + s.size},${s.cy} ${s.cx},${s.cy + s.size * 0.25}`}
-                  fill={s.color} opacity="0.9"
-                />
-                {/* Core dot */}
-                <circle cx={s.cx} cy={s.cy} r={s.size * 0.2} fill="white" opacity="0.95" />
-              </g>
-            ))}
-          </svg>
-        </div>
 
         {/* Menu items */}
         <nav className="flex flex-col items-center gap-5 mt-2">
