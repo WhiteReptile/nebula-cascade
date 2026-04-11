@@ -1,70 +1,46 @@
 
 
-# Reorganize & Clean Up the Codebase
+# Vertical Carousel Menu — Show 2 at a Time
 
-## Overview
-Restructure the `src/components/` and `src/game/` directories into clear, logical folders so any developer (or Lovable) can navigate the project easily. No functional changes — purely organizational.
+## What Changes
 
-## Current State
-Everything in `src/components/` is flat: MainMenu, GameHUD, CosmicGame, DivisionBadge, WalletConnect, NavLink all sit alongside the `ui/` folder. Game logic is already well-structured under `src/game/`.
+Rewrite the menu nav section in `MainMenu.tsx` to show only 2 items at a time in a sliding vertical carousel, with the new order and "PLAY" replacing "START".
 
-## Proposed Structure
+## Menu Order
+1. PLAY (was START)
+2. WALLET
+3. OPTIONS
+4. MARKETPLACE
+5. RULES & REWARDS
 
-```text
-src/
-├── components/
-│   ├── game/                    # Game-specific UI
-│   │   ├── CosmicGame.tsx       # Phaser wrapper
-│   │   ├── GameHUD.tsx          # In-game HUD overlay
-│   │   └── DivisionBadge.tsx    # Division rank badge
-│   ├── menu/                    # Main menu
-│   │   └── MainMenu.tsx         # Start screen
-│   ├── wallet/                  # Wallet-related UI
-│   │   └── WalletConnect.tsx    # Wallet connection panel
-│   ├── shared/                  # Reusable non-shadcn components
-│   │   └── NavLink.tsx          # Router NavLink wrapper
-│   └── ui/                     # shadcn components (untouched)
-├── game/                        # Phaser game engine (untouched)
-│   ├── logic/
-│   ├── rendering/
-│   ├── GameScene.ts
-│   ├── events.ts
-│   ├── pieces.ts
-│   └── types.ts
-├── hooks/                       # (untouched)
-├── lib/                         # (untouched)
-├── pages/                       # (untouched)
-└── integrations/                # (untouched)
-```
+## How It Works
 
-## Changes
+- A fixed-height viewport (`overflow: hidden`) shows exactly 2 menu item slots
+- Items are rendered in a vertical list that translates up/down via `transform: translateY(...)` with a CSS transition
+- The **selected item** is always in the top visible slot; the item below it is the second visible one
+- **Arrow Down**: selected index increments (stops at the last item — no wrap)
+- **Arrow Up**: selected index decrements (stops at 0)
+- **Mouse click/hover**: sets the selected index directly; clicking confirms selection
+- **Mouse wheel**: optional scroll through items
+- Navigation loops cleanly — it **stops** at both ends (no wrapping)
+- The `translateY` offset is calculated as `-(selected * itemHeight)px`
+- Smooth `transition: transform 0.3s ease` for the sliding effect
 
-### 1. Move component files into subfolders
-- `CosmicGame.tsx`, `GameHUD.tsx`, `DivisionBadge.tsx` → `components/game/`
-- `MainMenu.tsx` → `components/menu/`
-- `WalletConnect.tsx` → `components/wallet/`
-- `NavLink.tsx` → `components/shared/`
+## Visual Details
+- Each item slot is ~48px tall with the existing font/spacing
+- The viewport is `96px` tall (2 × 48px), centered below the title
+- Selected item keeps the existing red glow + ▶ indicator + scale-105
+- The second visible item shows in the dimmed `text-red-900/60` style
+- Subtle fade masks at top/bottom edges of the viewport hint at more items
 
-### 2. Update all imports
-- `src/pages/Index.tsx` — update paths to `../components/game/CosmicGame`, `../components/game/GameHUD`, `../components/menu/MainMenu`
-- `src/components/game/GameHUD.tsx` — update DivisionBadge import to `./DivisionBadge`
-- `src/pages/Wallet.tsx` — update WalletConnect import
+## Technical Changes
 
-### 3. Add brief header comments to key files
-- Each moved file gets a one-line comment describing its purpose
-- `src/game/events.ts`, `src/game/types.ts`, `src/game/pieces.ts` get header comments if missing
+**`src/components/menu/MainMenu.tsx`**:
+- Update `MENU_ITEMS` to `['PLAY', 'WALLET', 'OPTIONS', 'MARKETPLACE', 'RULES & REWARDS']`
+- Update `handleSelect` to check for `'PLAY'` instead of `'START'`
+- Replace the `<nav>` section with a clipped viewport + translateY sliding list
+- Clamp keyboard navigation to `[0, length-1]` instead of wrapping with modulo
+- Add mouse wheel handler on the viewport to scroll through items
 
-### 4. Clean up index.css
-- Add section separators and clearer comment headers for the CSS blocks (design system vars, menu effects, animations)
-
-## Files Modified
-- 6 component files moved (new paths, old deleted)
-- 3-4 page/component files updated for imports
-- `index.css` — comment cleanup only
-
-## What Stays Untouched
-- All `ui/` shadcn components
-- All game engine files (`src/game/`)
-- All lib files, hooks, pages logic, integrations
-- No visual or behavioral changes whatsoever
+**No other files change.**
 
