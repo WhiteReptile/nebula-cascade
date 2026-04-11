@@ -129,6 +129,15 @@ const MainMenu = ({ onStart }: MainMenuProps) => {
       />
 
       <div className="relative z-20 flex flex-col items-center gap-2">
+        {/* Login / Sign Up button — above menu */}
+        <button
+          onClick={() => navigate('/auth')}
+          className="font-mono uppercase tracking-[0.2em] text-sm px-5 py-2 mb-4 rounded border border-cyan-500/40 bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 hover:border-cyan-400/60 transition-all duration-300 cursor-pointer select-none"
+          style={{ textShadow: '0 0 8px rgba(0,200,255,0.4)' }}
+        >
+          Login / Sign Up
+        </button>
+
         {/* Title */}
         <div className="menu-title-container mb-2 select-none" style={{ paddingLeft: 'calc(5% + 5px)' }}>
           <h1 className="menu-neon-title font-mono uppercase tracking-[0.5em] text-5xl md:text-7xl font-black">
@@ -147,9 +156,7 @@ const MainMenu = ({ onStart }: MainMenuProps) => {
           onWheel={handleWheel}
         >
           {/* Top fade mask */}
-          {selected > 0 && (
-            <div className="absolute top-0 left-0 right-0 h-3 z-10 pointer-events-none" style={{ background: 'linear-gradient(to bottom, #050510, transparent)' }} />
-          )}
+          <div className="absolute top-0 left-0 right-0 h-3 z-10 pointer-events-none" style={{ background: 'linear-gradient(to bottom, #050510, transparent)' }} />
 
           {/* Sliding list */}
           <div
@@ -185,9 +192,7 @@ const MainMenu = ({ onStart }: MainMenuProps) => {
           </div>
 
           {/* Bottom fade mask */}
-          {selected < MENU_ITEMS.length - 2 && (
-            <div className="absolute bottom-0 left-0 right-0 h-3 z-10 pointer-events-none" style={{ background: 'linear-gradient(to top, #050510, transparent)' }} />
-          )}
+          <div className="absolute bottom-0 left-0 right-0 h-3 z-10 pointer-events-none" style={{ background: 'linear-gradient(to top, #050510, transparent)' }} />
         </nav>
       </div>
     </div>
