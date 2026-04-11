@@ -1,12 +1,12 @@
 import { useNavigate } from 'react-router-dom';
 
-const Rules = () => {
+const Rewards = () => {
   const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-[#050510] text-white flex flex-col items-center justify-center font-mono">
       <h1 className="text-4xl font-black tracking-[0.3em] text-yellow-400 mb-4" style={{ textShadow: '0 0 20px #ffdd00' }}>
-        RULES
+        REWARDS
       </h1>
       <p className="text-white/50 text-lg mb-8">Coming soon...</p>
       <button
@@ -20,4 +20,4 @@ const Rules = () => {
   );
 };
 
-export default Rules;
+export default Rewards;
