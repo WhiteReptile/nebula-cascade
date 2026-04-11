@@ -207,17 +207,17 @@ const GameHUD = () => {
             </button>
           </div>
 
-          {/* CENTER — Game Canvas */}
-          <div
-            className="relative rounded-lg overflow-hidden shrink-0"
-            style={{
-              width: 'min(78vh, 620px)',
-              height: 'min(85.8vh, 655px)',
-              boxShadow: '0 0 30px rgba(102,255,238,0.1), 0 0 60px rgba(0,0,0,0.5)',
-              border: '1px solid rgba(102,255,238,0.15)',
-            }}
-            id="game-container"
-          />
+          {/* CENTER — Game Canvas with cyber frame */}
+          <div className="game-cyber-frame relative shrink-0" style={{ padding: '3px' }}>
+            <div
+              className="relative rounded-lg overflow-hidden w-full h-full"
+              style={{
+                width: 'min(78vh, 620px)',
+                height: 'min(85.8vh, 655px)',
+              }}
+              id="game-container"
+            />
+          </div>
 
           {/* RIGHT PANEL */}
           <div className="flex flex-col justify-between w-[160px] md:w-[200px] font-mono select-none shrink-0">
@@ -358,12 +358,122 @@ const GameHUD = () => {
         </div>
       )}
 
-      {/* Chain pop animation keyframes */}
       <style>{`
         @keyframes chainPop {
           0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
           30% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
           100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+
+        @keyframes neonBorderSpin {
+          0% { --angle: 0deg; }
+          100% { --angle: 360deg; }
+        }
+
+        @keyframes pulseGlow {
+          0%, 100% { opacity: 0.4; }
+          50% { opacity: 1; }
+        }
+
+        @keyframes scanLine {
+          0% { transform: translateY(-100%); }
+          100% { transform: translateY(100%); }
+        }
+
+        .game-cyber-frame {
+          position: relative;
+          border-radius: 12px;
+          background:
+            linear-gradient(135deg, rgba(102,255,238,0.25), rgba(140,100,255,0.2), rgba(80,160,255,0.25), rgba(102,255,238,0.25));
+          background-size: 300% 300%;
+          animation: neonBorderShift 4s ease infinite;
+          box-shadow:
+            0 0 15px rgba(102,255,238,0.15),
+            0 0 40px rgba(102,255,238,0.06),
+            0 0 80px rgba(140,100,255,0.04),
+            inset 0 0 20px rgba(0,0,0,0.3);
+        }
+
+        @keyframes neonBorderShift {
+          0%, 100% { background-position: 0% 50%; }
+          25% { background-position: 100% 0%; }
+          50% { background-position: 100% 100%; }
+          75% { background-position: 0% 100%; }
+        }
+
+        /* Corner accent brackets */
+        .game-cyber-frame::before,
+        .game-cyber-frame::after {
+          content: '';
+          position: absolute;
+          width: 24px;
+          height: 24px;
+          z-index: 3;
+          pointer-events: none;
+        }
+
+        .game-cyber-frame::before {
+          top: -1px;
+          left: -1px;
+          border-top: 2px solid rgba(102,255,238,0.6);
+          border-left: 2px solid rgba(102,255,238,0.6);
+          border-top-left-radius: 12px;
+          box-shadow: -2px -2px 8px rgba(102,255,238,0.2);
+        }
+
+        .game-cyber-frame::after {
+          bottom: -1px;
+          right: -1px;
+          border-bottom: 2px solid rgba(140,100,255,0.5);
+          border-right: 2px solid rgba(140,100,255,0.5);
+          border-bottom-right-radius: 12px;
+          box-shadow: 2px 2px 8px rgba(140,100,255,0.2);
+        }
+
+        /* Circuit pattern overlay via pseudo on inner container */
+        #game-container {
+          position: relative;
+        }
+
+        #game-container::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          z-index: 2;
+          pointer-events: none;
+          border-radius: 8px;
+          background:
+            /* Horizontal circuit lines */
+            linear-gradient(0deg, transparent 49.5%, rgba(102,255,238,0.03) 49.5%, rgba(102,255,238,0.03) 50.5%, transparent 50.5%) 0 0 / 100% 40px,
+            /* Vertical circuit lines */
+            linear-gradient(90deg, transparent 49.5%, rgba(102,255,238,0.03) 49.5%, rgba(102,255,238,0.03) 50.5%, transparent 50.5%) 0 0 / 40px 100%,
+            /* Circuit dots grid */
+            radial-gradient(circle 1px, rgba(102,255,238,0.06) 1px, transparent 1px) 0 0 / 40px 40px;
+        }
+
+        /* Scanning line across game area */
+        #game-container::after {
+          content: '';
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 100%;
+          height: 2px;
+          z-index: 3;
+          pointer-events: none;
+          background: linear-gradient(90deg, transparent, rgba(102,255,238,0.12), transparent);
+          animation: scanLine 6s linear infinite;
+        }
+
+        /* Pulsing top/bottom neon edge lines */
+        .game-cyber-frame > .neon-top,
+        .game-cyber-frame > .neon-bottom {
+          position: absolute;
+          left: 15%;
+          width: 70%;
+          height: 1px;
+          pointer-events: none;
+          z-index: 3;
         }
       `}</style>
     </>
