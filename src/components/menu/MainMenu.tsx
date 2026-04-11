@@ -82,13 +82,13 @@ const MainMenu = ({ onStart }: MainMenuProps) => {
     return () => { cancelAnimationFrame(animRef.current); window.removeEventListener('resize', resize); };
   }, []);
 
-  // Keyboard navigation — clamped, no wrap
+  // Keyboard navigation — looping wraparound
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (fadingOut) return;
-      if (e.key === 'ArrowDown') setSelected(s => Math.min(s + 1, MENU_ITEMS.length - 1));
-      else if (e.key === 'ArrowUp') setSelected(s => Math.max(s - 1, 0));
-      else if (e.key === 'Enter') handleSelect(selected);
+      if (e.key === 'ArrowDown') setSelected(s => (s + 1) % MENU_ITEMS.length);
+      else if (e.key === 'ArrowUp') setSelected(s => (s - 1 + MENU_ITEMS.length) % MENU_ITEMS.length);
+      else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleSelect(selected); }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
@@ -107,11 +107,11 @@ const MainMenu = ({ onStart }: MainMenuProps) => {
     }, 500);
   }, [fadingOut, onStart, navigate]);
 
-  // Mouse wheel on viewport
+  // Mouse wheel on viewport — looping
   const handleWheel = useCallback((e: React.WheelEvent) => {
     if (fadingOut) return;
-    if (e.deltaY > 0) setSelected(s => Math.min(s + 1, MENU_ITEMS.length - 1));
-    else if (e.deltaY < 0) setSelected(s => Math.max(s - 1, 0));
+    if (e.deltaY > 0) setSelected(s => (s + 1) % MENU_ITEMS.length);
+    else if (e.deltaY < 0) setSelected(s => (s - 1 + MENU_ITEMS.length) % MENU_ITEMS.length);
   }, [fadingOut]);
 
   const translateY = -(selected * ITEM_HEIGHT);
