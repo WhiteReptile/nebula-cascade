@@ -209,17 +209,19 @@ const GameHUD = () => {
         {!isLoggedIn && (
               <button
                 onClick={() => navigate('/auth')}
-                className="text-[10px] text-white/40 mt-3 font-mono hover:text-white/60 transition-colors underline"
+                className="rounded-lg border border-green-500/50 bg-green-500/20 px-6 py-2 font-mono text-green-300 hover:bg-green-500/30 transition-colors mt-3"
+                style={{ textShadow: '0 0 8px #33ff88' }}
               >
-                Sign in to track your scores
+                SIGN IN TO TRACK SCORES
               </button>
             )}
             {isLoggedIn && (
               <button
                 onClick={() => navigate('/wallet')}
-                className="text-[10px] text-white/40 mt-3 ml-3 font-mono hover:text-white/60 transition-colors underline"
+                className="rounded-lg border border-purple-500/50 bg-purple-500/20 px-6 py-2 font-mono text-purple-300 hover:bg-purple-500/30 transition-colors mt-3"
+                style={{ textShadow: '0 0 8px #aa66ff' }}
               >
-                💎 Wallet & Gems
+                💎 WALLET & GEMS
               </button>
             )}
           </div>

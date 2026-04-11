@@ -13,6 +13,7 @@ const CosmicGame = ({ onReady }: CosmicGameProps) => {
   useEffect(() => {
     if (!containerRef.current || gameRef.current) return;
 
+    const dpr = window.devicePixelRatio || 1;
     const config: Phaser.Types.Core.GameConfig = {
       type: Phaser.AUTO,
       parent: containerRef.current,
