@@ -1,46 +1,38 @@
 
 
-# Vertical Carousel Menu — Show 2 at a Time
+# Split "RULES & REWARDS" into Two Separate Menu Items
 
 ## What Changes
 
-Rewrite the menu nav section in `MainMenu.tsx` to show only 2 items at a time in a sliding vertical carousel, with the new order and "PLAY" replacing "START".
+Split the single "RULES & REWARDS" menu entry into two items — "RULES" and "REWARDS" — each with its own page and route.
 
-## Menu Order
-1. PLAY (was START)
+## New Menu Order (7 items, still 2 visible at a time)
+1. PLAY
 2. WALLET
 3. OPTIONS
 4. MARKETPLACE
-5. RULES & REWARDS
+5. RULES
+6. REWARDS
 
-## How It Works
+## Files to Create
 
-- A fixed-height viewport (`overflow: hidden`) shows exactly 2 menu item slots
-- Items are rendered in a vertical list that translates up/down via `transform: translateY(...)` with a CSS transition
-- The **selected item** is always in the top visible slot; the item below it is the second visible one
-- **Arrow Down**: selected index increments (stops at the last item — no wrap)
-- **Arrow Up**: selected index decrements (stops at 0)
-- **Mouse click/hover**: sets the selected index directly; clicking confirms selection
-- **Mouse wheel**: optional scroll through items
-- Navigation loops cleanly — it **stops** at both ends (no wrapping)
-- The `translateY` offset is calculated as `-(selected * itemHeight)px`
-- Smooth `transition: transform 0.3s ease` for the sliding effect
+**`src/pages/Rewards.tsx`** — New page, same "Coming soon" placeholder style as the current Rules page, with title "REWARDS" and a back button.
 
-## Visual Details
-- Each item slot is ~48px tall with the existing font/spacing
-- The viewport is `96px` tall (2 × 48px), centered below the title
-- Selected item keeps the existing red glow + ▶ indicator + scale-105
-- The second visible item shows in the dimmed `text-red-900/60` style
-- Subtle fade masks at top/bottom edges of the viewport hint at more items
-
-## Technical Changes
+## Files to Modify
 
 **`src/components/menu/MainMenu.tsx`**:
-- Update `MENU_ITEMS` to `['PLAY', 'WALLET', 'OPTIONS', 'MARKETPLACE', 'RULES & REWARDS']`
-- Update `handleSelect` to check for `'PLAY'` instead of `'START'`
-- Replace the `<nav>` section with a clipped viewport + translateY sliding list
-- Clamp keyboard navigation to `[0, length-1]` instead of wrapping with modulo
-- Add mouse wheel handler on the viewport to scroll through items
+- Update `MENU_ITEMS` to `['PLAY', 'WALLET', 'OPTIONS', 'MARKETPLACE', 'RULES', 'REWARDS']`
+- Add `'REWARDS'` case in `handleSelect` routing to `/rewards`
+- Update `'RULES & REWARDS'` case to `'RULES'` routing to `/rules`
 
-**No other files change.**
+**`src/pages/Rules.tsx`**:
+- Change the title from "RULES & REWARDS" to "RULES"
+
+**`src/App.tsx`**:
+- Import the new `Rewards` page
+- Add route `<Route path="/rewards" element={<Rewards />} />`
+
+## No Other Changes
+- Carousel logic, looping navigation, styling, and all other pages remain untouched
+- NFT/gems infrastructure is already in place and ready
 
