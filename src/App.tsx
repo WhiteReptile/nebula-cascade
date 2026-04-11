@@ -10,6 +10,8 @@ import AdminRewards from "./pages/AdminRewards.tsx";
 import Auth from "./pages/Auth.tsx";
 import Wallet from "./pages/Wallet.tsx";
 import Options from "./pages/Options.tsx";
+import Marketplace from "./pages/Marketplace.tsx";
+import Rules from "./pages/Rules.tsx";
 
 const queryClient = new QueryClient();
 
