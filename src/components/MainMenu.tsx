@@ -124,7 +124,7 @@ const MainMenu = ({ onStart }: MainMenuProps) => {
       {/* Content */}
       <div className="relative z-20 flex flex-col items-center gap-2">
         {/* Built-in neon title */}
-        <div className="menu-title-container mb-2 select-none">
+        <div className="menu-title-container mb-2 select-none pl-[5%]">
           <h1 className="menu-neon-title font-mono uppercase tracking-[0.5em] text-5xl md:text-7xl font-black">
             NEBULA
           </h1>
@@ -145,12 +145,12 @@ const MainMenu = ({ onStart }: MainMenuProps) => {
               onMouseEnter={() => setSelected(i)}
               className={`font-mono uppercase tracking-[0.25em] text-lg md:text-xl transition-all duration-300 bg-transparent border-none cursor-pointer select-none flex items-center gap-3 ${
                 selected === i
-                  ? 'menu-item-glow scale-105'
-                  : 'text-gray-500 hover:text-gray-300'
+                  ? 'menu-item-glow-red scale-105'
+                  : 'text-red-900/60 hover:text-red-400/80'
               }`}
-              style={selected === i ? { color: '#66ffee' } : undefined}
+              style={selected === i ? { color: '#ff3333', textShadow: '0 0 10px rgba(255,50,50,0.6), 0 0 30px rgba(255,50,50,0.3)' } : undefined}
             >
-              <span className={`text-xs transition-opacity duration-200 ${selected === i ? 'opacity-100' : 'opacity-0'}`}>
+              <span className={`text-xs transition-opacity duration-200 ${selected === i ? 'opacity-100' : 'opacity-0'}`} style={selected === i ? { color: '#ff3333' } : undefined}>
                 ▶
               </span>
               {item}
