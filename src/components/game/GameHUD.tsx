@@ -240,7 +240,7 @@ const GameHUD = () => {
       {/* Title */}
       <div className="absolute top-4 left-1/2 -translate-x-1/2">
         <h1 className="text-xl font-bold font-mono tracking-[0.3em] text-yellow-400/80" style={{ textShadow: '0 0 15px #ffdd00' }}>
-          COSMIC ORBS
+          NEBULA CASCADE
         </h1>
       </div>
 

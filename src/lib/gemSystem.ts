@@ -70,9 +70,9 @@ export async function getAllGems(): Promise<GemMetadata[]> {
 export function getGemMetadataForMarketplace(gem: GemMetadata): ERC721Metadata {
   return {
     name: gem.name,
-    description: `Cosmic Orbs ${gem.name} — Division ${gem.division.replace('gem_', '').toUpperCase()}. One of only ${TOTAL_GEM_SUPPLY} Gems in existence.`,
+    description: `Nebula Cascade ${gem.name} — Division ${gem.division.replace('gem_', '').toUpperCase()}. One of only ${TOTAL_GEM_SUPPLY} Gems in existence.`,
     image: '', // future: IPFS CID
-    external_url: 'https://cosmicorbs.gg',
+    external_url: 'https://nebulacascade.gg',
     attributes: [
       { trait_type: 'Division', value: gem.division.replace('gem_', '').toUpperCase() },
       { trait_type: 'Color', value: gem.colorHex },
