@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { DIVISION_LABELS, DIVISION_COLORS, getCurrentPeriod, type Division } from '@/lib/divisionSystem';
-import DivisionBadge from '@/components/DivisionBadge';
+import DivisionBadge from '@/components/game/DivisionBadge';
 
 const DIVISIONS: Division[] = ['gem_i', 'gem_ii', 'gem_iii', 'gem_iv', 'gem_v'];
 
