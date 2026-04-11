@@ -82,13 +82,13 @@ const MainMenu = ({ onStart }: MainMenuProps) => {
     return () => { cancelAnimationFrame(animRef.current); window.removeEventListener('resize', resize); };
   }, []);
 
-  // Keyboard navigation — clamped, no wrap
+  // Keyboard navigation — looping wraparound
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (fadingOut) return;
-      if (e.key === 'ArrowDown') setSelected(s => Math.min(s + 1, MENU_ITEMS.length - 1));
-      else if (e.key === 'ArrowUp') setSelected(s => Math.max(s - 1, 0));
-      else if (e.key === 'Enter') handleSelect(selected);
+      if (e.key === 'ArrowDown') setSelected(s => (s + 1) % MENU_ITEMS.length);
+      else if (e.key === 'ArrowUp') setSelected(s => (s - 1 + MENU_ITEMS.length) % MENU_ITEMS.length);
+      else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleSelect(selected); }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
@@ -107,11 +107,11 @@ const MainMenu = ({ onStart }: MainMenuProps) => {
     }, 500);
   }, [fadingOut, onStart, navigate]);
 
-  // Mouse wheel on viewport
+  // Mouse wheel on viewport — looping
   const handleWheel = useCallback((e: React.WheelEvent) => {
     if (fadingOut) return;
-    if (e.deltaY > 0) setSelected(s => Math.min(s + 1, MENU_ITEMS.length - 1));
-    else if (e.deltaY < 0) setSelected(s => Math.max(s - 1, 0));
+    if (e.deltaY > 0) setSelected(s => (s + 1) % MENU_ITEMS.length);
+    else if (e.deltaY < 0) setSelected(s => (s - 1 + MENU_ITEMS.length) % MENU_ITEMS.length);
   }, [fadingOut]);
 
   const translateY = -(selected * ITEM_HEIGHT);
@@ -129,6 +129,15 @@ const MainMenu = ({ onStart }: MainMenuProps) => {
       />
 
       <div className="relative z-20 flex flex-col items-center gap-2">
+        {/* Login / Sign Up button — above menu */}
+        <button
+          onClick={() => navigate('/auth')}
+          className="font-mono uppercase tracking-[0.2em] text-sm px-5 py-2 mb-4 rounded border border-cyan-500/40 bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 hover:border-cyan-400/60 transition-all duration-300 cursor-pointer select-none"
+          style={{ textShadow: '0 0 8px rgba(0,200,255,0.4)' }}
+        >
+          Login / Sign Up
+        </button>
+
         {/* Title */}
         <div className="menu-title-container mb-2 select-none" style={{ paddingLeft: 'calc(5% + 5px)' }}>
           <h1 className="menu-neon-title font-mono uppercase tracking-[0.5em] text-5xl md:text-7xl font-black">
@@ -147,9 +156,7 @@ const MainMenu = ({ onStart }: MainMenuProps) => {
           onWheel={handleWheel}
         >
           {/* Top fade mask */}
-          {selected > 0 && (
-            <div className="absolute top-0 left-0 right-0 h-3 z-10 pointer-events-none" style={{ background: 'linear-gradient(to bottom, #050510, transparent)' }} />
-          )}
+          <div className="absolute top-0 left-0 right-0 h-3 z-10 pointer-events-none" style={{ background: 'linear-gradient(to bottom, #050510, transparent)' }} />
 
           {/* Sliding list */}
           <div
@@ -185,9 +192,7 @@ const MainMenu = ({ onStart }: MainMenuProps) => {
           </div>
 
           {/* Bottom fade mask */}
-          {selected < MENU_ITEMS.length - 2 && (
-            <div className="absolute bottom-0 left-0 right-0 h-3 z-10 pointer-events-none" style={{ background: 'linear-gradient(to top, #050510, transparent)' }} />
-          )}
+          <div className="absolute bottom-0 left-0 right-0 h-3 z-10 pointer-events-none" style={{ background: 'linear-gradient(to top, #050510, transparent)' }} />
         </nav>
       </div>
     </div>
