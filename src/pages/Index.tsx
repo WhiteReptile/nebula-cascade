@@ -7,7 +7,7 @@ const Index = () => {
   const [showMenu, setShowMenu] = useState(true);
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden" style={{ backgroundColor: '#050510' }}>
+    <div className="fixed inset-0 overflow-hidden" style={{ backgroundColor: '#050510', width: '100vw', height: '100vh' }}>
       {showMenu ? (
         <MainMenu onStart={() => setShowMenu(false)} />
       ) : (

@@ -13,6 +13,7 @@ const CosmicGame = ({ onReady }: CosmicGameProps) => {
   useEffect(() => {
     if (!containerRef.current || gameRef.current) return;
 
+    const dpr = window.devicePixelRatio || 1;
     const config: Phaser.Types.Core.GameConfig = {
       type: Phaser.AUTO,
       parent: containerRef.current,
@@ -25,7 +26,7 @@ const CosmicGame = ({ onReady }: CosmicGameProps) => {
         autoCenter: Phaser.Scale.CENTER_BOTH,
       },
       physics: { default: 'arcade' },
-      render: { antialias: true, pixelArt: false },
+      render: { antialias: true, pixelArt: false, resolution: dpr },
     };
 
     gameRef.current = new Phaser.Game(config);
