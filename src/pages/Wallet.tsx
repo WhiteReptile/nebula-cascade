@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import WalletConnect from '@/components/WalletConnect';
+import WalletConnect from '@/components/wallet/WalletConnect';
 import { getAllGems, type GemMetadata } from '@/lib/gemSystem';
 import { DIVISION_LABELS } from '@/lib/divisionSystem';
 
