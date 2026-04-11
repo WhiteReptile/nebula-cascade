@@ -5,7 +5,10 @@ interface MainMenuProps {
   onStart: () => void;
 }
 
-const MENU_ITEMS = ['START', 'MARKETPLACE', 'WALLET', 'RULES & REWARDS', 'OPTIONS'] as const;
+const MENU_ITEMS = ['PLAY', 'WALLET', 'OPTIONS', 'MARKETPLACE', 'RULES & REWARDS'] as const;
+const ITEM_HEIGHT = 48;
+const VISIBLE_COUNT = 2;
+const VIEWPORT_HEIGHT = ITEM_HEIGHT * VISIBLE_COUNT;
 
 const MainMenu = ({ onStart }: MainMenuProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -52,7 +55,6 @@ const MainMenu = ({ onStart }: MainMenuProps) => {
       ctx.fillStyle = '#050510';
       ctx.fillRect(0, 0, w, h);
 
-      // Nebula blobs
       for (const neb of nebulasRef.current) {
         const nx = neb.x * w + Math.sin(t * 0.003 + neb.phase) * 40;
         const ny = neb.y * h + Math.cos(t * 0.002 + neb.phase) * 30;
@@ -63,7 +65,6 @@ const MainMenu = ({ onStart }: MainMenuProps) => {
         ctx.fillRect(nx - neb.r, ny - neb.r, neb.r * 2, neb.r * 2);
       }
 
-      // Stars
       for (const star of starsRef.current) {
         star.y += star.speed;
         if (star.y > 1) star.y = 0;
@@ -81,12 +82,12 @@ const MainMenu = ({ onStart }: MainMenuProps) => {
     return () => { cancelAnimationFrame(animRef.current); window.removeEventListener('resize', resize); };
   }, []);
 
-  // Keyboard navigation
+  // Keyboard navigation — clamped, no wrap
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (fadingOut) return;
-      if (e.key === 'ArrowDown') setSelected(s => (s + 1) % MENU_ITEMS.length);
-      else if (e.key === 'ArrowUp') setSelected(s => (s - 1 + MENU_ITEMS.length) % MENU_ITEMS.length);
+      if (e.key === 'ArrowDown') setSelected(s => Math.min(s + 1, MENU_ITEMS.length - 1));
+      else if (e.key === 'ArrowUp') setSelected(s => Math.max(s - 1, 0));
       else if (e.key === 'Enter') handleSelect(selected);
     };
     window.addEventListener('keydown', handler);
@@ -98,7 +99,7 @@ const MainMenu = ({ onStart }: MainMenuProps) => {
     setFadingOut(true);
     setTimeout(() => {
       const item = MENU_ITEMS[index];
-      if (item === 'START') onStart();
+      if (item === 'PLAY') onStart();
       else if (item === 'OPTIONS') navigate('/options');
       else if (item === 'WALLET') navigate('/wallet');
       else if (item === 'MARKETPLACE') navigate('/marketplace');
@@ -106,26 +107,29 @@ const MainMenu = ({ onStart }: MainMenuProps) => {
     }, 500);
   }, [fadingOut, onStart, navigate]);
 
+  // Mouse wheel on viewport
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    if (fadingOut) return;
+    if (e.deltaY > 0) setSelected(s => Math.min(s + 1, MENU_ITEMS.length - 1));
+    else if (e.deltaY < 0) setSelected(s => Math.max(s - 1, 0));
+  }, [fadingOut]);
+
+  const translateY = -(selected * ITEM_HEIGHT);
+
   return (
     <div
       className={`fixed inset-0 z-50 flex flex-col items-center justify-center transition-opacity duration-500 ${fadingOut ? 'opacity-0' : 'opacity-100'}`}
       style={{ backgroundColor: '#050510' }}
     >
-      {/* Canvas background */}
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
-
-      {/* CRT scanline overlay */}
       <div className="menu-scanlines absolute inset-0 pointer-events-none z-10" />
-
-      {/* Vignette */}
       <div
         className="absolute inset-0 pointer-events-none z-10"
         style={{ background: 'radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.6) 100%)' }}
       />
 
-      {/* Content */}
       <div className="relative z-20 flex flex-col items-center gap-2">
-        {/* Built-in neon title */}
+        {/* Title */}
         <div className="menu-title-container mb-2 select-none" style={{ paddingLeft: 'calc(5% + 5px)' }}>
           <h1 className="menu-neon-title font-mono uppercase tracking-[0.5em] text-5xl md:text-7xl font-black">
             NEBULA
@@ -133,31 +137,57 @@ const MainMenu = ({ onStart }: MainMenuProps) => {
           <div className="menu-neon-subtitle font-mono uppercase tracking-[0.8em] text-xs md:text-sm mt-1 text-center">
             ColdLogic
           </div>
-          {/* Decorative line */}
           <div className="menu-divider-line mx-auto mt-4 mb-2" />
         </div>
 
+        {/* Carousel viewport */}
+        <nav
+          className="relative mt-2"
+          style={{ height: VIEWPORT_HEIGHT, overflow: 'hidden' }}
+          onWheel={handleWheel}
+        >
+          {/* Top fade mask */}
+          {selected > 0 && (
+            <div className="absolute top-0 left-0 right-0 h-3 z-10 pointer-events-none" style={{ background: 'linear-gradient(to bottom, #050510, transparent)' }} />
+          )}
 
-        {/* Menu items */}
-        <nav className="flex flex-col items-center gap-5 mt-2">
-          {MENU_ITEMS.map((item, i) => (
-            <button
-              key={item}
-              onClick={() => handleSelect(i)}
-              onMouseEnter={() => setSelected(i)}
-              className={`font-mono uppercase tracking-[0.25em] text-lg md:text-xl transition-all duration-300 bg-transparent border-none cursor-pointer select-none flex items-center gap-3 ${
-                selected === i
-                  ? 'menu-item-glow-red scale-105'
-                  : 'text-red-900/60 hover:text-red-400/80'
-              }`}
-              style={selected === i ? { color: '#ff3333', textShadow: '0 0 10px rgba(255,50,50,0.6), 0 0 30px rgba(255,50,50,0.3)' } : undefined}
-            >
-              <span className={`text-xs transition-opacity duration-200 ${selected === i ? 'opacity-100' : 'opacity-0'}`} style={selected === i ? { color: '#ff3333' } : undefined}>
-                ▶
-              </span>
-              {item}
-            </button>
-          ))}
+          {/* Sliding list */}
+          <div
+            className="flex flex-col items-center"
+            style={{
+              transform: `translateY(${translateY}px)`,
+              transition: 'transform 0.3s ease',
+            }}
+          >
+            {MENU_ITEMS.map((item, i) => (
+              <button
+                key={item}
+                onClick={() => handleSelect(i)}
+                onMouseEnter={() => setSelected(i)}
+                className={`font-mono uppercase tracking-[0.25em] text-lg md:text-xl bg-transparent border-none cursor-pointer select-none flex items-center justify-center gap-3 transition-all duration-300 ${
+                  selected === i ? 'menu-item-glow-red scale-105' : 'text-red-900/60 hover:text-red-400/80'
+                }`}
+                style={{
+                  height: ITEM_HEIGHT,
+                  minWidth: 280,
+                  ...(selected === i ? { color: '#ff3333', textShadow: '0 0 10px rgba(255,50,50,0.6), 0 0 30px rgba(255,50,50,0.3)' } : {}),
+                }}
+              >
+                <span
+                  className={`text-xs transition-opacity duration-200 ${selected === i ? 'opacity-100' : 'opacity-0'}`}
+                  style={selected === i ? { color: '#ff3333' } : undefined}
+                >
+                  ▶
+                </span>
+                {item}
+              </button>
+            ))}
+          </div>
+
+          {/* Bottom fade mask */}
+          {selected < MENU_ITEMS.length - 2 && (
+            <div className="absolute bottom-0 left-0 right-0 h-3 z-10 pointer-events-none" style={{ background: 'linear-gradient(to top, #050510, transparent)' }} />
+          )}
         </nav>
       </div>
     </div>
