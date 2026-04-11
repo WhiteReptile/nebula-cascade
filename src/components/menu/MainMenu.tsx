@@ -124,7 +124,7 @@ const MainMenu = ({ onStart }: MainMenuProps) => {
       {/* Content */}
       <div className="relative z-20 flex flex-col items-center gap-2">
         {/* Built-in neon title */}
-        <div className="menu-title-container mb-2 select-none pl-[5%]">
+        <div className="menu-title-container mb-2 select-none" style={{ paddingLeft: 'calc(5% + 5px)' }}>
           <h1 className="menu-neon-title font-mono uppercase tracking-[0.5em] text-5xl md:text-7xl font-black">
             NEBULA
           </h1>
