@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import CosmicGame from '../components/CosmicGame';
-import GameHUD from '../components/GameHUD';
-import MainMenu from '../components/MainMenu';
+import CosmicGame from '../components/game/CosmicGame';
+import GameHUD from '../components/game/GameHUD';
+import MainMenu from '../components/menu/MainMenu';
 
 const Index = () => {
   const [showMenu, setShowMenu] = useState(true);

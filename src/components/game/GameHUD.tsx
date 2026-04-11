@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { gameEvents } from '../game/events';
-import { PieceDef } from '../game/pieces';
+import { gameEvents } from '../../game/events';
+import { PieceDef } from '../../game/pieces';
 import { logMatch } from '@/lib/matchLogger';
 import DivisionBadge from './DivisionBadge';
 import { usePlayerProfile } from '@/hooks/usePlayerProfile';
