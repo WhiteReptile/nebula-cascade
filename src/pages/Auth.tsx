@@ -49,7 +49,7 @@ const Auth = () => {
           className="text-2xl font-bold font-mono tracking-[0.3em] text-center mb-8"
           style={{ color: '#ffdd00', textShadow: '0 0 15px #ffdd00' }}
         >
-          COSMIC ORBS
+          NEBULA CASCADE
         </h1>
 
         <div className="rounded-lg border border-yellow-500/20 bg-black/60 p-6 backdrop-blur-sm">
