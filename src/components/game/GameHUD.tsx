@@ -5,6 +5,7 @@ import { PieceDef } from '../../game/pieces';
 import { logMatch } from '@/lib/matchLogger';
 import DivisionBadge from './DivisionBadge';
 import { usePlayerProfile } from '@/hooks/usePlayerProfile';
+import MachineFrame from './MachineFrame';
 
 const GameHUD = () => {
   const navigate = useNavigate();
