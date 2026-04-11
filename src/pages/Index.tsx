@@ -12,8 +12,8 @@ const Index = () => {
         <MainMenu onStart={() => setShowMenu(false)} />
       ) : (
         <>
-          <CosmicGame />
           <GameHUD />
+          <CosmicGame />
         </>
       )}
     </div>
