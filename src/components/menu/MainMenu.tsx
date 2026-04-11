@@ -5,7 +5,7 @@ interface MainMenuProps {
   onStart: () => void;
 }
 
-const MENU_ITEMS = ['START', 'WALLET', 'OPTIONS'] as const;
+const MENU_ITEMS = ['START', 'MARKETPLACE', 'WALLET', 'RULES & REWARDS', 'OPTIONS'] as const;
 
 const MainMenu = ({ onStart }: MainMenuProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
