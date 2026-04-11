@@ -210,8 +210,8 @@ const GameHUD = () => {
           <div
             className="relative rounded-lg overflow-hidden shrink-0"
             style={{
-              width: 'min(55vh, 420px)',
-              height: 'min(66vh, 504px)',
+              width: 'min(71.5vh, 546px)',
+              height: 'min(85.8vh, 655px)',
               boxShadow: '0 0 30px rgba(102,255,238,0.1), 0 0 60px rgba(0,0,0,0.5)',
               border: '1px solid rgba(102,255,238,0.15)',
             }}
