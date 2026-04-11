@@ -95,15 +95,17 @@ const Auth = () => {
 
           <button
             onClick={() => setIsLogin(!isLogin)}
-            className="mt-4 text-[11px] text-white/40 font-mono w-full text-center hover:text-white/60 transition-colors"
+            className="mt-4 w-full font-mono text-sm border border-yellow-500/40 bg-yellow-500/10 text-yellow-300 hover:bg-yellow-500/20 transition-colors rounded-md py-2"
+            style={{ textShadow: '0 0 8px rgba(255,221,0,0.4)' }}
           >
-            {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
+            {isLogin ? 'Sign Up' : 'Sign In'}
           </button>
         </div>
 
         <button
           onClick={() => navigate('/')}
-          className="mt-4 text-[10px] text-white/30 font-mono w-full text-center hover:text-white/50 transition-colors"
+          className="mt-5 text-sm font-mono w-full text-center transition-colors"
+          style={{ color: '#ffbb44', textShadow: '0 0 6px rgba(255,187,68,0.4)' }}
         >
           ← Back to game
         </button>
