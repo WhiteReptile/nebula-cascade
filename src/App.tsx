@@ -12,6 +12,7 @@ import Wallet from "./pages/Wallet.tsx";
 import Options from "./pages/Options.tsx";
 import Marketplace from "./pages/Marketplace.tsx";
 import Rules from "./pages/Rules.tsx";
+import Rewards from "./pages/Rewards.tsx";
 
 const queryClient = new QueryClient();
 
@@ -30,6 +31,7 @@ const App = () => (
           <Route path="/options" element={<Options />} />
           <Route path="/marketplace" element={<Marketplace />} />
           <Route path="/rules" element={<Rules />} />
+          <Route path="/rewards" element={<Rewards />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
