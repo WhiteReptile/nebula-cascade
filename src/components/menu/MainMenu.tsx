@@ -5,7 +5,7 @@ interface MainMenuProps {
   onStart: () => void;
 }
 
-const MENU_ITEMS = ['START', 'WALLET', 'OPTIONS'] as const;
+const MENU_ITEMS = ['START', 'MARKETPLACE', 'WALLET', 'RULES & REWARDS', 'OPTIONS'] as const;
 
 const MainMenu = ({ onStart }: MainMenuProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -101,6 +101,8 @@ const MainMenu = ({ onStart }: MainMenuProps) => {
       if (item === 'START') onStart();
       else if (item === 'OPTIONS') navigate('/options');
       else if (item === 'WALLET') navigate('/wallet');
+      else if (item === 'MARKETPLACE') navigate('/marketplace');
+      else if (item === 'RULES & REWARDS') navigate('/rules');
     }, 500);
   }, [fadingOut, onStart, navigate]);
 
