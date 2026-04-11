@@ -132,7 +132,7 @@ const MainMenu = ({ onStart }: MainMenuProps) => {
         {/* Login / Sign Up button — above menu */}
         <button
           onClick={() => navigate('/auth')}
-          className="font-mono uppercase tracking-[0.2em] text-sm px-5 py-2 mb-4 rounded border border-cyan-500/40 bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 hover:border-cyan-400/60 transition-all duration-300 cursor-pointer select-none"
+          className="font-mono uppercase tracking-[0.2em] text-sm px-5 py-2 mb-6 rounded border border-cyan-500/40 bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 hover:border-cyan-400/60 transition-all duration-300 cursor-pointer select-none" style={{ marginBottom: 24 + 20, textShadow: '0 0 8px rgba(0,200,255,0.4)' }}
           style={{ textShadow: '0 0 8px rgba(0,200,255,0.4)' }}
         >
           Login / Sign Up
