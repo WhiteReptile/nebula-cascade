@@ -7,16 +7,15 @@ interface CosmicGameProps {
 }
 
 const CosmicGame = ({ onReady }: CosmicGameProps) => {
-  const containerRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
 
   useEffect(() => {
-    if (!containerRef.current || gameRef.current) return;
+    const container = document.getElementById('game-container');
+    if (!container || gameRef.current) return;
 
-    const dpr = window.devicePixelRatio || 1;
     const config: Phaser.Types.Core.GameConfig = {
       type: Phaser.AUTO,
-      parent: containerRef.current,
+      parent: container,
       width: 600,
       height: 720,
       backgroundColor: '#050510',
@@ -38,18 +37,7 @@ const CosmicGame = ({ onReady }: CosmicGameProps) => {
     };
   }, []);
 
-  return (
-    <div
-      ref={containerRef}
-      style={{
-        width: '100%',
-        height: '100%',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    />
-  );
+  return null;
 };
 
 export default CosmicGame;
