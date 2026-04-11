@@ -26,7 +26,7 @@ const CosmicGame = ({ onReady }: CosmicGameProps) => {
         autoCenter: Phaser.Scale.CENTER_BOTH,
       },
       physics: { default: 'arcade' },
-      render: { antialias: true, pixelArt: false, resolution: dpr },
+      render: { antialias: true, pixelArt: false },
     };
 
     gameRef.current = new Phaser.Game(config);
