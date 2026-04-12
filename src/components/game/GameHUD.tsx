@@ -338,11 +338,11 @@ const GameHUD = () => {
             )}
             {isLoggedIn && (
               <button
-                onClick={() => navigate('/wallet')}
+                onClick={() => navigate('/cards')}
                 className="rounded-lg border border-purple-500/50 bg-purple-500/20 px-6 py-2 hover:bg-purple-500/30 transition-colors mt-3"
                 style={{ color: '#aa88ff', textShadow: '0 0 8px #aa66ff' }}
               >
-                💎 WALLET & GEMS
+                🃏 CARDS
               </button>
             )}
           </div>
