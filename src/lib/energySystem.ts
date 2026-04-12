@@ -1,62 +1,56 @@
-// Energy system — each Gem provides 2 energy per day, resets daily
+// Energy system — per-card, each card has 2 energy, resets daily
 import { supabase } from '@/integrations/supabase/client';
-import { ENERGY_PER_GEM } from './gemSystem';
+import { ENERGY_PER_CARD } from './cardSystem';
 
-export interface PlayerEnergy {
+export interface CardEnergy {
   energy: number;
   maxEnergy: number;
   lastResetAt: string;
 }
 
-export function calculateMaxEnergy(ownedGemCount: number): number {
-  return ownedGemCount * ENERGY_PER_GEM;
-}
-
-export async function getPlayerEnergy(playerId: string): Promise<PlayerEnergy | null> {
+export async function getCardEnergy(cardId: string): Promise<CardEnergy | null> {
   const { data } = await supabase
-    .from('player_energy')
+    .from('card_energy')
     .select('*')
-    .eq('player_id', playerId)
+    .eq('card_id', cardId)
     .single();
 
   if (!data) return null;
 
   const today = new Date().toISOString().slice(0, 10);
-  if (data.last_reset_at < today) {
-    // Auto-reset energy for the new day
+  if (data.last_reset_at && data.last_reset_at < today) {
     const { data: updated } = await supabase
-      .from('player_energy')
+      .from('card_energy')
       .update({ energy: data.max_energy, last_reset_at: today })
-      .eq('player_id', playerId)
+      .eq('card_id', cardId)
       .select()
       .single();
 
     if (updated) {
-      return { energy: updated.energy, maxEnergy: updated.max_energy, lastResetAt: updated.last_reset_at };
+      return { energy: updated.energy!, maxEnergy: updated.max_energy!, lastResetAt: updated.last_reset_at! };
     }
   }
 
-  return { energy: data.energy, maxEnergy: data.max_energy, lastResetAt: data.last_reset_at };
+  return { energy: data.energy!, maxEnergy: data.max_energy!, lastResetAt: data.last_reset_at! };
 }
 
-export async function consumeEnergy(playerId: string, amount: number): Promise<boolean> {
-  const current = await getPlayerEnergy(playerId);
-  if (!current || current.energy < amount) return false;
+export async function consumeCardEnergy(cardId: string): Promise<boolean> {
+  const current = await getCardEnergy(cardId);
+  if (!current || current.energy < 1) return false;
 
   const { error } = await supabase
-    .from('player_energy')
-    .update({ energy: current.energy - amount })
-    .eq('player_id', playerId);
+    .from('card_energy')
+    .update({ energy: current.energy - 1 })
+    .eq('card_id', cardId);
 
   return !error;
 }
 
-export async function initPlayerEnergy(playerId: string, gemCount: number): Promise<void> {
-  const maxEnergy = calculateMaxEnergy(gemCount);
-  await supabase.from('player_energy').upsert({
-    player_id: playerId,
-    energy: maxEnergy,
-    max_energy: maxEnergy,
+export async function initCardEnergy(cardId: string): Promise<void> {
+  await supabase.from('card_energy').upsert({
+    card_id: cardId,
+    energy: ENERGY_PER_CARD,
+    max_energy: ENERGY_PER_CARD,
     last_reset_at: new Date().toISOString().slice(0, 10),
-  }, { onConflict: 'player_id' });
+  }, { onConflict: 'card_id' });
 }

@@ -5,7 +5,7 @@ interface MainMenuProps {
   onStart: () => void;
 }
 
-const MENU_ITEMS = ['PLAY', 'WALLET', 'OPTIONS', 'MARKETPLACE', 'RULES', 'REWARDS'] as const;
+const MENU_ITEMS = ['PLAY', 'CARDS', 'OPTIONS', 'MARKETPLACE', 'RULES', 'REWARDS'] as const;
 const ITEM_HEIGHT = 48;
 const VISIBLE_COUNT = 2;
 const VIEWPORT_HEIGHT = ITEM_HEIGHT * VISIBLE_COUNT;
@@ -101,7 +101,7 @@ const MainMenu = ({ onStart }: MainMenuProps) => {
       const item = MENU_ITEMS[index];
       if (item === 'PLAY') onStart();
       else if (item === 'OPTIONS') navigate('/options');
-      else if (item === 'WALLET') navigate('/wallet');
+      else if (item === 'CARDS') navigate('/cards');
       else if (item === 'MARKETPLACE') navigate('/marketplace');
       else if (item === 'RULES') navigate('/rules');
       else if (item === 'REWARDS') navigate('/rewards');
