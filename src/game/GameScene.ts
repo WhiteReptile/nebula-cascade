@@ -49,7 +49,7 @@ export class GameScene extends Phaser.Scene {
 
   // Time tracking for speed ramp + urgency
   private gameElapsed = 0; // seconds since game start
-  private readonly URGENCY_START = 60; // 1:00
+  private readonly URGENCY_START = 40; // 0:40
   private speedBonus = 0; // additional gravity multiplier from time
 
   // Near-miss highlight timer
@@ -440,11 +440,10 @@ export class GameScene extends Phaser.Scene {
   }
 
   private getGravityMultiplier(): number {
-    // After 80s, gradually increase gravity
     if (this.gameElapsed < this.URGENCY_START) return 1;
     const elapsed = this.gameElapsed - this.URGENCY_START;
-    // Very small increment: +2% per second, stacking
-    return 1 + elapsed * 0.02;
+    // +5% per second, stacking — ramps hard
+    return 1 + elapsed * 0.05;
   }
 
   update(_time: number, delta: number) {

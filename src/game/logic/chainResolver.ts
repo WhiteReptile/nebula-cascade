@@ -28,7 +28,7 @@ export function findProximityBurst(grid: (OrbState | null)[][]): { cells: [numbe
           }
         }
       }
-      if (cluster.length >= 7) {
+      if (cluster.length >= 10) {
         return { cells: cluster, color };
       }
     }
