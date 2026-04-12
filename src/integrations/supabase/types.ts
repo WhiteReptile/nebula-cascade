@@ -14,38 +14,82 @@ export type Database = {
   }
   public: {
     Tables: {
-      gems: {
+      card_energy: {
+        Row: {
+          card_id: string
+          energy: number
+          id: string
+          last_reset_at: string
+          max_energy: number
+        }
+        Insert: {
+          card_id: string
+          energy?: number
+          id?: string
+          last_reset_at?: string
+          max_energy?: number
+        }
+        Update: {
+          card_id?: string
+          energy?: number
+          id?: string
+          last_reset_at?: string
+          max_energy?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "card_energy_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: true
+            referencedRelation: "cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cards: {
         Row: {
           color_hex: string
           created_at: string | null
           division: Database["public"]["Enums"]["gem_division"]
+          flavor_text: string
           id: string
+          image_url: string | null
+          is_active: boolean
           metadata: Json | null
           name: string
           owner_player_id: string | null
           owner_wallet: string | null
+          price_cents: number
           token_id: number
         }
         Insert: {
           color_hex: string
           created_at?: string | null
           division: Database["public"]["Enums"]["gem_division"]
+          flavor_text?: string
           id?: string
+          image_url?: string | null
+          is_active?: boolean
           metadata?: Json | null
           name: string
           owner_player_id?: string | null
           owner_wallet?: string | null
+          price_cents?: number
           token_id: number
         }
         Update: {
           color_hex?: string
           created_at?: string | null
           division?: Database["public"]["Enums"]["gem_division"]
+          flavor_text?: string
           id?: string
+          image_url?: string | null
+          is_active?: boolean
           metadata?: Json | null
           name?: string
           owner_player_id?: string | null
           owner_wallet?: string | null
+          price_cents?: number
           token_id?: number
         }
         Relationships: [
@@ -58,8 +102,54 @@ export type Database = {
           },
         ]
       }
+      game_sessions: {
+        Row: {
+          card_id: string | null
+          completed: boolean
+          cooldown_until: string | null
+          id: string
+          player_id: string
+          seed: string
+          started_at: string
+        }
+        Insert: {
+          card_id?: string | null
+          completed?: boolean
+          cooldown_until?: string | null
+          id?: string
+          player_id: string
+          seed: string
+          started_at?: string
+        }
+        Update: {
+          card_id?: string | null
+          completed?: boolean
+          cooldown_until?: string | null
+          id?: string
+          player_id?: string
+          seed?: string
+          started_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_sessions_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_sessions_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leaderboard: {
         Row: {
+          avg_top3_score: number
           best_score: number
           created_at: string
           division: Database["public"]["Enums"]["gem_division"]
@@ -73,6 +163,7 @@ export type Database = {
           validated: boolean
         }
         Insert: {
+          avg_top3_score?: number
           best_score?: number
           created_at?: string
           division?: Database["public"]["Enums"]["gem_division"]
@@ -86,6 +177,7 @@ export type Database = {
           validated?: boolean
         }
         Update: {
+          avg_top3_score?: number
           best_score?: number
           created_at?: string
           division?: Database["public"]["Enums"]["gem_division"]
@@ -108,9 +200,68 @@ export type Database = {
           },
         ]
       }
+      marketplace_listings: {
+        Row: {
+          buyer_player_id: string | null
+          card_id: string
+          fee_percent: number
+          id: string
+          listed_at: string
+          price_cents: number
+          seller_player_id: string
+          sold_at: string | null
+          status: string
+        }
+        Insert: {
+          buyer_player_id?: string | null
+          card_id: string
+          fee_percent?: number
+          id?: string
+          listed_at?: string
+          price_cents: number
+          seller_player_id: string
+          sold_at?: string | null
+          status?: string
+        }
+        Update: {
+          buyer_player_id?: string | null
+          card_id?: string
+          fee_percent?: number
+          id?: string
+          listed_at?: string
+          price_cents?: number
+          seller_player_id?: string
+          sold_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_listings_buyer_player_id_fkey"
+            columns: ["buyer_player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketplace_listings_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketplace_listings_seller_player_id_fkey"
+            columns: ["seller_player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       match_logs: {
         Row: {
           anti_cheat_flags: Json
+          card_id: string | null
           combo_efficiency: number
           ended_at: string
           id: string
@@ -121,11 +272,14 @@ export type Database = {
           omni_color_count: number
           player_id: string
           score: number
+          session_id: string | null
+          session_seed: string | null
           started_at: string
           survival_time_seconds: number
         }
         Insert: {
           anti_cheat_flags?: Json
+          card_id?: string | null
           combo_efficiency?: number
           ended_at?: string
           id?: string
@@ -136,11 +290,14 @@ export type Database = {
           omni_color_count?: number
           player_id: string
           score?: number
+          session_id?: string | null
+          session_seed?: string | null
           started_at?: string
           survival_time_seconds?: number
         }
         Update: {
           anti_cheat_flags?: Json
+          card_id?: string | null
           combo_efficiency?: number
           ended_at?: string
           id?: string
@@ -151,6 +308,8 @@ export type Database = {
           omni_color_count?: number
           player_id?: string
           score?: number
+          session_id?: string | null
+          session_seed?: string | null
           started_at?: string
           survival_time_seconds?: number
         }
@@ -198,6 +357,7 @@ export type Database = {
       }
       players: {
         Row: {
+          active_card_id: string | null
           created_at: string
           display_name: string
           division: Database["public"]["Enums"]["gem_division"]
@@ -210,6 +370,7 @@ export type Database = {
           wallet_address: string | null
         }
         Insert: {
+          active_card_id?: string | null
           created_at?: string
           display_name?: string
           division?: Database["public"]["Enums"]["gem_division"]
@@ -222,6 +383,7 @@ export type Database = {
           wallet_address?: string | null
         }
         Update: {
+          active_card_id?: string | null
           created_at?: string
           display_name?: string
           division?: Database["public"]["Enums"]["gem_division"]
@@ -292,23 +454,35 @@ export type Database = {
       reward_periods: {
         Row: {
           created_at: string
+          ends_at: string | null
           finalized_at: string | null
+          freeze_ends_at: string | null
           id: string
+          payout_at: string | null
           period: string
+          starts_at: string | null
           status: Database["public"]["Enums"]["reward_period_status"]
         }
         Insert: {
           created_at?: string
+          ends_at?: string | null
           finalized_at?: string | null
+          freeze_ends_at?: string | null
           id?: string
+          payout_at?: string | null
           period: string
+          starts_at?: string | null
           status?: Database["public"]["Enums"]["reward_period_status"]
         }
         Update: {
           created_at?: string
+          ends_at?: string | null
           finalized_at?: string | null
+          freeze_ends_at?: string | null
           id?: string
+          payout_at?: string | null
           period?: string
+          starts_at?: string | null
           status?: Database["public"]["Enums"]["reward_period_status"]
         }
         Relationships: []
@@ -349,7 +523,13 @@ export type Database = {
       gem_division: "gem_v" | "gem_iv" | "gem_iii" | "gem_ii" | "gem_i"
       payout_method: "stripe" | "coinbase" | "circle" | "thirdweb"
       payout_status: "pending" | "approved" | "exported" | "paid"
-      reward_period_status: "open" | "validating" | "finalized"
+      reward_period_status:
+        | "open"
+        | "validating"
+        | "finalized"
+        | "frozen"
+        | "pending_payout"
+        | "paid"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -481,7 +661,14 @@ export const Constants = {
       gem_division: ["gem_v", "gem_iv", "gem_iii", "gem_ii", "gem_i"],
       payout_method: ["stripe", "coinbase", "circle", "thirdweb"],
       payout_status: ["pending", "approved", "exported", "paid"],
-      reward_period_status: ["open", "validating", "finalized"],
+      reward_period_status: [
+        "open",
+        "validating",
+        "finalized",
+        "frozen",
+        "pending_payout",
+        "paid",
+      ],
     },
   },
 } as const
