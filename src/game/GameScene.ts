@@ -26,8 +26,8 @@ export class GameScene extends Phaser.Scene {
   // Moon gravity
   private fallSpeed = 0;
   private fallAccum = 0;
-  private readonly BASE_GRAVITY = 0.002;
-  private readonly MAX_FALL_SPEED = 0.072;
+  private readonly BASE_GRAVITY = 0.005;
+  private readonly MAX_FALL_SPEED = 0.09;
   private fallAge = 0;
 
   private score = 0;
