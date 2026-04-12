@@ -1,4 +1,18 @@
-// Energy system — per-card, each card has 2 energy, resets daily
+/**
+ * energySystem.ts — Per-card energy management
+ *
+ * Each card has 2 energy points (ENERGY_PER_CARD) that reset daily.
+ * Playing a game consumes 1 energy from the active card.
+ * Energy resets are date-based (YYYY-MM-DD comparison).
+ *
+ * Flow:
+ *   1. Player selects active card → getCardEnergy() checks remaining
+ *   2. On game start → consumeCardEnergy() deducts 1
+ *   3. If energy = 0, player must wait for daily reset or use another card
+ *   4. On card purchase → initCardEnergy() sets full energy
+ *
+ * Database table: `card_energy` (1:1 with `cards`)
+ */
 import { supabase } from '@/integrations/supabase/client';
 import { ENERGY_PER_CARD } from './cardSystem';
 

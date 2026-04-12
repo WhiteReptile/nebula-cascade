@@ -1,3 +1,20 @@
+/**
+ * submit-score — Edge function: Validate and record match results
+ *
+ * Called when a game ends. Uses service role for trusted writes.
+ *
+ * Flow:
+ *   1. Authenticate user via JWT
+ *   2. Validate session (must exist, belong to player, not completed)
+ *   3. Compute anti-cheat flags (score/sec, combo ratio, clear rate)
+ *   4. Insert match_log with all stats
+ *   5. Update player division_points and division tier
+ *   6. Compute avg_top3_score from best 3 matches
+ *   7. Upsert monthly leaderboard entry
+ *   8. Mark session as completed with 60s cooldown
+ *
+ * Returns: { success, isFlagged, avgTop3, division }
+ */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.103.0";
 import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2.103.0/cors";
 

@@ -1,3 +1,12 @@
+/**
+ * orbReorganizer.ts — Post-match board manipulation
+ *
+ * After a block/tri-color match destroys cells, this module:
+ *   1. reorganizeOrbs() — Spawns small random formations of the match color
+ *      into empty spaces near the destroyed area (up to 16 orbs).
+ *   2. gravityCollapse() — Pulls all floating orbs down to fill gaps,
+ *      applying a small bounce animation on landing.
+ */
 import { COLS, ROWS } from '../pieces';
 import type { OrbState } from '../types';
 

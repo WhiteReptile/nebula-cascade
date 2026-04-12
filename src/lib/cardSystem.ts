@@ -1,4 +1,19 @@
-// Card system — replaces gemSystem.ts
+/**
+ * cardSystem.ts — Card ownership and management
+ *
+ * Cards are the core collectible/NFT-ready asset. Each player can own
+ * up to 10 cards. One card is "active" at a time and determines the
+ * division tier used for leaderboard placement.
+ *
+ * Key concepts:
+ *   - Each card has its own energy pool (see energySystem.ts)
+ *   - Cards have a division (gem_i to gem_v) that affects rewards
+ *   - Cards can be traded on the marketplace (see marketplaceSystem.ts)
+ *   - Card art/flavor text are purely cosmetic — no gameplay stats
+ *
+ * Database table: `cards`
+ * Related: `players.active_card_id` (FK to active card)
+ */
 import { supabase } from '@/integrations/supabase/client';
 import type { Division } from './divisionSystem';
 

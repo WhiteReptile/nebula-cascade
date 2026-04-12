@@ -1,3 +1,24 @@
+/**
+ * vfx.ts — Visual effects for all match/mechanic events
+ *
+ * Each match type has a dedicated VFX function that:
+ *   1. Spawns particles into the shared particle array
+ *   2. Returns screen-shake, flash, and slow-mo parameters
+ *
+ * VFX functions:
+ *   - createForceDropParticles — Radial burst on hard drop
+ *   - blockImplosionVFX       — Implosion ring + center burst (4×4 block match)
+ *   - triColorFusionVFX       — Multi-color spiral vortex (tri-color match)
+ *   - lineDestroyVFX          — Per-cell explosion + horizontal sparks (line clear)
+ *   - cosmicWipeVFX           — Full-screen radial supernova (5+ combo wipe)
+ *   - proximityBurstVFX       — Shockwave ring + colored sparks (cluster burst)
+ *   - elementalCascadeVFX     — Vertical energy beam + top burst (cascade bonus)
+ *   - gravityCrushVFX         — Subtle dust ring (force-drop push)
+ *   - drawUrgencyOverlay      — Red vignette pulsing at screen edges
+ *   - reorganizeVFX           — Trails from center to new orb positions
+ *   - drawParticles           — Renders all active particles with glow
+ *   - drawFlashOverlay        — White screen flash (fades out)
+ */
 import { COLS, ROWS, CELL, COLORS } from '../pieces';
 import type { Particle, OrbState } from '../types';
 

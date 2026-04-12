@@ -1,4 +1,17 @@
-// Payout integration stubs — ready for future implementation
+/**
+ * payoutIntegrations.ts — Reward payout provider stubs
+ *
+ * Defines the PayoutProvider interface and stub implementations for:
+ *   - Stripe (fiat transfers via Stripe Connect)
+ *   - Coinbase (crypto via Coinbase Commerce)
+ *   - Circle (USDC via Circle Payments)
+ *   - Thirdweb (NFT/token payouts on Base chain)
+ *
+ * Also includes chain configs for Base (primary) and Polygon (fallback),
+ * and a CSV export utility for manual payout processing.
+ *
+ * None of these are live yet — all return { ready: false }.
+ */
 
 export interface PayoutData {
   playerId: string;

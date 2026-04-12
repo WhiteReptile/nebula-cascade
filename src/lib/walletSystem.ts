@@ -1,4 +1,15 @@
-// Wallet system stubs — no live blockchain connections yet
+/**
+ * walletSystem.ts — Wallet linking stubs
+ *
+ * Manages the wallet_address field on the player record.
+ * Currently stub implementations — no live blockchain connections.
+ * Supported wallet types: MetaMask, Coinbase Wallet, WalletConnect, Guest.
+ *
+ * Future: Will integrate with Thirdweb SDK for on-chain card ownership
+ * and payout distribution on Base chain.
+ *
+ * Database field: `players.wallet_address`
+ */
 import { supabase } from '@/integrations/supabase/client';
 
 export type WalletType = 'metamask' | 'coinbase_wallet' | 'walletconnect' | 'guest';

@@ -1,3 +1,15 @@
+/**
+ * background.ts — Cosmic background rendering
+ *
+ * Draws the deep-space backdrop behind the game grid:
+ *   - Animated nebula clouds (6 layers with sine-wave drift)
+ *   - Distant galaxy ellipses
+ *   - Parallax starfield (200 stars with twinkle)
+ *   - Shooting stars (random spawn, trail effect)
+ *   - Passing spacecraft (random direction, thruster glow)
+ *   - Game grid (10×20 with subtle gridlines)
+ *   - Asteroid-textured border around the play area
+ */
 import { COLS, ROWS, CELL } from '../pieces';
 import type { Star, ShootingStar, Spacecraft } from '../types';
 

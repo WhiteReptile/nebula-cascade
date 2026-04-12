@@ -1,3 +1,20 @@
+/**
+ * generate-session — Edge function: Create a new game session
+ *
+ * Called before each game starts. Enforces a 60-second cooldown
+ * between sessions to prevent rapid-fire score farming.
+ *
+ * Flow:
+ *   1. Authenticate user via JWT
+ *   2. Look up player record and active card
+ *   3. Check cooldown (60s since last session)
+ *   4. Generate unique session ID + seed
+ *   5. Insert into `game_sessions` table
+ *   6. Return { sessionId, seed, cardId }
+ *
+ * The seed is used for deterministic RNG validation (future).
+ * The sessionId is required by submit-score to validate the match.
+ */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.103.0";
 import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2.103.0/cors";
 

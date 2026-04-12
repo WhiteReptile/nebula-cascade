@@ -1,3 +1,15 @@
+/**
+ * usePlayerProfile.ts — Global player state hook
+ *
+ * Provides auth-aware player data to all React components:
+ *   - isLoggedIn: whether a Supabase auth session exists
+ *   - playerId: the player's UUID from the `players` table
+ *   - playerDivision: current division tier (gem_v to gem_i)
+ *   - activeCard: full CardMetadata of the currently equipped card
+ *
+ * Auto-refreshes on auth state changes (login/logout/token refresh).
+ * Used by: MainMenu, GameHUD, Marketplace, Leaderboard
+ */
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { Division } from '@/lib/divisionSystem';
