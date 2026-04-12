@@ -26,7 +26,7 @@ export class GameScene extends Phaser.Scene {
   // Moon gravity
   private fallSpeed = 0;
   private fallAccum = 0;
-  private readonly BASE_GRAVITY = 0.0014;
+  private readonly BASE_GRAVITY = 0.002;
   private readonly MAX_FALL_SPEED = 0.072;
   private fallAge = 0;
 
@@ -49,7 +49,7 @@ export class GameScene extends Phaser.Scene {
 
   // Time tracking for speed ramp + urgency
   private gameElapsed = 0; // seconds since game start
-  private readonly URGENCY_START = 80; // 1:20
+  private readonly URGENCY_START = 60; // 1:00
   private speedBonus = 0; // additional gravity multiplier from time
 
   // Near-miss highlight timer

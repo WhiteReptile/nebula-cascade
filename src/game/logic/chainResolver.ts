@@ -28,7 +28,7 @@ export function findProximityBurst(grid: (OrbState | null)[][]): { cells: [numbe
           }
         }
       }
-      if (cluster.length >= 5) {
+      if (cluster.length >= 7) {
         return { cells: cluster, color };
       }
     }
@@ -213,7 +213,7 @@ export function findLineMatch(grid: (OrbState | null)[][], combo: number): { row
       let end = k + 1;
       while (end < run.length && rowDominant(run[end]) === clr) end++;
       const sameColorRun = run.slice(k, end);
-      if (sameColorRun.length >= 3) rowsToDestroy.push(...sameColorRun);
+      if (sameColorRun.length >= 4) rowsToDestroy.push(...sameColorRun);
       k = end;
     }
     i = j + 1;
