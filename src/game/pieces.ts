@@ -111,11 +111,11 @@ export function randomOrbPiece(boardColorBias?: number | null): PieceDef {
 
   let colorIdx: number;
   // Lucky piece: every ~15 spawns, bias toward the most common board color
-  if (boardColorBias != null && spawnCounter % 15 === 0 && Math.random() < 0.7) {
+  if (boardColorBias != null && spawnCounter % 25 === 0 && Math.random() < 0.5) {
     // 70% chance to use the board's most common color (subtle, not guaranteed)
     colorIdx = COLORS.findIndex(c => c.color === boardColorBias);
     if (colorIdx < 0) colorIdx = Math.floor(Math.random() * COLORS.length);
-  } else if (lastColorIndex >= 0 && Math.random() < 0.35) {
+  } else if (lastColorIndex >= 0 && Math.random() < 0.20) {
     colorIdx = lastColorIndex;
   } else {
     colorIdx = Math.floor(Math.random() * COLORS.length);
