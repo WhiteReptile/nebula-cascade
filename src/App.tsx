@@ -8,7 +8,6 @@ import NotFound from "./pages/NotFound.tsx";
 import Leaderboard from "./pages/Leaderboard.tsx";
 import AdminRewards from "./pages/AdminRewards.tsx";
 import Auth from "./pages/Auth.tsx";
-import Cards from "./pages/Cards.tsx";
 import Options from "./pages/Options.tsx";
 import Marketplace from "./pages/Marketplace.tsx";
 import Rules from "./pages/Rules.tsx";
@@ -27,8 +26,8 @@ const App = () => (
           <Route path="/auth" element={<Auth />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/admin/rewards" element={<AdminRewards />} />
-          <Route path="/cards" element={<Cards />} />
-          <Route path="/wallet" element={<Navigate to="/cards" replace />} />
+          <Route path="/cards" element={<Navigate to="/marketplace" replace />} />
+          <Route path="/wallet" element={<Navigate to="/marketplace" replace />} />
           <Route path="/options" element={<Options />} />
           <Route path="/marketplace" element={<Marketplace />} />
           <Route path="/rules" element={<Rules />} />
