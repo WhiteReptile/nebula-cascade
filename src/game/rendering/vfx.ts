@@ -252,6 +252,182 @@ export function reorganizeVFX(
   }
 }
 
+// ── Proximity Burst VFX: radial shockwave + colored sparks ──
+export function proximityBurstVFX(
+  particles: Particle[],
+  cells: [number, number][],
+  color: number,
+  chainStep: number,
+  offsetX: number,
+  offsetY: number,
+): { shakeAmount: number; flashAlpha: number; slowMoTimer: number } {
+  const scale = 1 + chainStep * 0.3;
+  let sumX = 0, sumY = 0;
+  for (const [r, c] of cells) {
+    sumX += offsetX + c * CELL + CELL / 2;
+    sumY += offsetY + r * CELL + CELL / 2;
+  }
+  const cx = sumX / cells.length;
+  const cy = sumY / cells.length;
+
+  // Shockwave ring expanding outward
+  const ringCount = Math.floor(30 * scale);
+  for (let i = 0; i < ringCount; i++) {
+    const angle = (i / ringCount) * Math.PI * 2;
+    const speed = 3 + Math.random() * 4;
+    particles.push({
+      x: cx, y: cy,
+      vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+      life: 20 + Math.random() * 10, maxLife: 30,
+      color, size: (2 + Math.random() * 3) * Math.min(scale, 1.8),
+    });
+  }
+
+  // Colored sparks from each cell
+  for (const [r, c] of cells) {
+    const px = offsetX + c * CELL + CELL / 2;
+    const py = offsetY + r * CELL + CELL / 2;
+    for (let i = 0; i < 5; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 1.5 + Math.random() * 3;
+      particles.push({
+        x: px, y: py,
+        vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed - 1,
+        life: 15 + Math.random() * 10, maxLife: 25,
+        color, size: 2 + Math.random() * 2,
+      });
+    }
+  }
+
+  // White center flash
+  for (let i = 0; i < 8; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    particles.push({
+      x: cx, y: cy,
+      vx: Math.cos(angle) * 1.5, vy: Math.sin(angle) * 1.5,
+      life: 12, maxLife: 12,
+      color: 0xffffff, size: 3 + Math.random() * 2,
+    });
+  }
+
+  return {
+    shakeAmount: Math.min(4 * (1 + chainStep * 0.3), 12),
+    flashAlpha: Math.min(0.15 * (1 + chainStep * 0.2), 0.5),
+    slowMoTimer: 15 + chainStep * 5,
+  };
+}
+
+// ── Elemental Cascade VFX: vertical energy beam + particles ──
+export function elementalCascadeVFX(
+  particles: Particle[],
+  column: number,
+  color: number,
+  chainStep: number,
+  offsetX: number,
+  offsetY: number,
+): { shakeAmount: number; flashAlpha: number; slowMoTimer: number } {
+  const scale = 1 + chainStep * 0.3;
+  const cx = offsetX + column * CELL + CELL / 2;
+
+  // Vertical beam particles
+  for (let r = 0; r < ROWS; r++) {
+    const py = offsetY + r * CELL + CELL / 2;
+    for (let i = 0; i < 6; i++) {
+      particles.push({
+        x: cx + (Math.random() - 0.5) * CELL * 0.8,
+        y: py,
+        vx: (Math.random() - 0.5) * 2,
+        vy: -2 - Math.random() * 4,
+        life: 30 + Math.random() * 20, maxLife: 50,
+        color, size: (2 + Math.random() * 3) * Math.min(scale, 1.5),
+      });
+    }
+    // White core
+    particles.push({
+      x: cx, y: py,
+      vx: 0, vy: -1 - Math.random() * 2,
+      life: 20, maxLife: 20,
+      color: 0xffffff, size: 3 + Math.random() * 2,
+    });
+  }
+
+  // Top burst
+  for (let i = 0; i < 15; i++) {
+    const angle = -Math.PI / 2 + (Math.random() - 0.5) * 1.2;
+    const speed = 3 + Math.random() * 5;
+    particles.push({
+      x: cx, y: offsetY,
+      vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+      life: 25, maxLife: 25,
+      color, size: 3 + Math.random() * 3,
+    });
+  }
+
+  return {
+    shakeAmount: Math.min(7 * (1 + chainStep * 0.3), 18),
+    flashAlpha: Math.min(0.3 * (1 + chainStep * 0.2), 0.7),
+    slowMoTimer: 25 + chainStep * 8,
+  };
+}
+
+// ── Gravity Crush VFX: subtle ground impact ring ──
+export function gravityCrushVFX(
+  particles: Particle[],
+  pushedCells: [number, number][],
+  color: number,
+  offsetX: number,
+  offsetY: number,
+) {
+  for (const [r, c] of pushedCells) {
+    const px = offsetX + c * CELL + CELL / 2;
+    const py = offsetY + r * CELL + CELL / 2;
+    // Small dust ring
+    for (let i = 0; i < 6; i++) {
+      const angle = (i / 6) * Math.PI * 2;
+      particles.push({
+        x: px, y: py,
+        vx: Math.cos(angle) * 2, vy: Math.sin(angle) * 1 - 0.5,
+        life: 12 + Math.random() * 6, maxLife: 18,
+        color, size: 1.5 + Math.random() * 1.5,
+      });
+    }
+    // Upward dust
+    for (let i = 0; i < 3; i++) {
+      particles.push({
+        x: px + (Math.random() - 0.5) * 8, y: py,
+        vx: (Math.random() - 0.5) * 1, vy: -1 - Math.random() * 2,
+        life: 10 + Math.random() * 5, maxLife: 15,
+        color: 0xffffff, size: 1 + Math.random() * 1.5,
+      });
+    }
+  }
+}
+
+// ── Urgency vignette overlay ──
+export function drawUrgencyOverlay(
+  g: Phaser.GameObjects.Graphics,
+  intensity: number, // 0-1
+  w: number,
+  h: number,
+  time: number,
+) {
+  if (intensity <= 0) return;
+  const pulse = 0.7 + Math.sin(time * 2.5) * 0.3;
+  const alpha = intensity * 0.12 * pulse;
+  // Red-ish vignette edges
+  g.fillStyle(0xff2200, alpha);
+  g.fillRect(0, 0, w, 8);
+  g.fillRect(0, h - 8, w, 8);
+  g.fillRect(0, 0, 8, h);
+  g.fillRect(w - 8, 0, 8, h);
+  // Wider subtle glow
+  g.fillStyle(0xff4400, alpha * 0.4);
+  g.fillRect(0, 0, w, 20);
+  g.fillRect(0, h - 20, w, 20);
+  g.fillRect(0, 0, 20, h);
+  g.fillRect(w - 20, 0, 20, h);
+}
+
 export function drawParticles(
   g: Phaser.GameObjects.Graphics,
   particles: Particle[],
