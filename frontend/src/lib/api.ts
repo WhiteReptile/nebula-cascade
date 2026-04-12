@@ -122,6 +122,9 @@ export const anticheatApi = {
     combo_efficiency?: number;
     lines_cleared?: number;
     session_id?: string;
+    // SEGMENTATION (see playerSegmentation.ts + core_rules.py)
+    has_ever_owned_card?: boolean;
+    target_leaderboard?: string; // "no_nft" | "nft" | "auto"
   }) =>
     apiFetch<any>("/api/anticheat/validate-score", {
       method: "POST",
@@ -133,4 +136,25 @@ export const anticheatApi = {
 
   getStatus: () =>
     apiFetch<any>("/api/anticheat/status"),
+};
+
+
+// ─── Player Segmentation ────────────────────────────────
+// See playerSegmentation.ts for frontend logic
+// See core_rules.py (backend) for the authoritative rule documentation
+export const playerApi = {
+  getSegment: (playerId: string) =>
+    apiFetch<any>(`/api/player/segment/${playerId}`),
+
+  flagCardOwnership: (playerId: string) =>
+    apiFetch<any>("/api/player/flag-card-ownership", {
+      method: "POST",
+      body: JSON.stringify({ player_id: playerId }),
+    }),
+
+  getLeaderboard: (boardType: string) =>
+    apiFetch<any>(`/api/player/leaderboard/${boardType}`),
+
+  canSubmit: (playerId: string, boardType: string) =>
+    apiFetch<any>(`/api/player/can-submit/${playerId}/${boardType}`),
 };

@@ -414,6 +414,324 @@ class BackendTester:
         except Exception as e:
             self.log_test("GET /api/anticheat/status", False, f"Exception: {str(e)}")
 
+    def test_player_segmentation_endpoints(self):
+        """Test NEW Player Segmentation API endpoints"""
+        print("=== Testing Player Segmentation Endpoints ===")
+        
+        # Test player IDs for segmentation testing
+        fresh_player_id = "fresh-player-123"
+        nft_player_id = "nft-player-456"
+        
+        # 1. Test fresh player segment (should be non_nft)
+        try:
+            response = self.session.get(f"{API_BASE}/player/segment/{fresh_player_id}")
+            if response.status_code == 200:
+                data = response.json()
+                if (data.get("segment") == "non_nft" and 
+                    data.get("has_ever_owned_card") == False and
+                    data.get("can_view_no_nft_board") == True and
+                    data.get("can_view_nft_board") == False):
+                    self.log_test("GET /api/player/segment/{fresh_player}", True, f"Fresh player correctly segmented as non_nft: {data}")
+                else:
+                    self.log_test("GET /api/player/segment/{fresh_player}", False, f"Unexpected segmentation: {data}")
+            else:
+                self.log_test("GET /api/player/segment/{fresh_player}", False, f"Status: {response.status_code}, Response: {response.text}")
+        except Exception as e:
+            self.log_test("GET /api/player/segment/{fresh_player}", False, f"Exception: {str(e)}")
+
+        # 2. Test fresh player can submit to no_nft board
+        try:
+            response = self.session.get(f"{API_BASE}/player/can-submit/{fresh_player_id}/no_nft")
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("can_submit") == True and data.get("has_ever_owned_card") == False:
+                    self.log_test("GET /api/player/can-submit/{fresh_player}/no_nft", True, f"Fresh player can submit to no_nft: {data}")
+                else:
+                    self.log_test("GET /api/player/can-submit/{fresh_player}/no_nft", False, f"Unexpected response: {data}")
+            else:
+                self.log_test("GET /api/player/can-submit/{fresh_player}/no_nft", False, f"Status: {response.status_code}, Response: {response.text}")
+        except Exception as e:
+            self.log_test("GET /api/player/can-submit/{fresh_player}/no_nft", False, f"Exception: {str(e)}")
+
+        # 3. Test fresh player CANNOT submit to nft board
+        try:
+            response = self.session.get(f"{API_BASE}/player/can-submit/{fresh_player_id}/nft")
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("can_submit") == False and data.get("has_ever_owned_card") == False:
+                    self.log_test("GET /api/player/can-submit/{fresh_player}/nft", True, f"Fresh player correctly excluded from nft board: {data}")
+                else:
+                    self.log_test("GET /api/player/can-submit/{fresh_player}/nft", False, f"Unexpected response: {data}")
+            else:
+                self.log_test("GET /api/player/can-submit/{fresh_player}/nft", False, f"Status: {response.status_code}, Response: {response.text}")
+        except Exception as e:
+            self.log_test("GET /api/player/can-submit/{fresh_player}/nft", False, f"Exception: {str(e)}")
+
+        # 4. Flag fresh player as card owner (ONE-WAY operation)
+        try:
+            flag_request = {"player_id": fresh_player_id}
+            response = self.session.post(f"{API_BASE}/player/flag-card-ownership", json=flag_request)
+            if response.status_code == 200:
+                data = response.json()
+                if (data.get("has_ever_owned_card") == True and 
+                    data.get("segment") == "nft_player" and
+                    data.get("was_already_flagged") == False):
+                    self.log_test("POST /api/player/flag-card-ownership (first time)", True, f"Player successfully flagged as card owner: {data}")
+                else:
+                    self.log_test("POST /api/player/flag-card-ownership (first time)", False, f"Unexpected response: {data}")
+            else:
+                self.log_test("POST /api/player/flag-card-ownership (first time)", False, f"Status: {response.status_code}, Response: {response.text}")
+        except Exception as e:
+            self.log_test("POST /api/player/flag-card-ownership (first time)", False, f"Exception: {str(e)}")
+
+        # 5. Verify player is now nft_player segment
+        try:
+            response = self.session.get(f"{API_BASE}/player/segment/{fresh_player_id}")
+            if response.status_code == 200:
+                data = response.json()
+                if (data.get("segment") == "nft_player" and 
+                    data.get("has_ever_owned_card") == True and
+                    data.get("can_view_no_nft_board") == False and
+                    data.get("can_view_nft_board") == True):
+                    self.log_test("GET /api/player/segment/{flagged_player}", True, f"Flagged player correctly segmented as nft_player: {data}")
+                else:
+                    self.log_test("GET /api/player/segment/{flagged_player}", False, f"Unexpected segmentation: {data}")
+            else:
+                self.log_test("GET /api/player/segment/{flagged_player}", False, f"Status: {response.status_code}, Response: {response.text}")
+        except Exception as e:
+            self.log_test("GET /api/player/segment/{flagged_player}", False, f"Exception: {str(e)}")
+
+        # 6. CRITICAL: Verify flagged player CANNOT submit to no_nft board (permanently excluded)
+        try:
+            response = self.session.get(f"{API_BASE}/player/can-submit/{fresh_player_id}/no_nft")
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("can_submit") == False and data.get("has_ever_owned_card") == True:
+                    self.log_test("GET /api/player/can-submit/{flagged_player}/no_nft", True, f"CRITICAL: Flagged player correctly excluded from no_nft board: {data}")
+                else:
+                    self.log_test("GET /api/player/can-submit/{flagged_player}/no_nft", False, f"CRITICAL FAILURE: Flagged player should be excluded from no_nft board: {data}")
+            else:
+                self.log_test("GET /api/player/can-submit/{flagged_player}/no_nft", False, f"Status: {response.status_code}, Response: {response.text}")
+        except Exception as e:
+            self.log_test("GET /api/player/can-submit/{flagged_player}/no_nft", False, f"Exception: {str(e)}")
+
+        # 7. Verify flagged player CAN submit to nft board
+        try:
+            response = self.session.get(f"{API_BASE}/player/can-submit/{fresh_player_id}/nft")
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("can_submit") == True and data.get("has_ever_owned_card") == True:
+                    self.log_test("GET /api/player/can-submit/{flagged_player}/nft", True, f"Flagged player can submit to nft board: {data}")
+                else:
+                    self.log_test("GET /api/player/can-submit/{flagged_player}/nft", False, f"Unexpected response: {data}")
+            else:
+                self.log_test("GET /api/player/can-submit/{flagged_player}/nft", False, f"Status: {response.status_code}, Response: {response.text}")
+        except Exception as e:
+            self.log_test("GET /api/player/can-submit/{flagged_player}/nft", False, f"Exception: {str(e)}")
+
+        # 8. Test idempotent flagging (flag same player again)
+        try:
+            flag_request = {"player_id": fresh_player_id}
+            response = self.session.post(f"{API_BASE}/player/flag-card-ownership", json=flag_request)
+            if response.status_code == 200:
+                data = response.json()
+                if (data.get("has_ever_owned_card") == True and 
+                    data.get("was_already_flagged") == True and
+                    "already flagged" in data.get("message", "").lower()):
+                    self.log_test("POST /api/player/flag-card-ownership (idempotent)", True, f"Idempotent flagging works correctly: {data}")
+                else:
+                    self.log_test("POST /api/player/flag-card-ownership (idempotent)", False, f"Unexpected response: {data}")
+            else:
+                self.log_test("POST /api/player/flag-card-ownership (idempotent)", False, f"Status: {response.status_code}, Response: {response.text}")
+        except Exception as e:
+            self.log_test("POST /api/player/flag-card-ownership (idempotent)", False, f"Exception: {str(e)}")
+
+        # 9. Test leaderboard filtering - no_nft board
+        try:
+            response = self.session.get(f"{API_BASE}/player/leaderboard/no_nft")
+            if response.status_code == 200:
+                data = response.json()
+                if (data.get("board_type") == "no_nft" and 
+                    "entries" in data and
+                    "only players who have never owned a card" in data.get("rule_note", "").lower()):
+                    self.log_test("GET /api/player/leaderboard/no_nft", True, f"No-NFT leaderboard retrieved: {data}")
+                else:
+                    self.log_test("GET /api/player/leaderboard/no_nft", False, f"Unexpected response: {data}")
+            else:
+                self.log_test("GET /api/player/leaderboard/no_nft", False, f"Status: {response.status_code}, Response: {response.text}")
+        except Exception as e:
+            self.log_test("GET /api/player/leaderboard/no_nft", False, f"Exception: {str(e)}")
+
+        # 10. Test leaderboard filtering - nft board
+        try:
+            response = self.session.get(f"{API_BASE}/player/leaderboard/nft")
+            if response.status_code == 200:
+                data = response.json()
+                if (data.get("board_type") == "nft" and 
+                    "entries" in data and
+                    "current/former card owners" in data.get("rule_note", "").lower()):
+                    self.log_test("GET /api/player/leaderboard/nft", True, f"NFT leaderboard retrieved: {data}")
+                else:
+                    self.log_test("GET /api/player/leaderboard/nft", False, f"Unexpected response: {data}")
+            else:
+                self.log_test("GET /api/player/leaderboard/nft", False, f"Status: {response.status_code}, Response: {response.text}")
+        except Exception as e:
+            self.log_test("GET /api/player/leaderboard/nft", False, f"Exception: {str(e)}")
+
+        # 11. Test leaderboard filtering - global board
+        try:
+            response = self.session.get(f"{API_BASE}/player/leaderboard/global")
+            if response.status_code == 200:
+                data = response.json()
+                if (data.get("board_type") == "global" and 
+                    "entries" in data and
+                    "all players" in data.get("rule_note", "").lower()):
+                    self.log_test("GET /api/player/leaderboard/global", True, f"Global leaderboard retrieved: {data}")
+                else:
+                    self.log_test("GET /api/player/leaderboard/global", False, f"Unexpected response: {data}")
+            else:
+                self.log_test("GET /api/player/leaderboard/global", False, f"Status: {response.status_code}, Response: {response.text}")
+        except Exception as e:
+            self.log_test("GET /api/player/leaderboard/global", False, f"Exception: {str(e)}")
+
+    def test_anticheat_segmentation_enforcement(self):
+        """Test CRITICAL Anti-cheat Segmentation Enforcement"""
+        print("=== Testing Anti-cheat Segmentation Enforcement ===")
+        
+        # Test player IDs
+        non_nft_player = "anticheat-non-nft-123"
+        nft_player = "anticheat-nft-456"
+        
+        # 1. CRITICAL: NFT player trying to submit to no_nft board should be REJECTED
+        try:
+            nft_to_no_nft_score = {
+                "player_id": nft_player,
+                "score": 5000,
+                "level_reached": 8,
+                "survival_time_seconds": 180,
+                "max_combo": 12,
+                "lines_cleared": 25,
+                "has_ever_owned_card": True,  # NFT player
+                "target_leaderboard": "no_nft"  # Trying wrong board
+            }
+            response = self.session.post(f"{API_BASE}/anticheat/validate-score", json=nft_to_no_nft_score)
+            if response.status_code == 200:
+                data = response.json()
+                if (data.get("segmentation_valid") == False and 
+                    data.get("risk_level") == "critical" and
+                    data.get("score_accepted") == False):
+                    self.log_test("POST /api/anticheat/validate-score (NFT→no_nft REJECT)", True, f"CRITICAL: NFT player correctly rejected from no_nft board: {data}")
+                else:
+                    self.log_test("POST /api/anticheat/validate-score (NFT→no_nft REJECT)", False, f"CRITICAL FAILURE: NFT player should be rejected from no_nft board: {data}")
+            else:
+                self.log_test("POST /api/anticheat/validate-score (NFT→no_nft REJECT)", False, f"Status: {response.status_code}, Response: {response.text}")
+        except Exception as e:
+            self.log_test("POST /api/anticheat/validate-score (NFT→no_nft REJECT)", False, f"Exception: {str(e)}")
+
+        # 2. Non-NFT player submitting to no_nft board should PASS (if score is clean)
+        try:
+            non_nft_to_no_nft_score = {
+                "player_id": non_nft_player,
+                "score": 3500,
+                "level_reached": 6,
+                "survival_time_seconds": 150,
+                "max_combo": 8,
+                "lines_cleared": 20,
+                "has_ever_owned_card": False,  # Non-NFT player
+                "target_leaderboard": "no_nft"  # Correct board
+            }
+            response = self.session.post(f"{API_BASE}/anticheat/validate-score", json=non_nft_to_no_nft_score)
+            if response.status_code == 200:
+                data = response.json()
+                if (data.get("segmentation_valid") == True and 
+                    data.get("score_accepted") == True and
+                    data.get("routed_to_leaderboard") == "no_nft"):
+                    self.log_test("POST /api/anticheat/validate-score (non-NFT→no_nft PASS)", True, f"Non-NFT player correctly accepted to no_nft board: {data}")
+                else:
+                    self.log_test("POST /api/anticheat/validate-score (non-NFT→no_nft PASS)", False, f"Unexpected response: {data}")
+            else:
+                self.log_test("POST /api/anticheat/validate-score (non-NFT→no_nft PASS)", False, f"Status: {response.status_code}, Response: {response.text}")
+        except Exception as e:
+            self.log_test("POST /api/anticheat/validate-score (non-NFT→no_nft PASS)", False, f"Exception: {str(e)}")
+
+        # 3. NFT player with auto routing should go to nft board
+        try:
+            nft_auto_route_score = {
+                "player_id": nft_player,
+                "score": 4200,
+                "level_reached": 7,
+                "survival_time_seconds": 160,
+                "max_combo": 10,
+                "lines_cleared": 22,
+                "has_ever_owned_card": True,  # NFT player
+                "target_leaderboard": "auto"  # Auto routing
+            }
+            response = self.session.post(f"{API_BASE}/anticheat/validate-score", json=nft_auto_route_score)
+            if response.status_code == 200:
+                data = response.json()
+                if (data.get("segmentation_valid") == True and 
+                    data.get("score_accepted") == True and
+                    data.get("routed_to_leaderboard") == "nft"):
+                    self.log_test("POST /api/anticheat/validate-score (NFT auto→nft)", True, f"NFT player auto-routed to nft board: {data}")
+                else:
+                    self.log_test("POST /api/anticheat/validate-score (NFT auto→nft)", False, f"Unexpected response: {data}")
+            else:
+                self.log_test("POST /api/anticheat/validate-score (NFT auto→nft)", False, f"Status: {response.status_code}, Response: {response.text}")
+        except Exception as e:
+            self.log_test("POST /api/anticheat/validate-score (NFT auto→nft)", False, f"Exception: {str(e)}")
+
+        # 4. Non-NFT player with auto routing should go to no_nft board
+        try:
+            non_nft_auto_route_score = {
+                "player_id": non_nft_player,
+                "score": 2800,
+                "level_reached": 5,
+                "survival_time_seconds": 120,
+                "max_combo": 6,
+                "lines_cleared": 18,
+                "has_ever_owned_card": False,  # Non-NFT player
+                "target_leaderboard": "auto"  # Auto routing
+            }
+            response = self.session.post(f"{API_BASE}/anticheat/validate-score", json=non_nft_auto_route_score)
+            if response.status_code == 200:
+                data = response.json()
+                if (data.get("segmentation_valid") == True and 
+                    data.get("score_accepted") == True and
+                    data.get("routed_to_leaderboard") == "no_nft"):
+                    self.log_test("POST /api/anticheat/validate-score (non-NFT auto→no_nft)", True, f"Non-NFT player auto-routed to no_nft board: {data}")
+                else:
+                    self.log_test("POST /api/anticheat/validate-score (non-NFT auto→no_nft)", False, f"Unexpected response: {data}")
+            else:
+                self.log_test("POST /api/anticheat/validate-score (non-NFT auto→no_nft)", False, f"Status: {response.status_code}, Response: {response.text}")
+        except Exception as e:
+            self.log_test("POST /api/anticheat/validate-score (non-NFT auto→no_nft)", False, f"Exception: {str(e)}")
+
+        # 5. NFT player submitting to nft board should PASS
+        try:
+            nft_to_nft_score = {
+                "player_id": nft_player,
+                "score": 6500,
+                "level_reached": 10,
+                "survival_time_seconds": 200,
+                "max_combo": 15,
+                "lines_cleared": 30,
+                "has_ever_owned_card": True,  # NFT player
+                "target_leaderboard": "nft"  # Correct board
+            }
+            response = self.session.post(f"{API_BASE}/anticheat/validate-score", json=nft_to_nft_score)
+            if response.status_code == 200:
+                data = response.json()
+                if (data.get("segmentation_valid") == True and 
+                    data.get("score_accepted") == True and
+                    data.get("routed_to_leaderboard") == "nft"):
+                    self.log_test("POST /api/anticheat/validate-score (NFT→nft PASS)", True, f"NFT player correctly accepted to nft board: {data}")
+                else:
+                    self.log_test("POST /api/anticheat/validate-score (NFT→nft PASS)", False, f"Unexpected response: {data}")
+            else:
+                self.log_test("POST /api/anticheat/validate-score (NFT→nft PASS)", False, f"Status: {response.status_code}, Response: {response.text}")
+        except Exception as e:
+            self.log_test("POST /api/anticheat/validate-score (NFT→nft PASS)", False, f"Exception: {str(e)}")
+
     def test_edge_cases(self):
         """Test edge cases and error handling"""
         print("=== Testing Edge Cases ===")
@@ -486,6 +804,11 @@ class BackendTester:
         self.test_marketplace_endpoints()
         self.test_wallet_endpoints()
         self.test_anticheat_endpoints()
+        
+        # NEW SEGMENTATION TESTS (Priority focus)
+        self.test_player_segmentation_endpoints()
+        self.test_anticheat_segmentation_enforcement()
+        
         self.test_edge_cases()
         
         self.print_summary()

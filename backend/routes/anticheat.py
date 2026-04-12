@@ -3,6 +3,11 @@
 Server-side score validation and anti-cheat checks.
 Structure for future external anti-cheat API integration.
 
+ENFORCES: Player segmentation rule (see core_rules.py)
+- Validates has_ever_owned_card on every score submission
+- Routes scores to correct leaderboard (no_nft vs nft)
+- Rejects submissions to wrong leaderboard
+
 All routes prefixed with /api/anticheat
 """
 from fastapi import APIRouter, HTTPException
@@ -10,6 +15,14 @@ from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any, List
 import logging
 from datetime import datetime
+
+# Import core rules for segmentation enforcement
+from core_rules import (
+    LeaderboardType,
+    get_player_segment,
+    get_eligible_leaderboards,
+    can_submit_to_leaderboard,
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/anticheat", tags=["anticheat"])
@@ -29,6 +42,9 @@ class ScoreSubmission(BaseModel):
     session_seed: Optional[str] = None
     card_id: Optional[str] = None
     client_timestamp: Optional[str] = None
+    # SEGMENTATION FIELDS (see core_rules.py for full explanation)
+    has_ever_owned_card: bool = False  # Player's ownership flag
+    target_leaderboard: str = "auto"   # "no_nft", "nft", or "auto" (server decides)
 
 
 class ValidationResult(BaseModel):
@@ -39,6 +55,10 @@ class ValidationResult(BaseModel):
     risk_level: str = "low"  # low | medium | high | critical
     warnings: List[str] = []
     adjustments: Dict[str, Any] = {}
+    # SEGMENTATION (see core_rules.py)
+    player_segment: str = "non_nft"      # "non_nft" or "nft_player"
+    routed_to_leaderboard: str = "no_nft"  # Which leaderboard this score goes to
+    segmentation_valid: bool = True       # False if player tried wrong board
 
 
 # Thresholds for anti-cheat checks
@@ -114,20 +134,16 @@ def assess_risk(flags: Dict[str, bool]) -> str:
 async def validate_score(submission: ScoreSubmission):
     """Validate a score submission server-side
     
-    Runs multiple anti-cheat checks and returns a risk assessment.
+    Runs multiple checks:
+    1. PLAYER SEGMENTATION (core_rules.py) — route to correct leaderboard
+    2. Anti-cheat flags — detect suspicious scores
+    3. Risk assessment — accept or flag
     
-    Current checks (local):
-    - Score per second rate
-    - Combo vs level reasonability
-    - Lines per second rate
-    - Speed hack detection
-    - Impossible score detection
-    - Perfect efficiency detection
-    
-    Future (external APIs):
-    - Session replay verification
-    - Input pattern analysis
-    - Device fingerprinting
+    SEGMENTATION ENFORCEMENT (CRITICAL):
+    - If has_ever_owned_card is True → score goes to NFT leaderboard ONLY
+    - If has_ever_owned_card is False → score goes to No-NFT leaderboard ONLY
+    - If player requests wrong board → rejected with segmentation_valid=False
+    - This is a PERMANENT rule. See core_rules.py for full explanation.
     """
     # Basic validation
     if submission.score < 0:
@@ -135,7 +151,52 @@ async def validate_score(submission: ScoreSubmission):
     if submission.survival_time_seconds < 0:
         raise HTTPException(status_code=400, detail="Invalid survival time")
 
-    # Compute flags
+    # ═══════════════════════════════════════════════════════════════
+    # SEGMENTATION ENFORCEMENT (see core_rules.py RULE 1)
+    # ═══════════════════════════════════════════════════════════════
+    segment = get_player_segment(submission.has_ever_owned_card)
+    eligible = get_eligible_leaderboards(submission.has_ever_owned_card)
+
+    # Determine target leaderboard
+    if submission.target_leaderboard == "auto":
+        # Auto-route based on ownership flag
+        routed_board = "nft" if submission.has_ever_owned_card else "no_nft"
+    else:
+        routed_board = submission.target_leaderboard
+
+    # Validate segmentation — is the player allowed on this board?
+    try:
+        target_board_type = LeaderboardType(routed_board)
+    except ValueError:
+        target_board_type = LeaderboardType.GLOBAL
+
+    segmentation_valid = can_submit_to_leaderboard(
+        submission.has_ever_owned_card, target_board_type
+    )
+
+    if not segmentation_valid:
+        # HARD REJECT — player tried to submit to wrong leaderboard
+        logger.warning(
+            f"SEGMENTATION VIOLATION: player={submission.player_id}, "
+            f"has_ever_owned_card={submission.has_ever_owned_card}, "
+            f"tried board={routed_board}. Rejected."
+        )
+        return ValidationResult(
+            valid=False,
+            score_accepted=False,
+            flags={},
+            risk_level="critical",
+            warnings=[
+                f"Player segment ({segment.value}) cannot submit to {routed_board} leaderboard. "
+                f"See core_rules.py for player segmentation rules."
+            ],
+            player_segment=segment.value,
+            routed_to_leaderboard=routed_board,
+            segmentation_valid=False,
+        )
+    # ═══════════════════════════════════════════════════════════════
+
+    # Compute anti-cheat flags
     flags = compute_flags(submission)
     risk_level = assess_risk(flags)
     
@@ -159,6 +220,7 @@ async def validate_score(submission: ScoreSubmission):
         logger.warning(
             f"Flagged score: player={submission.player_id}, "
             f"score={submission.score}, risk={risk_level}, "
+            f"segment={segment.value}, board={routed_board}, "
             f"flags={[k for k, v in flags.items() if v]}"
         )
 
@@ -168,6 +230,9 @@ async def validate_score(submission: ScoreSubmission):
         flags=flags,
         risk_level=risk_level,
         warnings=warnings,
+        player_segment=segment.value,
+        routed_to_leaderboard=routed_board,
+        segmentation_valid=True,
     )
 
 

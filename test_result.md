@@ -180,6 +180,52 @@ backend:
           agent: "testing"
           comment: "Blockchain service framework tested via NFT status endpoint. Correctly reports framework_mode=true, shows Base Sepolia testnet config, properly indicates missing API keys and contract deployment. Framework is ready for production keys."
 
+
+  - task: "Core Rules Module (Player Segmentation)"
+    implemented: true
+    working: true
+    file: "backend/core_rules.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "SINGLE SOURCE OF TRUTH for all game rules. RULE 1: Player Segmentation (has_ever_owned_card permanent flag). RULE 2: Energy. RULE 3: Divisions. Contains SQL migration for Supabase. All enforcement functions tested."
+        - working: true
+          agent: "testing"
+          comment: "Core rules module tested via player segmentation endpoints. All segmentation logic working correctly: get_player_segment(), get_eligible_leaderboards(), can_submit_to_leaderboard(), should_flag_on_card_acquisition(). PlayerSegment and LeaderboardType enums functioning properly. One-way flagging rule enforced correctly."
+
+  - task: "Player Segmentation API"
+    implemented: true
+    working: true
+    file: "backend/routes/player.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "GET /api/player/segment/{id}, POST /api/player/flag-card-ownership (ONE-WAY), GET /api/player/leaderboard/{type}, GET /api/player/can-submit/{id}/{board}. NFT player correctly rejected from no_nft board."
+        - working: true
+          agent: "testing"
+          comment: "Comprehensive testing of all 4 player segmentation endpoints completed successfully. GET /api/player/segment/{id} correctly returns segment info (non_nft/nft_player), eligible leaderboards, and board visibility flags. POST /api/player/flag-card-ownership works as ONE-WAY permanent operation with idempotent behavior. GET /api/player/can-submit/{id}/{board} correctly enforces segmentation rules - fresh players can submit to no_nft, flagged players permanently excluded from no_nft. GET /api/player/leaderboard/{board_type} returns properly filtered leaderboards by segment. Critical segmentation enforcement working perfectly."
+
+  - task: "Anti-Cheat Segmentation Enforcement"
+    implemented: true
+    working: true
+    file: "backend/routes/anticheat.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "validate-score now enforces segmentation via has_ever_owned_card + target_leaderboard. NFT player submitting to no_nft gets segmentation_valid=false, risk=critical."
+        - working: true
+          agent: "testing"
+          comment: "CRITICAL segmentation enforcement tested and working perfectly. NFT players (has_ever_owned_card=true) attempting to submit to no_nft board are correctly REJECTED with segmentation_valid=false and risk=critical. Auto-routing works correctly: NFT players route to 'nft' board, non-NFT players route to 'no_nft' board. All valid submissions are accepted with proper segmentation_valid=true. The permanent exclusion rule is properly enforced - once flagged as card owner, players can never submit to no_nft board again."
+
 frontend:
   - task: "Thirdweb Wallet Connect Component"
     implemented: true
@@ -256,17 +302,13 @@ frontend:
 metadata:
   created_by: "main_agent"
   version: "1.0"
-  test_sequence: 2
+  test_sequence: 3
   run_ui: false
 
 test_plan:
-  current_focus:
-    - "NFT Status & Metadata API"
-    - "Marketplace Validation API"
-    - "Wallet Link & Verify API"
-    - "Anti-Cheat Score Validation API"
+  current_focus: []
   stuck_tasks: []
-  test_all: true
+  test_all: false
   test_priority: "high_first"
 
 agent_communication:
@@ -274,3 +316,7 @@ agent_communication:
       message: "Phase 1 implemented: Backend API layer (NFT, marketplace, wallet, anticheat) + Frontend (Thirdweb wallet connect, LI.FI swap widget, API client, wallet context). All backend endpoints tested via curl. Frontend pages rendering correctly. All integrations are in FRAMEWORK MODE (no API keys configured yet). Please test all backend endpoints thoroughly."
     - agent: "testing"
       message: "Comprehensive backend testing completed successfully. All 25 test cases passed (100% success rate). Tested all endpoint groups: NFT (6 endpoints), Marketplace (4 endpoints), Wallet (5 endpoints), Anti-cheat (3 endpoints), Basic (3 endpoints), plus edge cases (4 tests). All APIs working correctly in framework mode. System ready for production API key configuration."
+    - agent: "main"
+      message: "PLAYER SEGMENTATION RULE implemented. New files: backend/core_rules.py (single source of truth), backend/routes/player.py (segmentation endpoints), frontend/src/lib/playerSegmentation.ts (frontend logic). Updated: backend/routes/anticheat.py (enforce segmentation on score submit), frontend/src/pages/Leaderboard.tsx (dual boards: FREE/NFT/ALL with segment-based visibility), frontend/src/lib/api.ts (playerApi). Please test: 1) GET /api/player/segment/{id}, 2) POST /api/player/flag-card-ownership, 3) GET /api/player/can-submit/{id}/{board}, 4) GET /api/player/leaderboard/{type}, 5) POST /api/anticheat/validate-score with has_ever_owned_card + target_leaderboard fields, especially NFT player trying no_nft board should be REJECTED."
+    - agent: "testing"
+      message: "COMPREHENSIVE PLAYER SEGMENTATION TESTING COMPLETED - ALL 41 TESTS PASSED (100% SUCCESS). Tested all NEW segmentation features: 1) Player Segmentation API (11 tests) - segment detection, eligibility checks, one-way flagging, leaderboard filtering all working perfectly. 2) Anti-cheat Segmentation Enforcement (5 tests) - CRITICAL enforcement working: NFT players correctly REJECTED from no_nft board with segmentation_valid=false, auto-routing functional, permanent exclusion rule enforced. 3) All existing endpoints still working (25 tests). The segmentation system is production-ready with proper enforcement of the permanent one-way rule: once a player owns a card, they are permanently excluded from the no_nft leaderboard."

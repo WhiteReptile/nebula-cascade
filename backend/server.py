@@ -75,11 +75,13 @@ from routes.nft import router as nft_router
 from routes.marketplace import router as marketplace_router
 from routes.wallet import router as wallet_router
 from routes.anticheat import router as anticheat_router
+from routes.player import router as player_router
 
 app.include_router(nft_router)
 app.include_router(marketplace_router)
 app.include_router(wallet_router)
 app.include_router(anticheat_router)
+app.include_router(player_router)
 
 # CORS middleware
 app.add_middleware(
