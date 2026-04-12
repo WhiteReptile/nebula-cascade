@@ -1,3 +1,22 @@
+/**
+ * chainResolver.ts — Match detection and chain scoring logic
+ *
+ * Contains all pattern-matching algorithms that run after each piece locks.
+ * Resolution order (checked sequentially, first match wins per step):
+ *   1. Block Match     — 4×4 same-color grid → implosion + reorganize
+ *   2. Proximity Burst — 10+ adjacent same-color (flood-fill) → destroy cluster
+ *   3. Tri-Color Match — 3 consecutive full rows with 3 different dominant colors
+ *                        AND all 4 colors present with ≥6 each → fusion
+ *   4. Line Match      — 4+ consecutive full rows with same dominant color → clear
+ *                        (5+ total combo triggers Cosmic Wipe: full board clear)
+ *
+ * Bonus mechanics:
+ *   - Elemental Cascade: chain 3+ with same element repeating → destroy densest column
+ *   - Gravity Crush: force-drop pushes adjacent same-color orbs down 1 row
+ *   - Near-Miss Detection: highlights orbs 1 cell away from forming a match
+ *
+ * Chain multiplier: step 1 = 1×, step 2 = 1.2×, step 3+ = min(1.4, 1 + step×0.15)
+ */
 import { COLS, ROWS, COLORS } from '../pieces';
 import type { OrbState } from '../types';
 
