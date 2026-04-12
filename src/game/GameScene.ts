@@ -1,11 +1,18 @@
 import Phaser from 'phaser';
-import { randomOrbPiece, COLS, ROWS, CELL } from './pieces';
+import { randomOrbPiece, COLS, ROWS, CELL, COLORS } from './pieces';
 import { gameEvents } from './events';
 import type { ActivePiece, OrbState, FallingOrb, Star, ShootingStar, Spacecraft, Particle } from './types';
 import { drawBackground, drawGrid, drawAsteroidBorder } from './rendering/background';
 import { drawOrb } from './rendering/orbRenderer';
-import { createForceDropParticles, blockImplosionVFX, triColorFusionVFX, lineDestroyVFX, cosmicWipeVFX, reorganizeVFX, drawParticles, drawFlashOverlay } from './rendering/vfx';
-import { findBlockMatch, findTriColorMatch, findLineMatch, getChainMultiplier } from './logic/chainResolver';
+import {
+  createForceDropParticles, blockImplosionVFX, triColorFusionVFX,
+  lineDestroyVFX, cosmicWipeVFX, reorganizeVFX, drawParticles, drawFlashOverlay,
+  proximityBurstVFX, elementalCascadeVFX, gravityCrushVFX, drawUrgencyOverlay,
+} from './rendering/vfx';
+import {
+  findBlockMatch, findTriColorMatch, findLineMatch, getChainMultiplier,
+  findProximityBurst, findElementalCascade, applyGravityCrush, findNearMissOrbs,
+} from './logic/chainResolver';
 import { reorganizeOrbs, gravityCollapse } from './logic/orbReorganizer';
 import { updateFallingOrbPhysics } from './logic/fallingPhysics';
 
@@ -19,7 +26,7 @@ export class GameScene extends Phaser.Scene {
   // Moon gravity
   private fallSpeed = 0;
   private fallAccum = 0;
-  private readonly GRAVITY = 0.0014;
+  private readonly BASE_GRAVITY = 0.0014;
   private readonly MAX_FALL_SPEED = 0.072;
   private fallAge = 0;
 
@@ -30,12 +37,28 @@ export class GameScene extends Phaser.Scene {
   private chainResolving = false;
   private gameOver = false;
 
+  // Chain element tracking for Elemental Cascade
+  private lastChainElement: string | null = null;
+
   // Match tracking
   private matchStartedAt = new Date();
   private matchMaxCombo = 0;
   private matchComboPoints = 0;
   private matchOmniColorCount = 0;
   private matchLinesCleared = 0;
+
+  // Time tracking for speed ramp + urgency
+  private gameElapsed = 0; // seconds since game start
+  private readonly URGENCY_START = 80; // 1:20
+  private speedBonus = 0; // additional gravity multiplier from time
+
+  // Near-miss highlight timer
+  private nearMissTimer = 0;
+  private nearMissCells: [number, number][] = [];
+
+  // Force drop flag for gravity crush
+  private wasForceDropped = false;
+  private forceDropCells: [number, number][] = [];
 
   private paused = false;
   private gridGraphics!: Phaser.GameObjects.Graphics;
@@ -90,6 +113,10 @@ export class GameScene extends Phaser.Scene {
     this.particles = []; this.shakeAmount = 0; this.flashAlpha = 0;
     this.bounceOffset = 0; this.bounceVel = 0;
     this.fallSpeed = 0; this.fallAccum = 0; this.fallAge = 0;
+    this.gameElapsed = 0; this.speedBonus = 0;
+    this.lastChainElement = null;
+    this.nearMissTimer = 0; this.nearMissCells = [];
+    this.wasForceDropped = false; this.forceDropCells = [];
     this.matchStartedAt = new Date();
     this.matchMaxCombo = 0; this.matchComboPoints = 0;
     this.matchOmniColorCount = 0; this.matchLinesCleared = 0;
@@ -106,9 +133,25 @@ export class GameScene extends Phaser.Scene {
     }));
   }
 
+  // Get the most common color on the board for lucky piece bias
+  private getBoardDominantColor(): number | null {
+    const counts = new Map<number, number>();
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const orb = this.grid[r][c];
+        if (orb) counts.set(orb.color, (counts.get(orb.color) || 0) + 1);
+      }
+    }
+    let best: number | null = null, bestCount = 0;
+    for (const [color, count] of counts) {
+      if (count > bestCount) { bestCount = count; best = color; }
+    }
+    return best;
+  }
+
   private spawnPiece() {
     const def = this.nextPieceDef;
-    this.nextPieceDef = randomOrbPiece();
+    this.nextPieceDef = randomOrbPiece(this.getBoardDominantColor());
     this.activePiece = { def, rotation: 0, row: 0, col: Math.floor(COLS / 2) - 1 };
     this.snapScale = 1; this.fallSpeed = 0; this.fallAccum = 0; this.fallAge = 0;
     this.initFallingOrbs(def.shapes[0].length);
@@ -175,16 +218,22 @@ export class GameScene extends Phaser.Scene {
     createForceDropParticles(this.particles, this.getCells(this.activePiece), this.activePiece.def.color, this.offsetX, this.offsetY, this.activePiece.col, this.activePiece.row);
     this.shakeAmount = 8;
     this.flashAlpha = 0.3;
+    this.wasForceDropped = true;
+    // Store placed cells for gravity crush
+    this.forceDropCells = this.getCells(this.activePiece).map(([r, c]) => 
+      [this.activePiece!.row + r, this.activePiece!.col + c] as [number, number]
+    );
     this.lockPiece();
   }
 
   private lockPiece() {
     if (!this.activePiece) return;
+    const placedColor = this.activePiece.def.color;
     for (const [r, c] of this.getCells(this.activePiece)) {
       const nr = this.activePiece.row + r, nc = this.activePiece.col + c;
       if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS) {
         this.grid[nr][nc] = {
-          color: this.activePiece.def.color,
+          color: placedColor,
           wobblePhase: Math.random() * Math.PI * 2, wobbleAmp: 3 + Math.random() * 2,
           glowPulse: Math.random() * Math.PI * 2,
           landBounce: -5 - Math.random() * 3, landBounceVel: 0,
@@ -193,7 +242,20 @@ export class GameScene extends Phaser.Scene {
     }
     this.snapScale = 1.15;
     this.chainStep = 0;
+    this.lastChainElement = null;
     this.chainResolving = true;
+
+    // Apply gravity crush if force-dropped
+    if (this.wasForceDropped) {
+      this.wasForceDropped = false;
+      const pushed = applyGravityCrush(this.grid, this.forceDropCells, placedColor);
+      if (pushed.length > 0) {
+        gravityCrushVFX(this.particles, pushed, placedColor, this.offsetX, this.offsetY);
+        this.shakeAmount = Math.max(this.shakeAmount, 3);
+      }
+      this.forceDropCells = [];
+    }
+
     this.resolveChains();
   }
 
@@ -202,6 +264,7 @@ export class GameScene extends Phaser.Scene {
     const blockResult = findBlockMatch(this.grid);
     if (blockResult) {
       this.chainStep++;
+      const currentElement = this.getElementForColor(blockResult.color);
       const mult = getChainMultiplier(this.chainStep);
       const chainScore = Math.min(Math.floor(200 * mult * this.level), 1000);
       this.score += chainScore; this.matchComboPoints += chainScore;
@@ -211,13 +274,43 @@ export class GameScene extends Phaser.Scene {
       const placed = reorganizeOrbs(this.grid, blockResult.cells, blockResult.color);
       reorganizeVFX(this.particles, placed, blockResult.color, ...this.getCellBounds(blockResult.cells), this.offsetX, this.offsetY);
       gravityCollapse(this.grid);
+
+      // Check Elemental Cascade (chain 3+)
+      this.checkElementalCascade(currentElement, blockResult.color);
+      this.lastChainElement = currentElement;
+
       gameEvents.emit('chainCombo', this.chainStep);
       this.emitHUD();
       this.time.delayedCall(350 + this.chainStep * 50, () => this.resolveChains());
       return;
     }
 
-    // 2. Tri-color
+    // 2. Proximity Burst (5+ adjacent same-color cluster)
+    const proximityResult = findProximityBurst(this.grid);
+    if (proximityResult) {
+      this.chainStep++;
+      const currentElement = this.getElementForColor(proximityResult.color);
+      const mult = getChainMultiplier(this.chainStep);
+      const baseScore = Math.min(proximityResult.cells.length * 25, 500);
+      const chainScore = Math.min(Math.floor(baseScore * mult * this.level), 500);
+      this.score += chainScore; this.matchComboPoints += chainScore;
+      this.matchMaxCombo = Math.max(this.matchMaxCombo, this.chainStep);
+      const fx = proximityBurstVFX(this.particles, proximityResult.cells, proximityResult.color, this.chainStep, this.offsetX, this.offsetY);
+      this.applyVFX(fx);
+      // Destroy the cluster
+      for (const [r, c] of proximityResult.cells) { this.grid[r][c] = null; }
+      gravityCollapse(this.grid);
+
+      this.checkElementalCascade(currentElement, proximityResult.color);
+      this.lastChainElement = currentElement;
+
+      gameEvents.emit('chainCombo', this.chainStep);
+      this.emitHUD();
+      this.time.delayedCall(300 + this.chainStep * 50, () => this.resolveChains());
+      return;
+    }
+
+    // 3. Tri-color
     const triResult = findTriColorMatch(this.grid);
     if (triResult) {
       this.chainStep++;
@@ -232,6 +325,7 @@ export class GameScene extends Phaser.Scene {
       const placed = reorganizeOrbs(this.grid, triResult.cells, triResult.dominantColor);
       reorganizeVFX(this.particles, placed, triResult.dominantColor, ...this.getCellBounds(triResult.cells), this.offsetX, this.offsetY);
       gravityCollapse(this.grid);
+      this.lastChainElement = null;
       gameEvents.emit('chainCombo', this.chainStep);
       gameEvents.emit('triColor', this.chainStep);
       this.emitHUD();
@@ -239,7 +333,7 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    // 3. Line match
+    // 4. Line match
     const lineResult = findLineMatch(this.grid, this.combo);
     if (lineResult) {
       this.chainStep++;
@@ -264,18 +358,55 @@ export class GameScene extends Phaser.Scene {
         for (const row of sorted) { this.grid.splice(row, 1); this.grid.unshift(Array(COLS).fill(null)); }
         this.combo += lineResult.rows.length;
       }
+      this.lastChainElement = null;
       gameEvents.emit('chainCombo', this.chainStep);
       this.emitHUD();
       this.time.delayedCall(400 + this.chainStep * 50, () => this.resolveChains());
       return;
     }
 
-    // No matches
+    // No matches found — end chain
     this.chainResolving = false;
     if (this.chainStep === 0) this.combo = 0;
+    this.lastChainElement = null;
     this.level = Math.floor(this.score / 2000) + 1;
-    this.spawnPiece();
-    this.emitHUD();
+
+    // Near-miss helper: highlight almost-matching orbs
+    this.nearMissCells = findNearMissOrbs(this.grid);
+    if (this.nearMissCells.length > 0) {
+      this.nearMissTimer = 60; // ~1 second at 60fps
+    }
+
+    // Combo mercy window: delay spawn after chain 2+
+    const mercyDelay = this.chainStep >= 2 ? 500 : 0;
+    if (mercyDelay > 0) {
+      this.time.delayedCall(mercyDelay, () => {
+        this.spawnPiece();
+        this.emitHUD();
+      });
+    } else {
+      this.spawnPiece();
+      this.emitHUD();
+    }
+  }
+
+  private getElementForColor(color: number): string {
+    const found = COLORS.find(c => c.color === color);
+    return found ? found.element : 'unknown';
+  }
+
+  private checkElementalCascade(currentElement: string, color: number) {
+    const cascade = findElementalCascade(this.grid, this.chainStep, this.lastChainElement, currentElement);
+    if (cascade) {
+      const mult = getChainMultiplier(this.chainStep);
+      const cascadeScore = Math.min(Math.floor(300 * mult * this.level), 500);
+      this.score += cascadeScore; this.matchComboPoints += cascadeScore;
+      const fx = elementalCascadeVFX(this.particles, cascade.column, color, this.chainStep, this.offsetX, this.offsetY);
+      this.applyVFX(fx);
+      for (const [r, c] of cascade.cells) { this.grid[r][c] = null; }
+      gravityCollapse(this.grid);
+      gameEvents.emit('elementalCascade', this.chainStep);
+    }
   }
 
   private applyVFX(fx: { shakeAmount: number; flashAlpha: number; slowMoTimer: number }) {
@@ -295,14 +426,37 @@ export class GameScene extends Phaser.Scene {
     return [minCol, maxCol, maxRow];
   }
 
-  private emitHUD() { gameEvents.emit('hud', { score: this.score, level: this.level, combo: this.combo }); }
+  private emitHUD() {
+    gameEvents.emit('hud', {
+      score: this.score, level: this.level, combo: this.combo,
+      elapsed: this.gameElapsed, urgency: this.getUrgencyIntensity(),
+    });
+  }
+
+  private getUrgencyIntensity(): number {
+    if (this.gameElapsed < this.URGENCY_START) return 0;
+    // Ramps from 0 to 1 over ~60 seconds after urgency starts
+    return Math.min((this.gameElapsed - this.URGENCY_START) / 60, 1);
+  }
+
+  private getGravityMultiplier(): number {
+    // After 80s, gradually increase gravity
+    if (this.gameElapsed < this.URGENCY_START) return 1;
+    const elapsed = this.gameElapsed - this.URGENCY_START;
+    // Very small increment: +2% per second, stacking
+    return 1 + elapsed * 0.02;
+  }
 
   update(_time: number, delta: number) {
     if (this.gameOver || this.paused) { this.drawAll(); return; }
     const dt = this.slowMo ? delta * 0.3 : delta;
     this.globalTime += delta * 0.001;
+    this.gameElapsed += delta * 0.001;
 
     if (this.slowMo) { this.slowMoTimer--; if (this.slowMoTimer <= 0) this.slowMo = false; }
+
+    // Near-miss timer decay
+    if (this.nearMissTimer > 0) this.nearMissTimer--;
 
     // Bounce spring
     this.bounceOffset += this.bounceVel;
@@ -330,23 +484,20 @@ export class GameScene extends Phaser.Scene {
       }
     }
 
-    // Moon gravity — delta-time based velocity + acceleration
+    // Moon gravity — delta-time based velocity + acceleration with time-based speed ramp
     if (this.activePiece && !this.chainResolving) {
-      const dtSec = dt * 0.001; // convert ms → seconds
+      const dtSec = dt * 0.001;
       const levelBoost = 1 + (this.level - 1) * 0.045;
+      const timeBoost = this.getGravityMultiplier();
 
-      // Apply gravity acceleration (pixels/s²), clamped to terminal velocity
       this.fallSpeed = Math.min(
-        this.fallSpeed + this.GRAVITY * 1000 * levelBoost * dtSec,
-        this.MAX_FALL_SPEED * 60,
+        this.fallSpeed + this.BASE_GRAVITY * 1000 * levelBoost * timeBoost * dtSec,
+        this.MAX_FALL_SPEED * 60 * Math.min(timeBoost, 3), // cap terminal velocity scaling
       );
-      // Light damping for floaty feel
       this.fallSpeed *= Math.pow(0.992, dtSec * 60);
 
-      // Accumulate sub-cell progress using velocity × dt
       this.fallAccum += this.fallSpeed * dtSec;
 
-      // Advance whole rows when accumulator crosses 1.0
       while (this.fallAccum >= 1) {
         this.fallAccum -= 1;
         const test = { ...this.activePiece, row: this.activePiece.row + 1 };
@@ -413,6 +564,13 @@ export class GameScene extends Phaser.Scene {
           const py = oy + r * CELL + CELL / 2 + wobble + orb.landBounce;
           const glow = 0.85 + Math.sin(this.globalTime * 1.8 + orb.glowPulse) * 0.15;
           drawOrb(this.gridGraphics, px, py, orbRadius * this.snapScale, orb.color, glow, this.globalTime * 2 + orb.wobblePhase);
+
+          // Near-miss highlight
+          if (this.nearMissTimer > 0 && this.nearMissCells.some(([nr, nc]) => nr === r && nc === c)) {
+            const pulseAlpha = (this.nearMissTimer / 60) * (0.3 + Math.sin(this.globalTime * 8) * 0.15);
+            this.gridGraphics.fillStyle(0xffffff, pulseAlpha);
+            this.gridGraphics.fillCircle(px, py, orbRadius * 1.6);
+          }
         }
       }
     }
@@ -473,5 +631,11 @@ export class GameScene extends Phaser.Scene {
     this.vfxGraphics.clear();
     drawParticles(this.vfxGraphics, this.particles, shakeX, shakeY);
     drawFlashOverlay(this.vfxGraphics, this.flashAlpha, w, h);
+
+    // Urgency overlay (subtle vignette after 1:20)
+    const urgency = this.getUrgencyIntensity();
+    if (urgency > 0) {
+      drawUrgencyOverlay(this.vfxGraphics, urgency, w, h, this.globalTime);
+    }
   }
 }

@@ -7,6 +7,88 @@ export function getChainMultiplier(step: number): number {
   return Math.min(1.4, 1 + step * 0.15);
 }
 
+// ── Proximity Burst: 5+ same-color adjacent cluster (flood-fill) ──
+export function findProximityBurst(grid: (OrbState | null)[][]): { cells: [number, number][]; color: number } | null {
+  const visited = Array.from({ length: ROWS }, () => Array(COLS).fill(false));
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      if (visited[r][c] || !grid[r][c]) continue;
+      const color = grid[r][c]!.color;
+      const cluster: [number, number][] = [];
+      const queue: [number, number][] = [[r, c]];
+      visited[r][c] = true;
+      while (queue.length > 0) {
+        const [cr, cc] = queue.shift()!;
+        cluster.push([cr, cc]);
+        for (const [dr, dc] of [[0,1],[0,-1],[1,0],[-1,0]] as [number, number][]) {
+          const nr = cr + dr, nc = cc + dc;
+          if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && !visited[nr][nc] && grid[nr][nc]?.color === color) {
+            visited[nr][nc] = true;
+            queue.push([nr, nc]);
+          }
+        }
+      }
+      if (cluster.length >= 5) {
+        return { cells: cluster, color };
+      }
+    }
+  }
+  return null;
+}
+
+// ── Elemental Cascade: on chain 3+, if same element repeats, destroy a column ──
+export function findElementalCascade(
+  grid: (OrbState | null)[][],
+  chainStep: number,
+  lastChainElement: string | null,
+  currentElement: string,
+): { column: number; cells: [number, number][] } | null {
+  if (chainStep < 3 || !lastChainElement || lastChainElement !== currentElement) return null;
+  // Find the column with the most orbs of this element
+  let bestCol = -1, bestCount = 0;
+  for (let c = 0; c < COLS; c++) {
+    let count = 0;
+    for (let r = 0; r < ROWS; r++) {
+      if (grid[r][c]) count++;
+    }
+    if (count > bestCount) { bestCount = count; bestCol = c; }
+  }
+  if (bestCol < 0 || bestCount === 0) return null;
+  const cells: [number, number][] = [];
+  for (let r = 0; r < ROWS; r++) {
+    if (grid[r][bestCol]) cells.push([r, bestCol]);
+  }
+  return { column: bestCol, cells };
+}
+
+// ── Gravity Crush: push nearby same-color orbs down 1 row after force drop ──
+export function applyGravityCrush(
+  grid: (OrbState | null)[][],
+  placedCells: [number, number][],
+  color: number,
+): [number, number][] {
+  const pushed: [number, number][] = [];
+  const visited = new Set<string>();
+  for (const [pr, pc] of placedCells) {
+    for (const [dr, dc] of [[0,1],[0,-1],[1,0],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]] as [number, number][]) {
+      const nr = pr + dr, nc = pc + dc;
+      const key = `${nr},${nc}`;
+      if (nr >= 0 && nr < ROWS - 1 && nc >= 0 && nc < COLS && !visited.has(key)) {
+        visited.add(key);
+        const orb = grid[nr][nc];
+        if (orb && orb.color === color && nr + 1 < ROWS && !grid[nr + 1][nc]) {
+          grid[nr + 1][nc] = orb;
+          grid[nr][nc] = null;
+          orb.landBounce = -3;
+          orb.landBounceVel = 0;
+          pushed.push([nr + 1, nc]);
+        }
+      }
+    }
+  }
+  return pushed;
+}
+
 export function findBlockMatch(grid: (OrbState | null)[][]): { cells: [number, number][]; color: number } | null {
   for (let r = 0; r <= ROWS - 4; r++) {
     for (let c = 0; c <= COLS - 4; c++) {
@@ -47,7 +129,6 @@ function mode(arr: number[]): number | null {
 export function findTriColorMatch(grid: (OrbState | null)[][]): { cells: [number, number][]; dominantColor: number } | null {
   const allColors = COLORS.map(c => c.color);
 
-  // Strategy 1: 3 consecutive full rows with different dominant colors
   const fullRows: number[] = [];
   for (let r = 0; r < ROWS; r++) {
     if (grid[r].every(c => c !== null)) fullRows.push(r);
@@ -75,7 +156,6 @@ export function findTriColorMatch(grid: (OrbState | null)[][]): { cells: [number
     }
   }
 
-  // Strategy 2: connected cluster of 30+ orbs with all 5 colors (6+ each)
   const visited = Array.from({ length: ROWS }, () => Array(COLS).fill(false));
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
@@ -142,4 +222,45 @@ export function findLineMatch(grid: (OrbState | null)[][], combo: number): { row
   if (rowsToDestroy.length === 0) return null;
   const totalCombo = combo + rowsToDestroy.length;
   return { rows: rowsToDestroy, cosmicWipe: totalCombo >= 5 };
+}
+
+// ── Near-miss detection: find orbs 1 away from a match ──
+export function findNearMissOrbs(grid: (OrbState | null)[][]): [number, number][] {
+  const hints: [number, number][] = [];
+  const added = new Set<string>();
+
+  // Check horizontal runs of 2 same-color with empty neighbor
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS - 1; c++) {
+      const a = grid[r][c], b = grid[r][c + 1];
+      if (a && b && a.color === b.color) {
+        // Check if extending left or right would make 3+
+        for (const nc of [c - 1, c + 2]) {
+          if (nc >= 0 && nc < COLS && grid[r][nc] && grid[r][nc]!.color === a.color) {
+            for (const col of [c, c + 1, nc]) {
+              const key = `${r},${col}`;
+              if (!added.has(key)) { added.add(key); hints.push([r, col]); }
+            }
+          }
+        }
+      }
+    }
+  }
+  // Check vertical runs of 2
+  for (let c = 0; c < COLS; c++) {
+    for (let r = 0; r < ROWS - 1; r++) {
+      const a = grid[r][c], b = grid[r + 1][c];
+      if (a && b && a.color === b.color) {
+        for (const nr of [r - 1, r + 2]) {
+          if (nr >= 0 && nr < ROWS && grid[nr][c] && grid[nr][c]!.color === a.color) {
+            for (const row of [r, r + 1, nr]) {
+              const key = `${row},${c}`;
+              if (!added.has(key)) { added.add(key); hints.push([row, c]); }
+            }
+          }
+        }
+      }
+    }
+  }
+  return hints;
 }
