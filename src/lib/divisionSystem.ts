@@ -1,4 +1,4 @@
-// Division thresholds and utilities — Gems system
+// Division thresholds and utilities — Cards system
 export type Division = 'gem_v' | 'gem_iv' | 'gem_iii' | 'gem_ii' | 'gem_i';
 
 export const DIVISION_THRESHOLDS: { division: Division; minPoints: number }[] = [
@@ -10,11 +10,11 @@ export const DIVISION_THRESHOLDS: { division: Division; minPoints: number }[] = 
 ];
 
 export const DIVISION_LABELS: Record<Division, string> = {
-  gem_v: 'Gem V',
-  gem_iv: 'Gem IV',
-  gem_iii: 'Gem III',
-  gem_ii: 'Gem II',
-  gem_i: 'Gem I',
+  gem_v: 'Division V',
+  gem_iv: 'Division IV',
+  gem_iii: 'Division III',
+  gem_ii: 'Division II',
+  gem_i: 'Division I',
 };
 
 export const DIVISION_COLORS: Record<Division, string> = {
@@ -23,6 +23,14 @@ export const DIVISION_COLORS: Record<Division, string> = {
   gem_iii: '#3388ff', // Blue
   gem_ii: '#aa44ff',  // Purple
   gem_i: '#66ffee',   // White/Cyan
+};
+
+export const DIVISION_PRIORITY: Record<Division, number> = {
+  gem_v: 1,
+  gem_iv: 2,
+  gem_iii: 3,
+  gem_ii: 4,
+  gem_i: 5,
 };
 
 export function getDivisionForPoints(points: number): Division {
@@ -47,12 +55,8 @@ export const REWARD_TIERS: Record<Division, number[]> = {
   gem_v:   [1000, 500, 300, 200, 100],
 };
 
-// ISO week period string
+// Monthly period string (YYYY-MM)
 export function getCurrentPeriod(): string {
   const now = new Date();
-  const year = now.getFullYear();
-  const oneJan = new Date(year, 0, 1);
-  const days = Math.floor((now.getTime() - oneJan.getTime()) / 86400000);
-  const week = Math.ceil((days + oneJan.getDay() + 1) / 7);
-  return `${year}-W${String(week).padStart(2, '0')}`;
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 }

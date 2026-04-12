@@ -9,6 +9,9 @@ interface MatchData {
   omniColorCount: number;
   linesCleared: number;
   startedAt: Date;
+  cardId?: string;
+  sessionSeed?: string;
+  sessionId?: string;
 }
 
 interface AntiCheatFlags {
@@ -19,33 +22,31 @@ interface AntiCheatFlags {
 
 function computeAntiCheatFlags(data: MatchData, survivalSeconds: number): { flags: AntiCheatFlags; isFlagged: boolean } {
   const flags: AntiCheatFlags = {};
-
-  // Score-to-time ratio check
-  if (survivalSeconds > 0 && data.score / survivalSeconds > 50) {
-    flags.highScorePerSecond = true;
-  }
-
-  // Combo anomaly — max combo shouldn't exceed level * 8
-  if (data.maxCombo > data.level * 8) {
-    flags.abnormalCombo = true;
-  }
-
-  // Impossible clears — more than 2 lines/second sustained
-  if (survivalSeconds > 10 && data.linesCleared / survivalSeconds > 2) {
-    flags.impossibleClears = true;
-  }
-
+  if (survivalSeconds > 0 && data.score / survivalSeconds > 50) flags.highScorePerSecond = true;
+  if (data.maxCombo > data.level * 8) flags.abnormalCombo = true;
+  if (survivalSeconds > 10 && data.linesCleared / survivalSeconds > 2) flags.impossibleClears = true;
   const isFlagged = Object.values(flags).some(Boolean);
   return { flags, isFlagged };
 }
 
+async function computeAvgTop3(playerId: string): Promise<number> {
+  const { data } = await supabase
+    .from('match_logs')
+    .select('score')
+    .eq('player_id', playerId)
+    .order('score', { ascending: false })
+    .limit(3);
+
+  if (!data || data.length === 0) return 0;
+  const sum = data.reduce((acc, row) => acc + Number(row.score), 0);
+  return Math.floor(sum / data.length);
+}
+
 export async function logMatch(data: MatchData): Promise<void> {
   const { data: userData } = await supabase.auth.getUser();
-  if (!userData?.user) return; // not logged in — skip silently
+  if (!userData?.user) return;
 
   const userId = userData.user.id;
-
-  // Get player record
   const { data: player } = await supabase
     .from('players')
     .select('id, division_points, total_matches')
@@ -57,10 +58,8 @@ export async function logMatch(data: MatchData): Promise<void> {
   const endedAt = new Date();
   const survivalSeconds = Math.floor((endedAt.getTime() - data.startedAt.getTime()) / 1000);
   const comboEfficiency = data.score > 0 ? data.comboPoints / data.score : 0;
-
   const { flags, isFlagged } = computeAntiCheatFlags(data, survivalSeconds);
 
-  // Insert match log
   await supabase.from('match_logs').insert({
     player_id: player.id,
     score: data.score,
@@ -74,6 +73,9 @@ export async function logMatch(data: MatchData): Promise<void> {
     is_flagged: isFlagged,
     started_at: data.startedAt.toISOString(),
     ended_at: endedAt.toISOString(),
+    card_id: data.cardId ?? null,
+    session_seed: data.sessionSeed ?? null,
+    session_id: data.sessionId ?? null,
   });
 
   // Update player stats
@@ -89,8 +91,10 @@ export async function logMatch(data: MatchData): Promise<void> {
     })
     .eq('id', player.id);
 
-  // Upsert leaderboard
+  // Upsert leaderboard with avg_top3_score
   const period = getCurrentPeriod();
+  const avgTop3 = await computeAvgTop3(player.id);
+
   const { data: existing } = await supabase
     .from('leaderboard')
     .select('id, total_score, best_score, matches_played')
@@ -106,6 +110,7 @@ export async function logMatch(data: MatchData): Promise<void> {
         best_score: Math.max(existing.best_score, data.score),
         matches_played: existing.matches_played + 1,
         division: newDivision,
+        avg_top3_score: avgTop3,
       })
       .eq('id', existing.id);
   } else {
@@ -116,6 +121,7 @@ export async function logMatch(data: MatchData): Promise<void> {
       total_score: data.score,
       best_score: data.score,
       matches_played: 1,
+      avg_top3_score: avgTop3,
     });
   }
 }
