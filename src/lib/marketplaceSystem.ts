@@ -1,4 +1,20 @@
-// Marketplace system — internal card trading
+/**
+ * marketplaceSystem.ts — Internal card trading marketplace
+ *
+ * Players can list owned cards for sale and buy listed cards.
+ * Dynamic fee structure discourages rapid flipping:
+ *   - Base fee: 5%
+ *   - 1 resale within 7 days: 7%
+ *   - 2+ resales within 7 days: 10%
+ *
+ * Listing flow:
+ *   1. listCard() → Deactivates card, clears active_card_id, creates listing
+ *   2. buyCard() → Transfers ownership, inits energy for buyer, marks sold
+ *   3. cancelListing() → Sets status to 'cancelled' (card stays with seller)
+ *
+ * Database table: `marketplace_listings`
+ * Statuses: 'active' | 'sold' | 'cancelled'
+ */
 import { supabase } from '@/integrations/supabase/client';
 import { initCardEnergy } from './energySystem';
 

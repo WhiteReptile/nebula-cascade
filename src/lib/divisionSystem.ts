@@ -1,4 +1,20 @@
-// Division thresholds and utilities — Cards system
+/**
+ * divisionSystem.ts — Player ranking tiers and reward structure
+ *
+ * 5 divisions from lowest to highest:
+ *   gem_v  (0+ pts)     → Division V   (Red)
+ *   gem_iv (5,001+ pts) → Division IV  (Yellow)
+ *   gem_iii(15,001+ pts)→ Division III (Blue)
+ *   gem_ii (35,001+ pts)→ Division II  (Purple)
+ *   gem_i  (70,001+ pts)→ Division I   (Cyan)
+ *
+ * Division determines:
+ *   - Leaderboard tier grouping
+ *   - Reward payout caps (REWARD_TIERS)
+ *   - Visual badge color in UI
+ *
+ * Period format: "YYYY-MM" (monthly leaderboard seasons)
+ */
 export type Division = 'gem_v' | 'gem_iv' | 'gem_iii' | 'gem_ii' | 'gem_i';
 
 export const DIVISION_THRESHOLDS: { division: Division; minPoints: number }[] = [

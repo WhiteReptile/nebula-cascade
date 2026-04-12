@@ -1,3 +1,15 @@
+/**
+ * orbRenderer.ts — Element-specific orb rendering
+ *
+ * Each of the 4 elements has a distinct visual style:
+ *   - Fire (0xff3344): Flickering outer glow, orange core, upward spark
+ *   - Water (0x3388ff): Ripple rings, blue gradient, white specular highlight
+ *   - Electricity (0xffdd00): Jittering glow, lightning bolt lines, white core
+ *   - Shadow (0x888899): Drifting purple haze, muted glow, subtle highlight
+ *
+ * All rendering uses Phaser Graphics primitives (circles, lines).
+ * The `phase` parameter drives per-orb animation timing.
+ */
 const FIRE = 0xff3344, WATER = 0x3388ff, ELEC = 0xffdd00, SHADOW = 0x888899;
 
 export function drawOrb(

@@ -1,3 +1,21 @@
+/**
+ * matchLogger.ts — Client-side match result logging (fallback)
+ *
+ * NOTE: The primary match submission path is the `submit-score` edge function
+ * which runs server-side with service role for anti-cheat. This client-side
+ * logger exists as a fallback/development convenience.
+ *
+ * On match end:
+ *   1. Computes survival time, combo efficiency, anti-cheat flags
+ *   2. Inserts into `match_logs` table
+ *   3. Updates player's division_points and division tier
+ *   4. Upserts monthly leaderboard entry with avg_top3_score
+ *
+ * Anti-cheat flags (advisory, not blocking):
+ *   - highScorePerSecond: >50 score/sec
+ *   - abnormalCombo: combo > level × 8
+ *   - impossibleClears: >2 lines/sec sustained
+ */
 import { supabase } from '@/integrations/supabase/client';
 import { getDivisionForPoints, getCurrentPeriod } from './divisionSystem';
 

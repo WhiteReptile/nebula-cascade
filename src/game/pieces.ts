@@ -1,4 +1,13 @@
-// Energy Orb formations — 5 elements: Fire(Red), Water(Blue), Electricity(Yellow), Shadow(Grey), Void(Black)
+/**
+ * pieces.ts — Piece definitions, colors, and spawn logic
+ *
+ * Defines the 4 elemental orb colors and 8 piece formations.
+ * The `randomOrbPiece()` function handles spawn selection with:
+ *   - No color-repeat bias (removed for difficulty)
+ *   - Lucky piece: every 25 spawns, 30% chance to match board's dominant color
+ *
+ * Grid constants: 10 columns × 20 rows × 30px cells
+ */
 export interface PieceDef {
   name: string;
   color: number;      // hex tint

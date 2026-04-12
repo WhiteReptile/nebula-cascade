@@ -1,3 +1,32 @@
+/**
+ * GameScene.ts — Main Phaser scene orchestrator
+ *
+ * This is the central game loop that coordinates all subsystems:
+ *
+ * LIFECYCLE:
+ *   create()     → Initializes grid, input bindings, spawns first piece
+ *   update()     → Runs every frame: gravity, physics, particles, drawing
+ *   resetGame()  → Full state reset for new game
+ *
+ * GAME LOOP (per frame):
+ *   1. Apply moon-gravity to active piece (BASE_GRAVITY + level/time scaling)
+ *   2. Update falling orb visual physics (loosening wobble)
+ *   3. Update landing bounce springs on placed orbs
+ *   4. Move/rotate active piece on input
+ *   5. On piece lock → resolveChains() (recursive match detection)
+ *   6. Update particles, shooting stars, spacecraft
+ *   7. Draw everything via rendering modules
+ *
+ * DIFFICULTY SCALING:
+ *   - BASE_GRAVITY: 0.005 (fast initial fall)
+ *   - Level boost: +4.5% per level (score / 2000)
+ *   - Urgency at 40s: gravity ramps +5% per second
+ *   - MAX_FALL_SPEED: 0.09 (terminal velocity)
+ *
+ * COMMUNICATION:
+ *   Emits events via gameEvents bus → consumed by React HUD (GameHUD.tsx)
+ *   Receives 'restart' event from menu to reset game state
+ */
 import Phaser from 'phaser';
 import { randomOrbPiece, COLS, ROWS, CELL, COLORS } from './pieces';
 import { gameEvents } from './events';

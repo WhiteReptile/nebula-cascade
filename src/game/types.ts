@@ -1,3 +1,10 @@
+/**
+ * types.ts — Shared type definitions for the Phaser game engine
+ *
+ * All visual/physics state types used across GameScene, rendering,
+ * and logic modules. These are internal engine types — not persisted
+ * to the database.
+ */
 import { PieceDef } from './pieces';
 
 export interface ActivePiece {
