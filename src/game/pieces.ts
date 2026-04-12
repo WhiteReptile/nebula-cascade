@@ -103,13 +103,19 @@ export const PIECES: PieceDef[] = FORMATIONS.map(f => ({
 
 // Color bias: 30% more likely to repeat recent color
 let lastColorIndex = -1;
+let spawnCounter = 0;
 
-export function randomOrbPiece(): PieceDef {
+export function randomOrbPiece(boardColorBias?: number | null): PieceDef {
   const formation = FORMATIONS[Math.floor(Math.random() * FORMATIONS.length)];
+  spawnCounter++;
 
   let colorIdx: number;
-  if (lastColorIndex >= 0 && Math.random() < 0.35) {
-    // 35% chance to repeat last color (reduced from 45% — more variety with 5 colors)
+  // Lucky piece: every ~15 spawns, bias toward the most common board color
+  if (boardColorBias != null && spawnCounter % 15 === 0 && Math.random() < 0.7) {
+    // 70% chance to use the board's most common color (subtle, not guaranteed)
+    colorIdx = COLORS.findIndex(c => c.color === boardColorBias);
+    if (colorIdx < 0) colorIdx = Math.floor(Math.random() * COLORS.length);
+  } else if (lastColorIndex >= 0 && Math.random() < 0.35) {
     colorIdx = lastColorIndex;
   } else {
     colorIdx = Math.floor(Math.random() * COLORS.length);
