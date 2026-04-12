@@ -7,6 +7,7 @@ import { getCardEnergy, type CardEnergy } from '@/lib/energySystem';
 import { DIVISION_LABELS, DIVISION_COLORS, getNextDivisionThreshold, type Division } from '@/lib/divisionSystem';
 import { Input } from '@/components/ui/input';
 import WalletConnect from '@/components/wallet/WalletConnect';
+import ThirdwebWalletConnect from '@/components/wallet/ThirdwebWalletConnect';
 import { useToast } from '@/hooks/use-toast';
 
 /* ── Types ── */
@@ -639,7 +640,54 @@ const Marketplace = () => {
           {section === 'wallet' && (
             <div className="max-w-md mx-auto space-y-6">
               <h2 className="text-sm uppercase tracking-[0.3em] text-white/50">Wallet</h2>
-              <WalletConnect currentAddress={walletAddress} />
+              
+              {/* Thirdweb Wallet Connection */}
+              <ThirdwebWalletConnect />
+
+              {/* Swap link */}
+              <div className="rounded-xl border border-purple-500/20 bg-purple-500/5 p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-bold text-purple-300">Token Swap</h3>
+                    <p className="text-[10px] text-white/30 mt-1">Swap & bridge tokens via LI.FI</p>
+                  </div>
+                  <button
+                    onClick={() => navigate('/swap')}
+                    className="px-4 py-2 rounded-lg border border-purple-500/30 bg-purple-500/10 text-purple-300 text-xs tracking-widest hover:bg-purple-500/20 transition-all"
+                  >
+                    OPEN SWAP →
+                  </button>
+                </div>
+              </div>
+
+              {/* Legacy wallet connect (keeping for backward compat) */}
+              <div className="opacity-60">
+                <div className="text-[10px] text-white/25 uppercase tracking-widest mb-2">Legacy Wallet Options</div>
+                <WalletConnect currentAddress={walletAddress} />
+              </div>
+
+              {/* Blockchain info */}
+              <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-4 space-y-2">
+                <h3 className="text-xs font-bold text-cyan-400">Blockchain Info</h3>
+                <div className="text-[10px] text-white/40 space-y-1">
+                  <div className="flex justify-between">
+                    <span>Chain</span>
+                    <span className="text-cyan-300">Base (ERC-721)</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>NFT Standard</span>
+                    <span className="text-cyan-300">ERC-721</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Swap Provider</span>
+                    <span className="text-cyan-300">LI.FI</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Wallet SDK</span>
+                    <span className="text-cyan-300">Thirdweb</span>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </main>
