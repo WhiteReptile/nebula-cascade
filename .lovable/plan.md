@@ -1,34 +1,81 @@
 
 
-# Marketplace Hub — Navigation Restructure
+# Marketplace User Hub — Complete Rebuild
 
-## What Changes
+## Overview
+Transform the Marketplace page into a premium all-in-one user hub with 4 tabs: Marketplace, My Cards, Profile, and Wallet. Includes auth state awareness (login/logout/signup inline), card listing form with fee converter, and consistent cosmic styling.
 
-1. **MainMenu.tsx** — Remove "CARDS" from the menu items array. New order: `PLAY, OPTIONS, MARKETPLACE, RULES, REWARDS` (5 items instead of 6).
+## Architecture
 
-2. **Marketplace.tsx** — Rebuild as a tabbed hub with two tabs:
-   - **MARKETPLACE** tab — the existing listings browser (buy/sell/cancel)
-   - **MY CARDS** tab — the existing Cards page content (owned cards grid, active card toggle, per-card energy, WalletConnect component)
-   
-   Uses the existing `Tabs`/`TabsList`/`TabsTrigger`/`TabsContent` components from `src/components/ui/tabs.tsx`, styled to match the dark cosmic theme.
+The Marketplace page becomes a single-page hub with a vertical sidebar nav (left) and content area (right), replacing the current simple 2-tab layout.
 
-3. **App.tsx** — Redirect `/cards` and `/wallet` to `/marketplace`. Remove the standalone Cards route.
+```text
+┌─────────────────────────────────────────────┐
+│  ← Back            NEBULA HUB              │
+├──────────┬──────────────────────────────────┤
+│          │                                  │
+│ MARKET   │   [Active content area]          │
+│ MY CARDS │                                  │
+│ PROFILE  │                                  │
+│ WALLET   │                                  │
+│          │                                  │
+│──────────│                                  │
+│ Log Out  │                                  │
+└──────────┴──────────────────────────────────┘
+```
 
-4. **Cards.tsx** — Keep the file but extract its card display + wallet logic into the Marketplace page directly (or import it as a component). The page itself becomes unused.
+If not logged in, the sidebar shows Login / Sign Up buttons instead of Profile/Logout, and My Cards shows a prompt to sign in.
 
-## Technical Details
+## Sections
 
-- **MainMenu.tsx line 8**: Change `MENU_ITEMS` to `['PLAY', 'OPTIONS', 'MARKETPLACE', 'RULES', 'REWARDS']`. Remove the `'CARDS'` case from `handleSelect`.
+### 1. MARKETPLACE Tab
+- Card grid layout (not list) with card orb, name, division badge, price
+- Fee tier color indicator (green 5% / yellow 7% / red 10%)
+- BUY button for others' cards, CANCEL for own listings
+- Division filter buttons across top (All, Div V, IV, III, II, I)
+- Empty state with cosmic styling
 
-- **Marketplace.tsx**: Merge the Cards page data loading (player cards, energies, active card, wallet address) into the Marketplace's `useEffect`. Wrap both sections in `<Tabs defaultValue="marketplace">` with two `TabsTrigger` buttons styled with the existing red/yellow neon aesthetic. The marketplace listings go in one `TabsContent`, the cards grid + WalletConnect in the other.
+### 2. MY CARDS Tab
+- Owned cards grid with visual energy bars (filled/empty pips)
+- Active card highlighted with animated glow ring
+- Click card to set active
+- "List on Marketplace" button per card — opens inline listing form
+- Listing form: price input (USD), live fee preview calculator showing "You receive: $X.XX after Y% fee"
+- Card count indicator (X/10)
 
-- **App.tsx**: Change `/cards` route to `<Navigate to="/marketplace" replace />`. Keep `/wallet` also redirecting to `/marketplace`.
+### 3. PROFILE Tab
+- Display name, email (from auth), division badge, total matches
+- Active card preview
+- Division progress bar toward next tier
+- If not logged in: show sign-in/sign-up form inline (reuse Auth page logic)
 
-## Files Modified
+### 4. WALLET Tab
+- Existing WalletConnect component unchanged
+- Current linked wallet address display
+
+## File Changes
 
 | File | Change |
 |------|--------|
-| `src/components/menu/MainMenu.tsx` | Remove CARDS from menu items |
-| `src/pages/Marketplace.tsx` | Add tabs: Marketplace + My Cards/Wallet |
-| `src/App.tsx` | Redirect /cards → /marketplace |
+| `src/pages/Marketplace.tsx` | Full rebuild — sidebar nav, 4 sections, listing form, fee converter, auth integration, division filter |
+| `src/components/game/GameHUD.tsx` | Line 342: change `/cards` to `/marketplace` |
+
+## Technical Details
+
+- **Auth state**: Use `supabase.auth.getUser()` + `onAuthStateChange` to show login/logout contextually
+- **Logout**: Call `supabase.auth.signOut()` then redirect to `/`
+- **Sign in/up**: Inline forms in Profile tab (same logic as Auth.tsx but embedded)
+- **Listing form**: Local state `listingCardId`, `listPrice`. Calls `calculateFee()` from marketplaceSystem for live preview, then `listCard()` on submit
+- **Fee converter**: Pure math — `priceCents * feePercent / 100` shown inline
+- **Division filter**: Client-side filter on `listings` array by `cardDivision`
+- **No new dependencies** — all existing UI components + Tailwind
+- **Sidebar nav**: Vertical `Tabs` with `TabsList` orientation vertical, styled with the yellow/cyan neon accents matching MainMenu
+
+## Styling Approach
+- Dark cosmic background (#0a0a1a) with backdrop-blur panels
+- Yellow-400 accent for active states, white/40 for inactive
+- Neon text-shadows matching game HUD aesthetic
+- Card orbs with radial gradients and colored box-shadows
+- Energy displayed as `⚡ X/2` with cyan/red coloring
+- Consistent font-mono, uppercase tracking throughout
 
