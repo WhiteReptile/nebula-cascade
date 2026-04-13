@@ -1,35 +1,30 @@
 
 
-# Menu Rename + Roadmap Page
+# Marketplace Cosmic Overhaul + Sui/Thirdweb Wallet Fix
+
+## Summary
+Update the Marketplace page to use the cosmic visual theme (`bg-[#050510]`, neon glows, starfield gradients) consistent with the rest of the app. Fix the wallet section to reference **Sui + Thirdweb** instead of Solana/Helius. Remove all Solana/Helius references from wallet code.
 
 ## Changes
 
-### 1. `src/components/menu/MainMenu.tsx`
-- Merge `'RULES'` and `'REWARDS'` into `'REWARDS & RULES'` in `MENU_ITEMS`
-- Update `handleSelect`: `'REWARDS & RULES'` navigates to `/rewards`; remove separate `'RULES'` case
-- Add a **"ROADMAP"** button in the top-left corner (absolute positioned), styled like "Login / Sign Up" but on the opposite side, navigates to `/roadmap`
+### 1. `src/pages/Marketplace.tsx` — Visual + Wallet Fix
+- **Background**: Change from `bg-[#0a0a1a]` to `bg-[#050510]` with radial cosmic gradients and subtle starfield dots (CSS-only, matching Rewards/Roadmap pages)
+- **Header**: Add neon cyan/purple glow to "NEBULA HUB" title, animated subtle pulse
+- **Sidebar**: Add gradient overlay, neon accent on active item (cyan glow instead of plain yellow)
+- **Cards/Listings**: Add cosmic border glows, subtle hover animations with neon shadows matching card color
+- **Empty states**: Replace plain emoji with glowing cosmic orbs
+- **Wallet section (lines 638-669)**: Replace "SOLANA WALLET — COMING SOON" / "Helius RPC" with **"SUI WALLET — COMING SOON"** and **"Thirdweb"** as the auth/wallet provider. Update blockchain info to show Chain: Sui, Provider: Thirdweb
+- **Fee color helper**: Simplify since fee is always flat 3% now (always green)
 
-### 2. `src/pages/Rewards.tsx`
-- Change title from `REWARDS` to `REWARDS & RULES` (line 291)
+### 2. `src/lib/walletSystem.ts` — Already correct (Thirdweb + Sui references in comments), no changes needed
 
-### 3. New: `src/pages/Roadmap.tsx`
-- Cosmic-themed page (`bg-[#050510]`, `font-mono`, neon glows, CSS gradients)
-- Back button header, "ROADMAP" title
-- Timeline with 5 months: **April → August 2026**
-- Each month is a collapsible/expandable card with color-coded header, goal subtitle, and milestone list with ✅/🔄 status icons
-- Dynamic: months auto-highlight based on current date; past months show completion state, current month pulses/glows, future months are dimmed
-- Deliverable summary at bottom of each month card
-
-### 4. `src/App.tsx`
-- Add import for `Roadmap`
-- Add route: `/roadmap` → `<Roadmap />`
-- Redirect `/rules` to `/rewards`
+### 3. `src/components/wallet/WalletConnect.tsx` — Minor cosmic styling
+- Add cosmic glow borders, match the `bg-[#050510]` theme
+- Update "coming soon" text to mention Sui
 
 ### Files
 | File | Action |
 |------|--------|
-| `src/components/menu/MainMenu.tsx` | Modify — merge items, add Roadmap button |
-| `src/pages/Rewards.tsx` | Modify — title rename |
-| `src/pages/Roadmap.tsx` | Create — full roadmap page |
-| `src/App.tsx` | Modify — add route, redirect `/rules` |
+| `src/pages/Marketplace.tsx` | Modify — cosmic theme + Sui/Thirdweb wallet |
+| `src/components/wallet/WalletConnect.tsx` | Modify — cosmic styling + Sui reference |
 
