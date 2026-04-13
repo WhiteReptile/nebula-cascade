@@ -177,7 +177,7 @@ const Marketplace = () => {
   const priceCents = Math.round((parseFloat(listPrice) || 0) * 100);
   const feeAmount = priceCents * estimatedFee / 100;
   const sellerReceives = priceCents - feeAmount;
-  const nextThreshold = playerData ? getNextDivisionThreshold(playerData.division) : null;
+  const nextThreshold = null; // Division progression is rarity-based, not point-based
 
   /* ── Sidebar nav items ── */
   const navItems: { key: Section; label: string; icon: string }[] = [

@@ -125,7 +125,7 @@ export async function logMatch(data: MatchData): Promise<void> {
         total_score: existing.total_score + data.score,
         best_score: Math.max(existing.best_score, data.score),
         matches_played: existing.matches_played + 1,
-        division: newDivision,
+        division: player.division,
         avg_top3_score: avgTop3,
       })
       .eq('id', existing.id);
@@ -133,7 +133,7 @@ export async function logMatch(data: MatchData): Promise<void> {
     await supabase.from('leaderboard').insert({
       player_id: player.id,
       period,
-      division: newDivision,
+      division: player.division,
       total_score: data.score,
       best_score: data.score,
       matches_played: 1,
