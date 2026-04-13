@@ -290,7 +290,7 @@ const Rewards = () => {
         >
           REWARDS & RULES
         </h1>
-        <p className="text-[10px] uppercase tracking-[0.5em] text-white/25 mt-2">System Overview</p>
+        <p className="text-[10px] uppercase tracking-[0.5em] text-red-500 mt-2">System Overview</p>
         <div className="mx-auto w-24 h-px bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent mt-4" />
       </div>
 
