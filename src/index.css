@@ -136,6 +136,16 @@ All colors MUST be HSL.
   animation: neonPulse 4s ease-in-out infinite 0.5s;
 }
 
+.menu-neon-title-red {
+  color: #ff4444;
+  text-shadow:
+    0 0 8px rgba(255, 50, 50, 0.9),
+    0 0 20px rgba(255, 50, 50, 0.6),
+    0 0 40px rgba(255, 50, 50, 0.3),
+    0 0 80px rgba(200, 30, 30, 0.15);
+  animation: neonPulseRed 4s ease-in-out infinite;
+}
+
 /* Decorative divider line */
 .menu-divider-line {
   width: 180px;
