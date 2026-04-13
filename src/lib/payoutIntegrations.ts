@@ -2,10 +2,10 @@
  * payoutIntegrations.ts — Reward payout provider stubs
  *
  * Defines the PayoutProvider interface and stub implementations for:
- *   - Thirdweb (NFT/token payouts via Thirdweb SDK on Sui)
+ *   - Thirdweb (NFT/token payouts via Thirdweb SDK on Base)
  *
  * Reward distribution uses Merkle proof verification on-chain.
- * The RewardsVault smart contract on Sui verifies proofs and releases funds.
+ * The RewardsVault smart contract on Base verifies proofs and releases funds.
  * Payout amounts are calculated off-chain by the team each season.
  *
  * Also includes a CSV export utility for manual payout processing.
@@ -27,19 +27,20 @@ export interface PayoutProvider {
 }
 
 export const thirdwebProvider: PayoutProvider = {
-  name: 'Thirdweb (Sui)',
+  name: 'Thirdweb (Base)',
   async preparePayout(data) {
-    // Future: Use Thirdweb SDK on Sui for Merkle proof reward claims
-    console.log('[Thirdweb/Sui stub] Prepare payout:', data);
-    return { ready: false, reference: 'thirdweb_sui_not_configured' };
+    // Future: Use Thirdweb SDK on Base for Merkle proof reward claims
+    console.log('[Thirdweb/Base stub] Prepare payout:', data);
+    return { ready: false, reference: 'thirdweb_base_not_configured' };
   },
 };
 
-// Sui chain configuration
-export const suiChainConfig = {
-  name: 'Sui',
-  rpcUrl: '', // placeholder — set when deploying
-  rewardsVaultAddress: '', // placeholder — RewardsVault contract
+// Base chain configuration
+export const baseChainConfig = {
+  name: 'Base',
+  chainId: 8453,
+  rpcUrl: 'https://mainnet.base.org',
+  contractAddress: '', // placeholder — deploy contract address here
 };
 
 export const PROVIDERS: Record<string, PayoutProvider> = {

@@ -718,7 +718,7 @@ const Marketplace = () => {
             <div className="max-w-md mx-auto space-y-6">
               <h2 className="text-sm uppercase tracking-[0.3em] text-cyan-300/60">Wallet</h2>
 
-              {/* Coming Soon — Sui */}
+              {/* Coming Soon — Base */}
               <div
                 className="rounded-xl border border-cyan-500/20 bg-black/50 p-6 text-center space-y-3 backdrop-blur-sm"
                 style={{ boxShadow: '0 0 40px rgba(0, 200, 255, 0.05)' }}
@@ -738,10 +738,10 @@ const Marketplace = () => {
                     WebkitTextFillColor: 'transparent',
                   }}
                 >
-                  SUI WALLET — COMING SOON
+                  BASE WALLET — COMING SOON
                 </h3>
                 <p className="text-[10px] text-white/30">
-                  Wallet connection via Thirdweb will be available when the Sui integration launches.
+                  Wallet connection via Thirdweb will be available when the Base integration launches.
                 </p>
               </div>
 
@@ -755,7 +755,7 @@ const Marketplace = () => {
                 <div className="text-[10px] text-white/40 space-y-1">
                   <div className="flex justify-between">
                     <span>Chain</span>
-                    <span className="text-cyan-300">Sui (planned)</span>
+                    <span className="text-cyan-300"><span className="text-cyan-300">Base (planned)</span></span>
                   </div>
                   <div className="flex justify-between">
                     <span>Auth Provider</span>

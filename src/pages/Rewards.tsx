@@ -84,7 +84,7 @@ const DivisionsContent = () => (
 const CardsContent = () => (
   <div className="space-y-4">
     <p className="text-white/80 text-xs leading-relaxed">
-      Cards are the core asset in Nebula — each one is an NFT deployed via Thirdweb on the Sui blockchain. 
+      Cards are the core asset in Nebula — each one is an NFT deployed via Thirdweb on the Base blockchain. 
       Every card generates <span className="text-white">2 energy per day</span>, and each energy point allows 
       you to play one ranked match. That means a single card gives you 2 ranked runs daily. If you own multiple 
       cards, each card has its own independent energy pool — you must play with each card separately to use its 
@@ -223,7 +223,7 @@ const SeasonContent = () => (
         <div>
           <div className="text-xs font-bold text-purple-400 tracking-wider mb-1">BETA STATUS</div>
           <p className="text-[11px] text-white/60 leading-relaxed">
-            The reward system is live but distribution activates after NFT launch on Sui. 
+            The reward system is live but distribution activates after NFT launch on Base. 
             Season structure and pool allocations may be refined during beta based on community feedback.
           </p>
         </div>

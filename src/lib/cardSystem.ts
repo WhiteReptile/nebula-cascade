@@ -1,7 +1,7 @@
 /**
  * cardSystem.ts — Card ownership and management
  *
- * Cards are the core collectible/NFT asset deployed via Thirdweb on Sui.
+ * * Cards are the core collectible/NFT asset deployed via Thirdweb on Base.
  * Each player can own up to 10 cards. One card is "active" at a time
  * and determines the division tier used for leaderboard placement.
  *
