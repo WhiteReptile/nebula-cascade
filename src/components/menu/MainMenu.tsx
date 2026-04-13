@@ -5,7 +5,7 @@ interface MainMenuProps {
   onStart: () => void;
 }
 
-const MENU_ITEMS = ['PLAY', 'OPTIONS', 'MARKETPLACE', 'SWAP', 'RULES', 'REWARDS'] as const;
+const MENU_ITEMS = ['PLAY', 'OPTIONS', 'MARKETPLACE', 'RULES', 'REWARDS'] as const;
 const ITEM_HEIGHT = 48;
 const VISIBLE_COUNT = 2;
 const VIEWPORT_HEIGHT = ITEM_HEIGHT * VISIBLE_COUNT;
