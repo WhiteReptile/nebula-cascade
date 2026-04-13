@@ -78,14 +78,14 @@ const AdminRewards = () => {
         .limit(5);
 
       if (!topPlayers) continue;
-      const tiers = REWARD_TIERS[div];
-      for (let i = 0; i < topPlayers.length && i < tiers.length; i++) {
+      // Payouts are calculated off-chain per season; insert placeholder amounts
+      for (let i = 0; i < topPlayers.length; i++) {
         const { data: flagged } = await supabase
           .from('match_logs').select('id').eq('player_id', topPlayers[i].player_id).eq('is_flagged', true).limit(1);
         if (flagged && flagged.length > 0) continue;
         await supabase.from('reward_payouts').insert({
           reward_period_id: periodId, player_id: topPlayers[i].player_id,
-          division: div, rank: i + 1, reward_amount_cents: tiers[i], status: 'pending',
+          division: div, rank: i + 1, reward_amount_cents: 0, status: 'pending',
         });
       }
     }

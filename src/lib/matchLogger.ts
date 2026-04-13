@@ -67,7 +67,7 @@ export async function logMatch(data: MatchData): Promise<void> {
   const userId = userData.user.id;
   const { data: player } = await supabase
     .from('players')
-    .select('id, division_points, total_matches')
+    .select('id, division_points, division, total_matches')
     .eq('user_id', userId)
     .single();
 
