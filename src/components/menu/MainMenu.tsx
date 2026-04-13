@@ -147,8 +147,9 @@ const MainMenu = ({ onStart }: MainMenuProps) => {
 
         {/* Title */}
         <div className="menu-title-container mb-2 select-none" style={{ paddingLeft: 'calc(5% + 5px)' }}>
-          <h1 className="menu-neon-title font-mono uppercase tracking-[0.5em] text-5xl md:text-7xl font-black">
-            NEBULA
+          <h1 className="font-mono uppercase tracking-[0.5em] text-5xl md:text-7xl font-black">
+            <span className="menu-neon-title">NEBULA</span>{' '}
+            <span className="menu-neon-title-red">CASCADE</span>
           </h1>
           <div className="menu-neon-subtitle font-mono uppercase tracking-[0.8em] text-xs md:text-sm mt-1 text-center">
             ColdLogic
