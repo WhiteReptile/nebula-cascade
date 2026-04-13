@@ -209,9 +209,8 @@ const SeasonContent = () => (
       rewards reliable high performance over lucky outlier runs. During the active season, the rewards pool grows 
       with every marketplace transaction and card sale. At the end of Day 40, the season closes. Final standings 
       are locked and the team begins the off-chain payout calculation process. This includes anti-cheat validation 
-      — any flagged accounts are reviewed before rewards are distributed. Once payouts are finalized, the Merkle 
-      tree is published and the claim period opens. Players can then submit their proof to the RewardsVault contract 
-      on Sui to receive their rewards. The claim window stays open for a defined period after season close. Then 
+      — any flagged accounts are reviewed before rewards are distributed. Once payouts are finalized, the team 
+      <span className="text-white/80">sends rewards directly to player wallets</span>. Then 
       the cycle repeats: Day 1 of the new season, clean slate, new pool, same hunger. Season length and structure 
       may be adjusted during the beta phase based on community feedback and participation data. The team will 
       communicate any changes in advance. The 40-day cycle is designed to be long enough for meaningful competition 
@@ -235,7 +234,7 @@ const SeasonContent = () => (
       {[
         { day: 'DAY 1', desc: 'Season begins\nLeaderboards reset' },
         { day: 'DAY 1-40', desc: 'Active competition\nPool accumulates' },
-        { day: 'DAY 40+', desc: 'Season ends\nClaims open' },
+        { day: 'DAY 40+', desc: 'Season ends\nRewards distributed' },
       ].map((step, i) => (
         <div key={step.day} className="flex-1">
           <div className="text-xs font-bold text-purple-300 mb-1">{step.day}</div>
