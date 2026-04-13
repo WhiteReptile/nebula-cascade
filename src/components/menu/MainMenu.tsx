@@ -147,7 +147,7 @@ const MainMenu = ({ onStart }: MainMenuProps) => {
 
         {/* Title */}
         <div className="menu-title-container mb-2 select-none" style={{ paddingLeft: 'calc(5% + 5px)' }}>
-          <h1 className="font-mono uppercase tracking-[0.5em] text-5xl md:text-7xl font-black">
+          <h1 className="font-mono uppercase tracking-[0.5em] text-5xl md:text-7xl font-black whitespace-nowrap">
             <span className="menu-neon-title">NEBULA</span>{' '}
             <span className="menu-neon-title-red">CASCADE</span>
           </h1>
