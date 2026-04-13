@@ -16,9 +16,6 @@ type Section = 'marketplace' | 'my-cards' | 'profile' | 'wallet';
 const DIVISIONS: (Division | 'all')[] = ['all', 'gem_v', 'gem_iv', 'gem_iii', 'gem_ii', 'gem_i'];
 const DIV_FILTER_LABELS: Record<string, string> = { all: 'ALL', gem_v: 'V', gem_iv: 'IV', gem_iii: 'III', gem_ii: 'II', gem_i: 'I' };
 
-/* ── Fee color helper ── */
-const feeColor = (f: number) => f >= 10 ? '#ff4444' : f >= 7 ? '#ffdd00' : '#33ff88';
-
 const Marketplace = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -177,7 +174,7 @@ const Marketplace = () => {
   const priceCents = Math.round((parseFloat(listPrice) || 0) * 100);
   const feeAmount = priceCents * estimatedFee / 100;
   const sellerReceives = priceCents - feeAmount;
-  const nextThreshold = null; // Division progression is rarity-based, not point-based
+  const nextThreshold = null;
 
   /* ── Sidebar nav items ── */
   const navItems: { key: Section; label: string; icon: string }[] = [
@@ -188,17 +185,58 @@ const Marketplace = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#0a0a1a] text-white font-mono">
+    <div
+      className="min-h-screen text-white font-mono relative"
+      style={{
+        background: `
+          radial-gradient(ellipse at 20% 0%, rgba(100, 60, 255, 0.12) 0%, transparent 50%),
+          radial-gradient(ellipse at 80% 100%, rgba(0, 200, 255, 0.08) 0%, transparent 50%),
+          radial-gradient(ellipse at 50% 50%, rgba(20, 0, 40, 0.5) 0%, transparent 70%),
+          #050510
+        `,
+      }}
+    >
+      {/* Starfield dots */}
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        {Array.from({ length: 60 }).map((_, i) => (
+          <div
+            key={i}
+            className="absolute rounded-full"
+            style={{
+              width: `${1 + Math.random() * 2}px`,
+              height: `${1 + Math.random() * 2}px`,
+              top: `${Math.random() * 100}%`,
+              left: `${Math.random() * 100}%`,
+              background: 'white',
+              opacity: 0.1 + Math.random() * 0.3,
+              animation: `pulse ${2 + Math.random() * 4}s ease-in-out infinite`,
+              animationDelay: `${Math.random() * 3}s`,
+            }}
+          />
+        ))}
+      </div>
+
       {/* ── Header ── */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
-        <button onClick={() => navigate('/')} className="text-yellow-400/70 hover:text-yellow-400 text-sm transition-colors">← Back</button>
-        <h1 className="text-lg font-bold tracking-[0.4em] text-yellow-400/90" style={{ textShadow: '0 0 20px #ffdd0060' }}>NEBULA HUB</h1>
+      <div className="relative flex items-center justify-between px-6 py-4 border-b border-cyan-500/10 bg-black/20 backdrop-blur-sm">
+        <button onClick={() => navigate('/')} className="text-cyan-400/70 hover:text-cyan-400 text-sm transition-colors">← Back</button>
+        <h1
+          className="text-lg font-bold tracking-[0.4em]"
+          style={{
+            background: 'linear-gradient(135deg, #66ffee, #a78bfa, #66ffee)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            textShadow: 'none',
+            filter: 'drop-shadow(0 0 20px rgba(102, 255, 238, 0.3))',
+          }}
+        >
+          NEBULA HUB
+        </h1>
         <div className="w-14" />
       </div>
 
-      <div className="flex min-h-[calc(100vh-57px)]">
+      <div className="relative flex min-h-[calc(100vh-57px)]">
         {/* ── Sidebar ── */}
-        <nav className="w-44 flex-shrink-0 border-r border-white/5 bg-black/30 flex flex-col">
+        <nav className="w-44 flex-shrink-0 border-r border-cyan-500/10 bg-black/40 backdrop-blur-sm flex flex-col">
           <div className="flex-1 py-4 space-y-1">
             {navItems.map(item => (
               <button
@@ -206,9 +244,13 @@ const Marketplace = () => {
                 onClick={() => setSection(item.key)}
                 className={`w-full text-left px-5 py-3 text-xs tracking-[0.2em] uppercase transition-all flex items-center gap-3 ${
                   section === item.key
-                    ? 'bg-yellow-400/10 text-yellow-400 border-r-2 border-yellow-400'
+                    ? 'text-cyan-300 border-r-2 border-cyan-400'
                     : 'text-white/40 hover:text-white/70 hover:bg-white/5'
                 }`}
+                style={section === item.key ? {
+                  background: 'linear-gradient(90deg, transparent, rgba(0, 200, 255, 0.08))',
+                  textShadow: '0 0 10px rgba(0, 200, 255, 0.4)',
+                } : {}}
               >
                 <span className="text-sm">{item.icon}</span>
                 {item.label}
@@ -230,7 +272,7 @@ const Marketplace = () => {
           {section === 'marketplace' && (
             <div className="max-w-4xl mx-auto space-y-6">
               <div className="flex items-center justify-between">
-                <h2 className="text-sm uppercase tracking-[0.3em] text-white/50">Card Marketplace</h2>
+                <h2 className="text-sm uppercase tracking-[0.3em] text-cyan-300/60">Card Marketplace</h2>
                 <span className="text-[10px] text-white/30">{filteredListings.length} listing{filteredListings.length !== 1 ? 's' : ''}</span>
               </div>
 
@@ -242,9 +284,10 @@ const Marketplace = () => {
                     onClick={() => setDivFilter(d)}
                     className={`px-3 py-1.5 text-[10px] tracking-widest rounded-md border transition-all ${
                       divFilter === d
-                        ? 'border-yellow-400/50 bg-yellow-400/10 text-yellow-400'
+                        ? 'border-cyan-400/50 bg-cyan-400/10 text-cyan-300'
                         : 'border-white/10 text-white/30 hover:text-white/60 hover:border-white/20'
                     }`}
+                    style={divFilter === d ? { boxShadow: '0 0 10px rgba(0, 200, 255, 0.15)' } : {}}
                   >
                     {DIV_FILTER_LABELS[d]}
                   </button>
@@ -255,7 +298,13 @@ const Marketplace = () => {
                 <div className="text-center text-white/30 py-16">Loading listings…</div>
               ) : filteredListings.length === 0 ? (
                 <div className="flex flex-col items-center py-16 text-white/20 space-y-3">
-                  <span className="text-4xl">🌌</span>
+                  <div
+                    className="w-16 h-16 rounded-full"
+                    style={{
+                      background: 'radial-gradient(circle at 40% 40%, rgba(102, 255, 238, 0.3), rgba(167, 139, 250, 0.1), transparent)',
+                      boxShadow: '0 0 30px rgba(102, 255, 238, 0.15), 0 0 60px rgba(167, 139, 250, 0.08)',
+                    }}
+                  />
                   <span className="text-sm tracking-widest">NO ACTIVE LISTINGS</span>
                   <span className="text-[10px] text-white/15">Cards listed for trade will appear here</span>
                 </div>
@@ -264,7 +313,18 @@ const Marketplace = () => {
                   {filteredListings.map(listing => (
                     <div
                       key={listing.id}
-                      className="rounded-xl border border-white/8 bg-black/50 p-5 backdrop-blur-sm hover:border-white/15 transition-all group"
+                      className="rounded-xl border border-white/8 bg-black/50 p-5 backdrop-blur-sm transition-all group hover:scale-[1.02]"
+                      style={{
+                        boxShadow: `0 0 0 1px ${listing.cardColor}10, 0 4px 20px ${listing.cardColor}08`,
+                      }}
+                      onMouseEnter={e => {
+                        (e.currentTarget as HTMLDivElement).style.boxShadow = `0 0 0 1px ${listing.cardColor}30, 0 4px 30px ${listing.cardColor}20, 0 0 60px ${listing.cardColor}10`;
+                        (e.currentTarget as HTMLDivElement).style.borderColor = `${listing.cardColor}30`;
+                      }}
+                      onMouseLeave={e => {
+                        (e.currentTarget as HTMLDivElement).style.boxShadow = `0 0 0 1px ${listing.cardColor}10, 0 4px 20px ${listing.cardColor}08`;
+                        (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(255,255,255,0.08)';
+                      }}
                     >
                       {/* Card orb */}
                       <div className="flex items-center gap-4 mb-4">
@@ -272,7 +332,7 @@ const Marketplace = () => {
                           className="w-12 h-12 rounded-full flex-shrink-0 transition-transform group-hover:scale-110"
                           style={{
                             background: `radial-gradient(circle at 35% 35%, ${listing.cardColor}cc, ${listing.cardColor}40)`,
-                            boxShadow: `0 0 20px ${listing.cardColor}30, inset 0 -2px 6px ${listing.cardColor}20`,
+                            boxShadow: `0 0 20px ${listing.cardColor}30, 0 0 40px ${listing.cardColor}15, inset 0 -2px 6px ${listing.cardColor}20`,
                           }}
                         />
                         <div className="flex-1 min-w-0">
@@ -289,12 +349,12 @@ const Marketplace = () => {
                       <div className="flex items-end justify-between mb-4">
                         <div>
                           <div className="text-[10px] text-white/25 uppercase tracking-widest">Price</div>
-                          <div className="text-lg font-bold text-yellow-400" style={{ textShadow: '0 0 10px #ffdd0030' }}>
+                          <div className="text-lg font-bold text-cyan-300" style={{ textShadow: '0 0 10px rgba(0, 200, 255, 0.3)' }}>
                             ${(listing.priceCents / 100).toFixed(2)}
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="text-[10px] tracking-widest" style={{ color: feeColor(listing.feePercent) }}>
+                          <div className="text-[10px] tracking-widest text-emerald-400">
                             {listing.feePercent}% FEE
                           </div>
                         </div>
@@ -304,7 +364,8 @@ const Marketplace = () => {
                       {playerId && listing.sellerPlayerId !== playerId && (
                         <button
                           onClick={() => handleBuy(listing.id)}
-                          className="w-full py-2 rounded-lg border border-green-500/30 text-green-400 text-xs tracking-widest hover:bg-green-500/10 transition-all"
+                          className="w-full py-2 rounded-lg border border-cyan-500/30 text-cyan-300 text-xs tracking-widest hover:bg-cyan-500/10 transition-all"
+                          style={{ boxShadow: '0 0 15px rgba(0, 200, 255, 0.05)' }}
                         >
                           BUY
                         </button>
@@ -337,24 +398,31 @@ const Marketplace = () => {
             <div className="max-w-4xl mx-auto space-y-6">
               {!user ? (
                 <div className="flex flex-col items-center py-16 text-white/20 space-y-4">
-                  <span className="text-4xl">🔒</span>
+                  <div
+                    className="w-14 h-14 rounded-full"
+                    style={{
+                      background: 'radial-gradient(circle at 40% 40%, rgba(167, 139, 250, 0.4), rgba(102, 255, 238, 0.1), transparent)',
+                      boxShadow: '0 0 30px rgba(167, 139, 250, 0.15)',
+                    }}
+                  />
                   <span className="text-sm tracking-widest">SIGN IN TO VIEW YOUR CARDS</span>
-                  <button onClick={() => setSection('profile')} className="text-xs text-yellow-400/70 hover:text-yellow-400 tracking-widest transition-colors">
+                  <button onClick={() => setSection('profile')} className="text-xs text-cyan-400/70 hover:text-cyan-400 tracking-widest transition-colors">
                     GO TO PROFILE →
                   </button>
                 </div>
               ) : (
                 <>
                   <div className="flex items-center justify-between">
-                    <h2 className="text-sm uppercase tracking-[0.3em] text-white/50">Your Cards</h2>
-                    <span className="text-[10px] text-white/30 border border-white/10 px-2 py-1 rounded">{cards.length} / 10</span>
+                    <h2 className="text-sm uppercase tracking-[0.3em] text-cyan-300/60">Your Cards</h2>
+                    <span className="text-[10px] text-white/30 border border-cyan-500/20 px-2 py-1 rounded">{cards.length} / 10</span>
                   </div>
 
                   {/* Listing form */}
                   {listingCardId && (
-                    <div className="rounded-xl border border-yellow-400/20 bg-yellow-400/5 p-5 space-y-4">
+                    <div className="rounded-xl border border-cyan-400/20 bg-cyan-400/5 p-5 space-y-4 backdrop-blur-sm"
+                      style={{ boxShadow: '0 0 30px rgba(0, 200, 255, 0.05)' }}>
                       <div className="flex items-center justify-between">
-                        <h3 className="text-xs tracking-widest text-yellow-400/80 uppercase">List Card for Sale</h3>
+                        <h3 className="text-xs tracking-widest text-cyan-300/80 uppercase">List Card for Sale</h3>
                         <button onClick={() => { setListingCardId(null); setListPrice(''); }} className="text-white/30 hover:text-white/60 text-xs">✕</button>
                       </div>
                       <div className="flex gap-4 items-end">
@@ -373,7 +441,8 @@ const Marketplace = () => {
                         <button
                           onClick={handleList}
                           disabled={listingSubmitting || !listPrice || parseFloat(listPrice) <= 0}
-                          className="px-6 py-2 rounded-lg border border-yellow-400/40 bg-yellow-400/10 text-yellow-400 text-xs tracking-widest hover:bg-yellow-400/20 disabled:opacity-30 transition-all h-9"
+                          className="px-6 py-2 rounded-lg border border-cyan-400/40 bg-cyan-400/10 text-cyan-300 text-xs tracking-widest hover:bg-cyan-400/20 disabled:opacity-30 transition-all h-9"
+                          style={{ textShadow: '0 0 8px rgba(0, 200, 255, 0.3)' }}
                         >
                           {listingSubmitting ? '...' : 'LIST'}
                         </button>
@@ -387,11 +456,11 @@ const Marketplace = () => {
                           </div>
                           <div className="flex justify-between">
                             <span>Fee ({estimatedFee}%)</span>
-                            <span style={{ color: feeColor(estimatedFee) }}>−${(feeAmount / 100).toFixed(2)}</span>
+                            <span className="text-emerald-400">−${(feeAmount / 100).toFixed(2)}</span>
                           </div>
                           <div className="flex justify-between font-bold text-xs">
                             <span className="text-white/60">You receive</span>
-                            <span className="text-yellow-400">${(sellerReceives / 100).toFixed(2)}</span>
+                            <span className="text-cyan-300">${(sellerReceives / 100).toFixed(2)}</span>
                           </div>
                         </div>
                       )}
@@ -400,7 +469,13 @@ const Marketplace = () => {
 
                   {cards.length === 0 ? (
                     <div className="flex flex-col items-center py-12 text-white/20 space-y-3">
-                      <span className="text-4xl">🃏</span>
+                      <div
+                        className="w-14 h-14 rounded-full"
+                        style={{
+                          background: 'radial-gradient(circle at 40% 40%, rgba(102, 255, 238, 0.25), transparent)',
+                          boxShadow: '0 0 25px rgba(102, 255, 238, 0.1)',
+                        }}
+                      />
                       <span className="text-sm tracking-widest">NO CARDS YET</span>
                       <span className="text-[10px] text-white/15">Purchase cards from the marketplace</span>
                     </div>
@@ -413,12 +488,13 @@ const Marketplace = () => {
                         return (
                           <div
                             key={card.id}
-                            className={`rounded-xl border p-5 transition-all cursor-pointer group ${
-                              isActive ? 'ring-1 ring-yellow-400/40' : ''
+                            className={`rounded-xl border p-5 transition-all cursor-pointer group hover:scale-[1.01] ${
+                              isActive ? 'ring-1 ring-cyan-400/30' : ''
                             }`}
                             style={{
-                              borderColor: isActive ? '#ffdd0030' : `${card.colorHex}20`,
+                              borderColor: isActive ? 'rgba(0, 200, 255, 0.2)' : `${card.colorHex}20`,
                               background: `linear-gradient(135deg, ${card.colorHex}08, transparent)`,
+                              boxShadow: isActive ? `0 0 25px ${card.colorHex}15, 0 0 50px rgba(0, 200, 255, 0.05)` : `0 0 15px ${card.colorHex}08`,
                             }}
                             onClick={() => !isListed && handleSetActive(card.id)}
                           >
@@ -440,8 +516,8 @@ const Marketplace = () => {
                                 <div className="text-sm font-bold truncate" style={{ color: card.colorHex }}>{card.name}</div>
                                 <div className="text-[10px] text-white/35 flex items-center gap-2">
                                   <span style={{ color: DIVISION_COLORS[card.division] }}>{DIVISION_LABELS[card.division]}</span>
-                                  {isActive && <span className="text-yellow-400">• ACTIVE</span>}
-                                  {isListed && <span className="text-cyan-400">• LISTED</span>}
+                                  {isActive && <span className="text-cyan-300">• ACTIVE</span>}
+                                  {isListed && <span className="text-purple-400">• LISTED</span>}
                                 </div>
                               </div>
                               {energy && (
@@ -449,7 +525,6 @@ const Marketplace = () => {
                                   <div className="text-xs font-bold" style={{ color: energy.energy > 0 ? '#66ffee' : '#ff4444' }}>
                                     ⚡ {energy.energy}/{energy.maxEnergy}
                                   </div>
-                                  {/* Energy pips */}
                                   <div className="flex gap-1 mt-1 justify-end">
                                     {Array.from({ length: energy.maxEnergy }).map((_, i) => (
                                       <div
@@ -465,12 +540,11 @@ const Marketplace = () => {
                                 </div>
                               )}
                             </div>
-                            {/* Card actions */}
                             {!isListed && (
                               <div className="mt-3 pt-3 border-t border-white/5 flex justify-end">
                                 <button
                                   onClick={(e) => { e.stopPropagation(); setListingCardId(card.id); setSection('my-cards'); }}
-                                  className="text-[10px] px-3 py-1 rounded border border-yellow-400/20 text-yellow-400/60 hover:text-yellow-400 hover:bg-yellow-400/5 tracking-widest transition-all"
+                                  className="text-[10px] px-3 py-1 rounded border border-cyan-400/20 text-cyan-400/60 hover:text-cyan-300 hover:bg-cyan-400/5 tracking-widest transition-all"
                                 >
                                   LIST ON MARKETPLACE
                                 </button>
@@ -490,16 +564,24 @@ const Marketplace = () => {
           {section === 'profile' && (
             <div className="max-w-md mx-auto space-y-6">
               {!user ? (
-                /* Inline auth form */
                 <div className="space-y-6">
                   <div className="text-center space-y-2">
-                    <h2 className="text-lg font-bold tracking-[0.3em] text-yellow-400/90" style={{ textShadow: '0 0 15px #ffdd0040' }}>
+                    <h2
+                      className="text-lg font-bold tracking-[0.3em]"
+                      style={{
+                        background: 'linear-gradient(135deg, #66ffee, #a78bfa)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        filter: 'drop-shadow(0 0 15px rgba(102, 255, 238, 0.3))',
+                      }}
+                    >
                       {isLogin ? 'SIGN IN' : 'CREATE ACCOUNT'}
                     </h2>
                     <p className="text-[10px] text-white/30 tracking-widest">Access your cards, wallet, and marketplace</p>
                   </div>
 
-                  <div className="rounded-xl border border-white/8 bg-black/50 p-6 backdrop-blur-sm">
+                  <div className="rounded-xl border border-cyan-500/15 bg-black/50 p-6 backdrop-blur-sm"
+                    style={{ boxShadow: '0 0 40px rgba(0, 200, 255, 0.03)' }}>
                     <form onSubmit={handleAuth} className="space-y-4">
                       {!isLogin && (
                         <Input
@@ -529,8 +611,8 @@ const Marketplace = () => {
                       <button
                         type="submit"
                         disabled={authSubmitting}
-                        className="w-full py-2.5 rounded-lg border border-yellow-400/40 bg-yellow-400/10 text-yellow-400 text-xs tracking-[0.2em] font-bold hover:bg-yellow-400/20 disabled:opacity-40 transition-all"
-                        style={{ textShadow: '0 0 8px #ffdd0040' }}
+                        className="w-full py-2.5 rounded-lg border border-cyan-400/40 bg-cyan-400/10 text-cyan-300 text-xs tracking-[0.2em] font-bold hover:bg-cyan-400/20 disabled:opacity-40 transition-all"
+                        style={{ textShadow: '0 0 8px rgba(0, 200, 255, 0.3)' }}
                       >
                         {authSubmitting ? '...' : isLogin ? 'SIGN IN' : 'SIGN UP'}
                       </button>
@@ -544,14 +626,20 @@ const Marketplace = () => {
                   </div>
                 </div>
               ) : (
-                /* Profile info */
                 <div className="space-y-6">
-                  <h2 className="text-sm uppercase tracking-[0.3em] text-white/50">Profile</h2>
+                  <h2 className="text-sm uppercase tracking-[0.3em] text-cyan-300/60">Profile</h2>
 
-                  <div className="rounded-xl border border-white/8 bg-black/50 p-6 backdrop-blur-sm space-y-5">
-                    {/* Identity */}
+                  <div className="rounded-xl border border-cyan-500/15 bg-black/50 p-6 backdrop-blur-sm space-y-5"
+                    style={{ boxShadow: '0 0 40px rgba(0, 200, 255, 0.03)' }}>
                     <div className="flex items-center gap-4">
-                      <div className="w-14 h-14 rounded-full bg-yellow-400/10 border border-yellow-400/20 flex items-center justify-center text-xl">
+                      <div
+                        className="w-14 h-14 rounded-full flex items-center justify-center text-xl"
+                        style={{
+                          background: 'radial-gradient(circle at 40% 40%, rgba(102, 255, 238, 0.2), rgba(167, 139, 250, 0.1), transparent)',
+                          border: '1px solid rgba(0, 200, 255, 0.2)',
+                          boxShadow: '0 0 20px rgba(0, 200, 255, 0.1)',
+                        }}
+                      >
                         👤
                       </div>
                       <div>
@@ -560,31 +648,22 @@ const Marketplace = () => {
                       </div>
                     </div>
 
-                    {/* Stats */}
                     {playerData && (
                       <div className="grid grid-cols-2 gap-4">
-                        <div className="rounded-lg bg-white/3 border border-white/5 p-3">
-                          <div className="text-[10px] text-white/25 uppercase tracking-widest mb-1">Division</div>
-                          <div className="text-sm font-bold" style={{ color: DIVISION_COLORS[playerData.division as Division] }}>
-                            {DIVISION_LABELS[playerData.division as Division]}
+                        {[
+                          { label: 'Division', value: DIVISION_LABELS[playerData.division as Division], color: DIVISION_COLORS[playerData.division as Division] },
+                          { label: 'Matches', value: playerData.total_matches, color: '#ffffff80' },
+                          { label: 'Points', value: playerData.division_points, color: '#ffffff80' },
+                          { label: 'Cards', value: `${cards.length}/10`, color: '#ffffff80' },
+                        ].map(stat => (
+                          <div key={stat.label} className="rounded-lg bg-white/3 border border-cyan-500/10 p-3">
+                            <div className="text-[10px] text-white/25 uppercase tracking-widest mb-1">{stat.label}</div>
+                            <div className="text-sm font-bold" style={{ color: stat.color }}>{stat.value}</div>
                           </div>
-                        </div>
-                        <div className="rounded-lg bg-white/3 border border-white/5 p-3">
-                          <div className="text-[10px] text-white/25 uppercase tracking-widest mb-1">Matches</div>
-                          <div className="text-sm font-bold text-white/80">{playerData.total_matches}</div>
-                        </div>
-                        <div className="rounded-lg bg-white/3 border border-white/5 p-3">
-                          <div className="text-[10px] text-white/25 uppercase tracking-widest mb-1">Points</div>
-                          <div className="text-sm font-bold text-white/80">{playerData.division_points}</div>
-                        </div>
-                        <div className="rounded-lg bg-white/3 border border-white/5 p-3">
-                          <div className="text-[10px] text-white/25 uppercase tracking-widest mb-1">Cards</div>
-                          <div className="text-sm font-bold text-white/80">{cards.length}/10</div>
-                        </div>
+                        ))}
                       </div>
                     )}
 
-                    {/* Division progress */}
                     {playerData && nextThreshold && (
                       <div className="space-y-2">
                         <div className="flex justify-between text-[10px] text-white/30 uppercase tracking-widest">
@@ -604,7 +683,6 @@ const Marketplace = () => {
                       </div>
                     )}
 
-                    {/* Active card */}
                     {activeCardId && (
                       <div className="space-y-2">
                         <div className="text-[10px] text-white/25 uppercase tracking-widest">Active Card</div>
@@ -612,7 +690,7 @@ const Marketplace = () => {
                           const card = cards.find(c => c.id === activeCardId);
                           if (!card) return null;
                           return (
-                            <div className="flex items-center gap-3 rounded-lg bg-white/3 border border-white/5 p-3">
+                            <div className="flex items-center gap-3 rounded-lg bg-white/3 border border-cyan-500/10 p-3">
                               <div
                                 className="w-8 h-8 rounded-full"
                                 style={{
@@ -638,14 +716,32 @@ const Marketplace = () => {
           {/* ════════ WALLET ════════ */}
           {section === 'wallet' && (
             <div className="max-w-md mx-auto space-y-6">
-              <h2 className="text-sm uppercase tracking-[0.3em] text-white/50">Wallet</h2>
+              <h2 className="text-sm uppercase tracking-[0.3em] text-cyan-300/60">Wallet</h2>
 
-              {/* Coming Soon — Solana */}
-              <div className="rounded-xl border border-purple-500/20 bg-purple-500/5 p-6 text-center space-y-3">
-                <span className="text-4xl">🔗</span>
-                <h3 className="text-sm font-bold text-purple-300 tracking-widest">SOLANA WALLET — COMING SOON</h3>
+              {/* Coming Soon — Sui */}
+              <div
+                className="rounded-xl border border-cyan-500/20 bg-black/50 p-6 text-center space-y-3 backdrop-blur-sm"
+                style={{ boxShadow: '0 0 40px rgba(0, 200, 255, 0.05)' }}
+              >
+                <div
+                  className="w-16 h-16 rounded-full mx-auto"
+                  style={{
+                    background: 'radial-gradient(circle at 40% 40%, rgba(102, 255, 238, 0.3), rgba(167, 139, 250, 0.15), transparent)',
+                    boxShadow: '0 0 30px rgba(102, 255, 238, 0.15), 0 0 60px rgba(167, 139, 250, 0.08)',
+                  }}
+                />
+                <h3
+                  className="text-sm font-bold tracking-widest"
+                  style={{
+                    background: 'linear-gradient(135deg, #66ffee, #a78bfa)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                  }}
+                >
+                  SUI WALLET — COMING SOON
+                </h3>
                 <p className="text-[10px] text-white/30">
-                  Wallet connection via Helius RPC will be available in a future update.
+                  Wallet connection via Thirdweb will be available when the Sui integration launches.
                 </p>
               </div>
 
@@ -653,16 +749,21 @@ const Marketplace = () => {
               <WalletConnect currentAddress={walletAddress} />
 
               {/* Blockchain info */}
-              <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-4 space-y-2">
-                <h3 className="text-xs font-bold text-cyan-400">Blockchain Info</h3>
+              <div className="rounded-xl border border-cyan-500/15 bg-black/50 p-4 space-y-2 backdrop-blur-sm"
+                style={{ boxShadow: '0 0 30px rgba(0, 200, 255, 0.03)' }}>
+                <h3 className="text-xs font-bold text-cyan-300" style={{ textShadow: '0 0 8px rgba(0, 200, 255, 0.3)' }}>Blockchain Info</h3>
                 <div className="text-[10px] text-white/40 space-y-1">
                   <div className="flex justify-between">
                     <span>Chain</span>
-                    <span className="text-cyan-300">Solana (planned)</span>
+                    <span className="text-cyan-300">Sui (planned)</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>RPC Provider</span>
-                    <span className="text-cyan-300">Helius (planned)</span>
+                    <span>Auth Provider</span>
+                    <span className="text-cyan-300">Thirdweb (planned)</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Fee Model</span>
+                    <span className="text-emerald-400">Flat 3%</span>
                   </div>
                 </div>
               </div>
