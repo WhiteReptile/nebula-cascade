@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { DIVISION_LABELS, type Division, REWARD_TIERS, getCurrentPeriod } from '@/lib/divisionSystem';
+import { DIVISION_LABELS, type Division, getCurrentPeriod } from '@/lib/divisionSystem';
 import { exportPayoutCSV, type PayoutData } from '@/lib/payoutIntegrations';
 
 const STATUS_STYLES: Record<string, string> = {

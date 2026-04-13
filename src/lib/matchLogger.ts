@@ -17,7 +17,7 @@
  *   - impossibleClears: >2 lines/sec sustained
  */
 import { supabase } from '@/integrations/supabase/client';
-import { getDivisionForPoints, getCurrentPeriod } from './divisionSystem';
+import { getCurrentPeriod } from './divisionSystem';
 
 interface MatchData {
   score: number;
@@ -98,13 +98,11 @@ export async function logMatch(data: MatchData): Promise<void> {
 
   // Update player stats
   const newPoints = player.division_points + data.score;
-  const newDivision = getDivisionForPoints(newPoints);
 
   await supabase
     .from('players')
     .update({
       division_points: newPoints,
-      division: newDivision,
       total_matches: player.total_matches + 1,
     })
     .eq('id', player.id);

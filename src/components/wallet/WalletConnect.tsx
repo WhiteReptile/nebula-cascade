@@ -3,9 +3,7 @@ import { WALLET_LABELS, type WalletType } from '@/lib/walletSystem';
 import { toast } from 'sonner';
 
 const WALLET_ICONS: Record<WalletType, string> = {
-  metamask: '🦊',
-  coinbase_wallet: '🔵',
-  walletconnect: '🔗',
+  thirdweb: '🔗',
   guest: '👤',
 };
 

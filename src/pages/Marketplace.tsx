@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { getActiveListings, buyCard, cancelListing, listCard, calculateFee, type MarketplaceListing } from '@/lib/marketplaceSystem';
 import { getCardsForPlayer, setActiveCard, type CardMetadata } from '@/lib/cardSystem';
 import { getCardEnergy, type CardEnergy } from '@/lib/energySystem';
-import { DIVISION_LABELS, DIVISION_COLORS, getNextDivisionThreshold, type Division } from '@/lib/divisionSystem';
+import { DIVISION_LABELS, DIVISION_COLORS, type Division } from '@/lib/divisionSystem';
 import { Input } from '@/components/ui/input';
 import WalletConnect from '@/components/wallet/WalletConnect';
 import { useToast } from '@/hooks/use-toast';
