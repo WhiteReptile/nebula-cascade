@@ -17,7 +17,7 @@ const WalletConnect = ({ currentAddress }: WalletConnectProps) => {
   const handleConnect = (type: WalletType) => {
     setConnecting(type);
     setTimeout(() => {
-      toast.info(`${WALLET_LABELS[type]} — Coming soon! Sui wallet connection will be available at launch.`);
+      toast.info(`${WALLET_LABELS[type]} — Coming soon! toast.info(`${WALLET_LABELS[type]} — Coming soon! Base wallet connection will be available at launch.`);`);
       setConnecting(null);
     }, 600);
   };
@@ -55,7 +55,7 @@ const WalletConnect = ({ currentAddress }: WalletConnectProps) => {
       </div>
 
       <p className="text-[10px] text-white/20 mt-4 text-center font-mono">
-        Sui wallet integration via Thirdweb is not yet live. Your progress is saved to your account.
+        Base wallet integration via Thirdweb is not yet live. Your progress is saved to your account. Your progress is saved to your account.
       </p>
     </div>
   );

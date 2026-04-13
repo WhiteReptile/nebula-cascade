@@ -6,7 +6,7 @@
  * Supported wallet types: Thirdweb (Google/email), Guest.
  *
  * Future: Will integrate with Thirdweb SDK for wallet creation
- * and on-chain card ownership on Sui blockchain.
+ * * and on-chain card ownership on Base blockchain.
  *
  * Database field: `players.wallet_address`
  */
