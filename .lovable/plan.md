@@ -1,49 +1,44 @@
 
 
-# Fix Preview + Clean Up Project
+# Rewrite Rewards Page + Update System Constants
 
-## Problem
-The preview is broken because Lovable expects `package.json` at the project root, but all app files live under `frontend/`. The dev server can't find a dev command. Additionally, thirdweb/emergent.sh artifacts need removal.
+## Files to Modify (7 files)
 
-## Plan
+### 1. `src/components/menu/MainMenu.tsx`
+- Remove `'SWAP'` from `MENU_ITEMS` array
+- Remove `navigate('/swap')` case in `handleSelect`
 
-### Step 1 — Flatten project structure
-Move all files from `frontend/` to the project root:
-- `frontend/package.json` → `package.json`
-- `frontend/vite.config.ts` → `vite.config.ts`
-- `frontend/index.html` → `index.html`
-- `frontend/src/` → `src/`
-- `frontend/supabase/` → `supabase/`
-- `frontend/tsconfig*.json` → root
-- `frontend/tailwind.config.ts`, `postcss.config.js`, `components.json`, `eslint.config.js`, `vitest.config.ts`, `public/` → root
+### 2. `src/lib/divisionSystem.ts`
+- Remove point-based `DIVISION_THRESHOLDS`, `getDivisionForPoints()`, `getNextDivisionThreshold()`, `REWARD_TIERS`
+- Add `DIVISION_RARITY` map: rarity label + estimated supply % per division (I: ~1%, II: ~4%, III: ~10%, IV: ~25%, V: ~60%)
+- Keep colors, labels, priority, `getCurrentPeriod()`
 
-Delete the empty `frontend/` directory after.
+### 3. `src/lib/marketplaceSystem.ts`
+- Replace dynamic fee (5/7/10%) with flat **3%** on all sales
+- `calculateFee()` → always returns 3
 
-### Step 2 — Remove thirdweb and wallet code
-Delete these files:
-- `src/config/thirdweb.ts`
-- `src/context/WalletContext.tsx`
-- `src/components/wallet/ThirdwebWalletConnect.tsx`
-- `src/components/wallet/SwapWidget.tsx`
-- `src/pages/Swap.tsx`
+### 4. `src/lib/cardSystem.ts`
+- No hard-coded copies constant — supply varies per card, market-determined
+- Update docs to reflect variable supply
 
-Remove `thirdweb` from `package.json` dependencies and `optimizeDeps.exclude` from `vite.config.ts`.
+### 5. `src/pages/Rewards.tsx` — Full Rewrite
+Replace the 682-line scroll page with a compact, button-driven single-screen.
 
-### Step 3 — Fix App.tsx
-- Remove `WalletProvider` import and wrapper
-- Remove `Swap` import and `/swap` route
-- Keep all other pages and routes intact
+**Style**: Same cosmic theme (`bg-[#050510]`, `font-mono`, neon glows), CSS gradients (no canvas).
 
-### Step 4 — Fix Marketplace.tsx
-- Remove `ThirdwebWalletConnect` import and usage
-- Replace wallet section with a "Coming Soon (Solana)" placeholder panel
+**Layout**: Header → title → 5 nav pill buttons → dynamic content panel
 
-### Step 5 — Remove emergent.sh artifacts
-Delete: `.emergent/`, `.gitconfig`, `backend/`, `tests/`, `backend_test.py`, `test_result.md`, `test_reports/`, root `bun.lock`, root `package-lock.json`
+**Buttons**: `DIVISIONS` · `CARDS` · `NO NFT` · `REWARDS` · `SEASON`
 
-### Step 6 — Verify build
-Run TypeScript check and confirm the preview loads.
+Each section has 300+ words of compacted detail:
 
-## Result
-Clean, flat project structure that Lovable can serve. Zero blockchain code. Preview works immediately.
+- **DIVISIONS**: 5 color-coded cards. Rarity labels, estimated supply %. "Rarity only, not skill. Worst player can own Div I. Must earn leaderboard spot. Supply estimates (~1% to ~60%), market determines final value."
+- **CARDS**: 2 energy/card/day, 1 energy = 1 ranked run, max 10 cards = 20 energy/day, UTC midnight reset, no energy = unranked play. Supply per card varies. Art is cosmetic. NFT via Thirdweb on Sui.
+- **NO NFT**: Account via Thirdweb (Google/email). 2 energy/day, random activation on game start. Separate leaderboard. Permanent rule: wallet ever held ANY NFT → permanently in NFT leaderboard.
+- **REWARDS**: 30% platform fees → pool. 3% marketplace fee + primary sales. 40-day accumulation. Off-chain payout calc. Merkle proof claims.
+- **SEASON**: 40-day cycles. Leaderboard resets. Claim period. Beta notice.
+
+### 6. `src/lib/walletSystem.ts` — Update comments to Sui + Thirdweb
+
+### 7. `src/lib/payoutIntegrations.ts` — Update comments to Sui + Thirdweb
 
