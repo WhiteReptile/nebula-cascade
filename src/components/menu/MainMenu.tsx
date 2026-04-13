@@ -127,15 +127,23 @@ const MainMenu = ({ onStart }: MainMenuProps) => {
         style={{ background: 'radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.6) 100%)' }}
       />
 
+      {/* Top corner buttons */}
+      <button
+        onClick={() => navigate('/roadmap')}
+        className="absolute top-6 left-6 z-30 font-mono uppercase tracking-[0.2em] text-sm px-5 py-2 rounded border border-cyan-500/40 bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 hover:border-cyan-400/60 transition-all duration-300 cursor-pointer select-none"
+        style={{ textShadow: '0 0 8px rgba(0,200,255,0.4)' }}
+      >
+        Roadmap
+      </button>
+      <button
+        onClick={() => navigate('/auth')}
+        className="absolute top-6 right-6 z-30 font-mono uppercase tracking-[0.2em] text-sm px-5 py-2 rounded border border-cyan-500/40 bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 hover:border-cyan-400/60 transition-all duration-300 cursor-pointer select-none"
+        style={{ textShadow: '0 0 8px rgba(0,200,255,0.4)' }}
+      >
+        Login / Sign Up
+      </button>
+
       <div className="relative z-20 flex flex-col items-center gap-2">
-        {/* Login / Sign Up button — above menu */}
-        <button
-          onClick={() => navigate('/auth')}
-          className="font-mono uppercase tracking-[0.2em] text-sm px-5 py-2 rounded border border-cyan-500/40 bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 hover:border-cyan-400/60 transition-all duration-300 cursor-pointer select-none"
-          style={{ marginBottom: 94, textShadow: '0 0 8px rgba(0,200,255,0.4)' }}
-        >
-          Login / Sign Up
-        </button>
 
         {/* Title */}
         <div className="menu-title-container mb-2 select-none" style={{ paddingLeft: 'calc(5% + 5px)' }}>
