@@ -89,15 +89,12 @@ const Leaderboard = () => {
       if (user) {
         const { data: player } = await supabase
           .from('players')
-          .select('has_ever_owned_card')
-          .eq('auth_id', user.id)
+          .select('active_card_id')
+          .eq('user_id', user.id)
           .single();
-        if (player && player.has_ever_owned_card !== undefined) {
-          setHasEverOwnedCard(player.has_ever_owned_card);
-          // Auto-select the right board for the player's segment
-          if (player.has_ever_owned_card) {
-            setActiveBoard("nft");
-          }
+        if (player && player.active_card_id) {
+          setHasEverOwnedCard(true);
+          setActiveBoard("nft");
         }
       }
     };
