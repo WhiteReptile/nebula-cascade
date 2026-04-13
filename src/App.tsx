@@ -12,6 +12,7 @@ import Options from "./pages/Options.tsx";
 import Marketplace from "./pages/Marketplace.tsx";
 import Rules from "./pages/Rules.tsx";
 import Rewards from "./pages/Rewards.tsx";
+import Roadmap from "./pages/Roadmap.tsx";
 
 const queryClient = new QueryClient();
 
@@ -30,8 +31,9 @@ const App = () => (
           <Route path="/wallet" element={<Navigate to="/marketplace" replace />} />
           <Route path="/options" element={<Options />} />
           <Route path="/marketplace" element={<Marketplace />} />
-          <Route path="/rules" element={<Rules />} />
+          <Route path="/rules" element={<Navigate to="/rewards" replace />} />
           <Route path="/rewards" element={<Rewards />} />
+          <Route path="/roadmap" element={<Roadmap />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

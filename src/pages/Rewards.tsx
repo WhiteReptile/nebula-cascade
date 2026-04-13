@@ -288,7 +288,7 @@ const Rewards = () => {
           className="text-4xl md:text-5xl font-black uppercase tracking-[0.4em]"
           style={{ color: '#66ffee', textShadow: '0 0 20px rgba(102,255,238,0.3), 0 0 60px rgba(102,255,238,0.1)' }}
         >
-          REWARDS
+          REWARDS & RULES
         </h1>
         <p className="text-[10px] uppercase tracking-[0.5em] text-white/25 mt-2">System Overview</p>
         <div className="mx-auto w-24 h-px bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent mt-4" />
