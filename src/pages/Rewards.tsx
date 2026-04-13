@@ -24,8 +24,8 @@ const DIVISIONS_ORDERED: { key: Division; roman: string; color: string }[] = [
 
 const DivisionsContent = () => (
   <div className="space-y-5">
-    <p className="text-white/50 text-xs leading-relaxed">
-      Nebula uses a five-tier division system that represents <span className="text-white/80">rarity only — not skill level</span>. 
+    <p className="text-white/80 text-xs leading-relaxed">
+      Nebula uses a five-tier division system that represents <span className="text-white">rarity only — not skill level</span>. 
       The worst player on the platform can own a Division I card, and the best player can start with Division V. 
       Your card's division determines which leaderboard tier you compete in, but it does not give any gameplay 
       advantage whatsoever. All cards have identical mechanics — same energy, same game rules, same scoring. 
@@ -67,7 +67,7 @@ const DivisionsContent = () => (
                   {rarity.rarity}
                 </span>
               </div>
-              <div className="text-[10px] text-white/30 mt-0.5">Supply: {rarity.supplyPercent} of total cards</div>
+              <div className="text-[10px] text-white/50 mt-0.5">Supply: {rarity.supplyPercent} of total cards</div>
             </div>
             <div className="flex gap-0.5">
               {Array.from({ length: DIVISIONS_ORDERED.length - DIVISIONS_ORDERED.findIndex(d => d.key === key) }).map((_, j) => (
@@ -83,28 +83,28 @@ const DivisionsContent = () => (
 
 const CardsContent = () => (
   <div className="space-y-4">
-    <p className="text-white/50 text-xs leading-relaxed">
+    <p className="text-white/80 text-xs leading-relaxed">
       Cards are the core asset in Nebula — each one is an NFT deployed via Thirdweb on the Sui blockchain. 
-      Every card generates <span className="text-white/80">2 energy per day</span>, and each energy point allows 
+      Every card generates <span className="text-white">2 energy per day</span>, and each energy point allows 
       you to play one ranked match. That means a single card gives you 2 ranked runs daily. If you own multiple 
       cards, each card has its own independent energy pool — you must play with each card separately to use its 
-      energy. A wallet can hold up to <span className="text-white/80">10 cards maximum</span>, which means the 
+      energy. A wallet can hold up to <span className="text-white">10 cards maximum</span>, which means the 
       theoretical daily cap is 20 ranked runs per player (10 cards × 2 energy each). Energy resets every day at 
-      <span className="text-white/80">UTC midnight</span> — unused energy does not carry over. If all your cards 
+      <span className="text-white">UTC midnight</span> — unused energy does not carry over. If all your cards 
       are out of energy, you can still play the game freely, but those matches will not count toward any ranked 
       leaderboard or seasonal standings.
     </p>
-    <p className="text-white/50 text-xs leading-relaxed">
-      <span className="text-white/80">Points belong to your wallet, not your card.</span> If you sell a card and 
+    <p className="text-white/80 text-xs leading-relaxed">
+      <span className="text-white">Points belong to your wallet, not your card.</span> If you sell a card and 
       buy a new one, your accumulated points stay with you. You compete in whatever division your current active 
       card belongs to, using your existing points. When a new card is added to your wallet — whether purchased from 
-      the marketplace or received via trade — its energy pool initializes instantly with <span className="text-white/80">
+      the marketplace or received via trade — its energy pool initializes instantly with <span className="text-white">
       2 energy</span>. No waiting, no UTC dependency. The new owner gets to play immediately.
     </p>
-    <p className="text-white/50 text-xs leading-relaxed">
-      <span className="text-white/80">Primary card selection</span> works automatically: when you start a game, the 
+    <p className="text-white/80 text-xs leading-relaxed">
+      <span className="text-white">Primary card selection</span> works automatically: when you start a game, the 
       system checks your wallet and selects the highest division card that still has energy available. If that card 
-      runs out of energy, the game does <span className="text-white/80">not</span> automatically switch to another card. 
+      runs out of energy, the game does <span className="text-white">not</span> automatically switch to another card. 
       You must manually select a different card to continue earning ranked scores. If you forget or choose not to use 
       your other cards, that energy goes unused. Consistency is part of the competition. Card art, names, and flavor 
       text are purely cosmetic — they provide zero gameplay stats or advantages.
@@ -120,7 +120,7 @@ const CardsContent = () => (
         <div key={item.label} className="rounded-lg border border-white/10 bg-white/[0.03] p-3 text-center">
           <div className="text-lg mb-1">{item.icon}</div>
           <div className="text-sm font-bold text-cyan-300" style={{ textShadow: '0 0 8px rgba(102,255,238,0.3)' }}>{item.label}</div>
-          <div className="text-[10px] text-white/30 mt-0.5">{item.desc}</div>
+          <div className="text-[10px] text-white/50 mt-0.5">{item.desc}</div>
         </div>
       ))}
     </div>
@@ -129,19 +129,19 @@ const CardsContent = () => (
 
 const NoNftContent = () => (
   <div className="space-y-4">
-    <p className="text-white/50 text-xs leading-relaxed">
+    <p className="text-white/80 text-xs leading-relaxed">
       You do not need to own any NFT cards to play Nebula. Every account — created via Thirdweb using Google, 
-      email, or any supported login method — automatically participates in the <span className="text-white/80">
+      email, or any supported login method — automatically participates in the <span className="text-white">
       No-NFT bracket</span>. This is a completely separate leaderboard from the division-based NFT tiers. 
-      Bracket placement is determined entirely by your current wallet contents: holding <span className="text-white/80">
+      Bracket placement is determined entirely by your current wallet contents: holding <span className="text-white">
       zero NFT cards</span> places you in the No-NFT bracket, while holding one or more NFT cards moves you to 
       the appropriate division bracket. There is no permanent lock-in — selling all your NFT cards immediately 
       returns you to the No-NFT bracket. Scores you submitted remain valid in the bracket where they were 
       originally earned.
     </p>
-    <p className="text-white/50 text-xs leading-relaxed">
-      Free players receive <span className="text-white/80">2 energy per day</span> with a random activation mechanic: 
-      each time you start a new game, your energy has a <span className="text-white/80">50% chance</span> to activate 
+    <p className="text-white/80 text-xs leading-relaxed">
+      Free players receive <span className="text-white">2 energy per day</span> with a random activation mechanic: 
+      each time you start a new game, your energy has a <span className="text-white">50% chance</span> to activate 
       for that run. This keeps the free experience accessible while adding a layer of unpredictability that balances 
       the playing field across all free participants. The No-NFT leaderboard operates on the same seasonal schedule 
       as the NFT divisions — 40-day cycles with standings that reset each season. Free players compete exclusively 
@@ -154,7 +154,7 @@ const NoNftContent = () => (
         <span className="text-emerald-400 text-lg">🔄</span>
         <div>
           <div className="text-xs font-bold text-emerald-400 tracking-wider mb-1">FLUID BRACKETS</div>
-          <p className="text-[11px] text-white/40 leading-relaxed">
+          <p className="text-[11px] text-white/60 leading-relaxed">
             Bracket placement is wallet-based and updates in real time. Hold 0 NFTs → No-NFT bracket. 
             Hold ≥1 NFT → NFT division bracket. Sell all cards → return to No-NFT immediately. No permanent lock-in.
           </p>
@@ -166,8 +166,8 @@ const NoNftContent = () => (
 
 const RewardsContent = () => (
   <div className="space-y-4">
-    <p className="text-white/50 text-xs leading-relaxed">
-      The Nebula rewards pool is funded by <span className="text-white/80">30% of all platform fees</span>. 
+    <p className="text-white/80 text-xs leading-relaxed">
+      The Nebula rewards pool is funded by <span className="text-white">30% of all platform fees</span>. 
       This includes the 3% marketplace fee charged on every secondary card sale, plus a portion of revenue from 
       primary card sales during launches and drops. These fees accumulate continuously throughout each 40-day season, 
       building a pool that grows proportionally with platform activity. More trading and more players means a 
@@ -176,7 +176,7 @@ const RewardsContent = () => (
       other players in your specific division — not by an absolute score threshold. The top performers in Division V 
       are rewarded from the Division V allocation, and the same applies up through Division I. Higher divisions 
       don't automatically guarantee higher individual payouts — the pool allocation per division may vary based on 
-      participation and card distribution. Once payouts are calculated, the team <span className="text-white/80">
+      participation and card distribution. Once payouts are calculated, the team <span className="text-white">
       sends rewards directly to player wallets</span>. No complex claiming process required — rewards are distributed 
       by the team after each season closes. The 30% allocation is a launch parameter and may be adjusted by the team 
       as the platform matures, always with advance notice to the community.
@@ -190,7 +190,7 @@ const RewardsContent = () => (
       ].map(item => (
         <div key={item.label} className="rounded-lg border border-cyan-500/15 bg-cyan-500/5 p-3 text-center">
           <div className="text-base font-black text-cyan-300" style={{ textShadow: '0 0 10px rgba(102,255,238,0.3)' }}>{item.value}</div>
-          <div className="text-[9px] text-white/30 mt-1 tracking-wider uppercase">{item.label}</div>
+          <div className="text-[9px] text-white/50 mt-1 tracking-wider uppercase">{item.label}</div>
         </div>
       ))}
     </div>
@@ -199,8 +199,8 @@ const RewardsContent = () => (
 
 const SeasonContent = () => (
   <div className="space-y-4">
-    <p className="text-white/50 text-xs leading-relaxed">
-      Nebula operates on <span className="text-white/80">40-day competitive seasons</span>. Each season is a 
+    <p className="text-white/80 text-xs leading-relaxed">
+      Nebula operates on <span className="text-white">40-day competitive seasons</span>. Each season is a 
       self-contained competition cycle with its own leaderboard standings, reward pool accumulation, and payout 
       distribution. On Day 1, a new season begins and all leaderboard positions across every division and the 
       No-NFT bracket reset to zero. Every player starts fresh — no carryover from previous seasons. From Day 1 
@@ -210,7 +210,7 @@ const SeasonContent = () => (
       with every marketplace transaction and card sale. At the end of Day 40, the season closes. Final standings 
       are locked and the team begins the off-chain payout calculation process. This includes anti-cheat validation 
       — any flagged accounts are reviewed before rewards are distributed. Once payouts are finalized, the team 
-      <span className="text-white/80">sends rewards directly to player wallets</span>. Then 
+      <span className="text-white">sends rewards directly to player wallets</span>. Then 
       the cycle repeats: Day 1 of the new season, clean slate, new pool, same hunger. Season length and structure 
       may be adjusted during the beta phase based on community feedback and participation data. The team will 
       communicate any changes in advance. The 40-day cycle is designed to be long enough for meaningful competition 
@@ -222,7 +222,7 @@ const SeasonContent = () => (
         <span className="text-purple-400 text-lg">🧪</span>
         <div>
           <div className="text-xs font-bold text-purple-400 tracking-wider mb-1">BETA STATUS</div>
-          <p className="text-[11px] text-white/40 leading-relaxed">
+          <p className="text-[11px] text-white/60 leading-relaxed">
             The reward system is live but distribution activates after NFT launch on Sui. 
             Season structure and pool allocations may be refined during beta based on community feedback.
           </p>
@@ -238,7 +238,7 @@ const SeasonContent = () => (
       ].map((step, i) => (
         <div key={step.day} className="flex-1">
           <div className="text-xs font-bold text-purple-300 mb-1">{step.day}</div>
-          <div className="text-[10px] text-white/30 whitespace-pre-line leading-tight">{step.desc}</div>
+          <div className="text-[10px] text-white/50 whitespace-pre-line leading-tight">{step.desc}</div>
           {i < 2 && <div className="text-white/10 mt-2">→</div>}
         </div>
       ))}
@@ -303,7 +303,7 @@ const Rewards = () => {
             className={`px-4 py-2 rounded-full text-[11px] font-bold uppercase tracking-[0.15em] border transition-all duration-300 ${
               activeTab === tab.key
                 ? 'border-cyan-400/50 bg-cyan-400/10 text-cyan-300'
-                : 'border-white/10 bg-white/[0.03] text-white/40 hover:text-white/60 hover:border-white/20'
+                : 'border-white/10 bg-white/[0.03] text-white/60 hover:text-white/60 hover:border-white/20'
             }`}
             style={activeTab === tab.key ? { boxShadow: '0 0 12px rgba(102,255,238,0.15)', textShadow: '0 0 6px rgba(102,255,238,0.3)' } : undefined}
           >
