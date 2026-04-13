@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { getActiveListings, buyCard, cancelListing, listCard, calculateFee, type MarketplaceListing } from '@/lib/marketplaceSystem';
 import { getCardsForPlayer, setActiveCard, type CardMetadata } from '@/lib/cardSystem';
 import { getCardEnergy, type CardEnergy } from '@/lib/energySystem';
-import { DIVISION_LABELS, DIVISION_COLORS, getNextDivisionThreshold, type Division } from '@/lib/divisionSystem';
+import { DIVISION_LABELS, DIVISION_COLORS, type Division } from '@/lib/divisionSystem';
 import { Input } from '@/components/ui/input';
 import WalletConnect from '@/components/wallet/WalletConnect';
 import { useToast } from '@/hooks/use-toast';
@@ -177,7 +177,7 @@ const Marketplace = () => {
   const priceCents = Math.round((parseFloat(listPrice) || 0) * 100);
   const feeAmount = priceCents * estimatedFee / 100;
   const sellerReceives = priceCents - feeAmount;
-  const nextThreshold = playerData ? getNextDivisionThreshold(playerData.division) : null;
+  const nextThreshold = null; // Division progression is rarity-based, not point-based
 
   /* ── Sidebar nav items ── */
   const navItems: { key: Section; label: string; icon: string }[] = [

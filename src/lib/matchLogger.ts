@@ -17,7 +17,7 @@
  *   - impossibleClears: >2 lines/sec sustained
  */
 import { supabase } from '@/integrations/supabase/client';
-import { getDivisionForPoints, getCurrentPeriod } from './divisionSystem';
+import { getCurrentPeriod } from './divisionSystem';
 
 interface MatchData {
   score: number;
@@ -67,7 +67,7 @@ export async function logMatch(data: MatchData): Promise<void> {
   const userId = userData.user.id;
   const { data: player } = await supabase
     .from('players')
-    .select('id, division_points, total_matches')
+    .select('id, division_points, division, total_matches')
     .eq('user_id', userId)
     .single();
 
@@ -98,13 +98,11 @@ export async function logMatch(data: MatchData): Promise<void> {
 
   // Update player stats
   const newPoints = player.division_points + data.score;
-  const newDivision = getDivisionForPoints(newPoints);
 
   await supabase
     .from('players')
     .update({
       division_points: newPoints,
-      division: newDivision,
       total_matches: player.total_matches + 1,
     })
     .eq('id', player.id);
@@ -127,7 +125,7 @@ export async function logMatch(data: MatchData): Promise<void> {
         total_score: existing.total_score + data.score,
         best_score: Math.max(existing.best_score, data.score),
         matches_played: existing.matches_played + 1,
-        division: newDivision,
+        division: player.division,
         avg_top3_score: avgTop3,
       })
       .eq('id', existing.id);
@@ -135,7 +133,7 @@ export async function logMatch(data: MatchData): Promise<void> {
     await supabase.from('leaderboard').insert({
       player_id: player.id,
       period,
-      division: newDivision,
+      division: player.division,
       total_score: data.score,
       best_score: data.score,
       matches_played: 1,

@@ -1,679 +1,322 @@
-/**
- * Rewards Page — Immersive galaxy-themed rewards hub
- *
- * Conceptual only — explains the rewards system clearly,
- * builds hype, and matches the cyber-retro / cosmic aesthetic.
- *
- * Sections:
- * 1. Hero — animated galaxy background
- * 2. How It Works — 3-step flow
- * 3. Divisions — tier hierarchy with glow
- * 4. Reward Pool — conceptual explanation
- * 5. Player Types — Card vs Free
- * 6. Core Rule — permanent segmentation
- * 7. Reward Cycle — 40-day timeline
- * 8. Beta Status — transparent notice
- */
-import { useRef, useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { DIVISION_LABELS, DIVISION_COLORS, type Division } from '@/lib/divisionSystem';
+import { DIVISION_LABELS, DIVISION_COLORS, DIVISION_RARITY, type Division } from '@/lib/divisionSystem';
 
-const DIVISIONS_ORDERED: { key: Division; label: string; color: string; glow: string; tier: number; desc: string }[] = [
-  { key: 'gem_i',   label: 'Division I',   color: '#66ffee', glow: 'rgba(102,255,238,0.5)',  tier: 5, desc: 'The apex. Elite players with the highest stakes and the greatest rewards.' },
-  { key: 'gem_ii',  label: 'Division II',  color: '#aa44ff', glow: 'rgba(170,68,255,0.5)',   tier: 4, desc: 'Proven competitors. High-level play rewarded with serious recognition.' },
-  { key: 'gem_iii', label: 'Division III', color: '#3388ff', glow: 'rgba(51,136,255,0.5)',   tier: 3, desc: 'Rising talent. Strong performance opens the path to higher tiers.' },
-  { key: 'gem_iv',  label: 'Division IV',  color: '#ffdd00', glow: 'rgba(255,221,0,0.5)',    tier: 2, desc: 'Building momentum. Consistent play here earns your first rewards.' },
-  { key: 'gem_v',   label: 'Division V',   color: '#ff3344', glow: 'rgba(255,51,68,0.5)',    tier: 1, desc: 'Entry tier. Every journey through the cosmos begins here.' },
+type Tab = 'divisions' | 'cards' | 'no-nft' | 'rewards' | 'season';
+
+const TABS: { key: Tab; label: string }[] = [
+  { key: 'divisions', label: 'DIVISIONS' },
+  { key: 'cards', label: 'CARDS' },
+  { key: 'no-nft', label: 'NO NFT' },
+  { key: 'rewards', label: 'REWARDS' },
+  { key: 'season', label: 'SEASON' },
 ];
+
+const DIVISIONS_ORDERED: { key: Division; roman: string; color: string }[] = [
+  { key: 'gem_i', roman: 'I', color: DIVISION_COLORS.gem_i },
+  { key: 'gem_ii', roman: 'II', color: DIVISION_COLORS.gem_ii },
+  { key: 'gem_iii', roman: 'III', color: DIVISION_COLORS.gem_iii },
+  { key: 'gem_iv', roman: 'IV', color: DIVISION_COLORS.gem_iv },
+  { key: 'gem_v', roman: 'V', color: DIVISION_COLORS.gem_v },
+];
+
+/* ────────────────────────────────────────────────────────── */
+
+const DivisionsContent = () => (
+  <div className="space-y-5">
+    <p className="text-white/50 text-xs leading-relaxed">
+      Nebula uses a five-tier division system that represents <span className="text-white/80">rarity only — not skill level</span>. 
+      The worst player on the platform can own a Division I card, and the best player can start with Division V. 
+      Your card's division determines which leaderboard tier you compete in, but it does not give any gameplay 
+      advantage whatsoever. All cards have identical mechanics — same energy, same game rules, same scoring. 
+      The only difference is scarcity: fewer Division I cards exist in circulation, making them more exclusive 
+      and typically more valuable on the secondary market. Supply percentages listed below are estimates based 
+      on initial design targets. The actual distribution may shift slightly depending on demand, but the ratios 
+      will stay close to these ranges. Ultimately, the market itself determines the real value of every card 
+      regardless of division — a high-demand Division V card from a popular collection could outprice a low-demand 
+      Division II card. Rarity creates the framework, but player demand writes the final price. To earn rewards 
+      from a division's leaderboard, you must earn your rank through consistent gameplay performance. Owning a 
+      rare card gets you into the tier — keeping your rank is entirely on you.
+    </p>
+
+    <div className="grid gap-3">
+      {DIVISIONS_ORDERED.map(({ key, roman, color }) => {
+        const rarity = DIVISION_RARITY[key];
+        return (
+          <div
+            key={key}
+            className="flex items-center gap-4 rounded-lg border px-4 py-3"
+            style={{
+              borderColor: `${color}25`,
+              background: `linear-gradient(135deg, ${color}08 0%, transparent 60%)`,
+            }}
+          >
+            <div
+              className="flex-shrink-0 w-10 h-10 rounded-md flex items-center justify-center text-lg font-black"
+              style={{ color, background: `${color}12`, border: `1px solid ${color}30`, textShadow: `0 0 8px ${color}` }}
+            >
+              {roman}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-bold tracking-wider" style={{ color }}>{DIVISION_LABELS[key]}</span>
+                <span
+                  className="text-[9px] px-1.5 py-0.5 rounded-full tracking-widest uppercase"
+                  style={{ background: `${color}15`, color, border: `1px solid ${color}30` }}
+                >
+                  {rarity.rarity}
+                </span>
+              </div>
+              <div className="text-[10px] text-white/30 mt-0.5">Supply: {rarity.supplyPercent} of total cards</div>
+            </div>
+            <div className="flex gap-0.5">
+              {Array.from({ length: DIVISIONS_ORDERED.length - DIVISIONS_ORDERED.findIndex(d => d.key === key) }).map((_, j) => (
+                <div key={j} className="w-2 h-2 rounded-sm" style={{ background: color, boxShadow: `0 0 4px ${color}80` }} />
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  </div>
+);
+
+const CardsContent = () => (
+  <div className="space-y-4">
+    <p className="text-white/50 text-xs leading-relaxed">
+      Cards are the core asset in Nebula — each one is an NFT deployed via Thirdweb on the Sui blockchain. 
+      Every card generates <span className="text-white/80">2 energy per day</span>, and each energy point allows 
+      you to play one ranked match. That means a single card gives you 2 ranked runs daily. If you own multiple 
+      cards, each card has its own independent energy pool — you must play with each card separately to use its 
+      energy. A wallet can hold up to <span className="text-white/80">10 cards maximum</span>, which means the 
+      theoretical daily cap is 20 ranked runs per player (10 cards × 2 energy each). Energy resets every day at 
+      <span className="text-white/80">UTC midnight</span> — unused energy does not carry over. If all your cards 
+      are out of energy, you can still play the game freely, but those matches will not count toward any ranked 
+      leaderboard or seasonal standings. The supply per card design varies — some designs might have a handful of 
+      copies, others might have more. There is no fixed number hardcoded into the system; supply is determined on 
+      a per-design basis and may be adjusted based on market conditions and community feedback. Card art, names, 
+      and flavor text are purely cosmetic. They look cool, they feel unique, but they provide zero gameplay stats 
+      or advantages. A Division V card with basic art performs identically to a Division I card with premium art. 
+      The only mechanical difference between cards is their division tier, which affects which leaderboard bracket 
+      you compete in. When a new card is added to your wallet, its energy pool initializes fresh — you get your 
+      2 energy immediately. Trading or selling a card on the marketplace transfers ownership and reinitializes 
+      energy for the new owner.
+    </p>
+
+    <div className="grid grid-cols-2 gap-3">
+      {[
+        { label: '2 / DAY', desc: 'Energy per card', icon: '⚡' },
+        { label: '10 MAX', desc: 'Cards per wallet', icon: '🃏' },
+        { label: '20 MAX', desc: 'Daily ranked runs', icon: '🎯' },
+        { label: 'UTC 00:00', desc: 'Energy reset time', icon: '🔄' },
+      ].map(item => (
+        <div key={item.label} className="rounded-lg border border-white/10 bg-white/[0.03] p-3 text-center">
+          <div className="text-lg mb-1">{item.icon}</div>
+          <div className="text-sm font-bold text-cyan-300" style={{ textShadow: '0 0 8px rgba(102,255,238,0.3)' }}>{item.label}</div>
+          <div className="text-[10px] text-white/30 mt-0.5">{item.desc}</div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+const NoNftContent = () => (
+  <div className="space-y-4">
+    <p className="text-white/50 text-xs leading-relaxed">
+      You do not need to own any NFT cards to play Nebula. Every account — created via Thirdweb using Google, 
+      email, or any supported login method — automatically participates in the <span className="text-white/80">
+      No-NFT bracket</span>. This is a completely separate leaderboard from the division-based NFT tiers. Free 
+      players receive <span className="text-white/80">2 energy per day</span> with a random activation mechanic: 
+      when you start a new game, your energy has a chance to activate for that run. This keeps the free experience 
+      accessible while adding a layer of unpredictability that balances the playing field across all free participants. 
+      The No-NFT leaderboard operates on the same seasonal schedule as the NFT divisions — 40-day cycles with 
+      standings that reset each season. Free players compete exclusively against other free players, ensuring a 
+      fair competitive environment that is never influenced by card ownership or spending power. There is one 
+      critical permanent rule that protects the integrity of this bracket: <span className="text-white/80">if your 
+      wallet has EVER held any NFT card — even briefly — you are permanently moved to the NFT leaderboard system</span>. 
+      This applies even if you sell all your cards, have zero energy, have no active cards, or have never used 
+      a card in a ranked match. The moment an NFT touches your wallet, the migration is irreversible. You can 
+      never return to the No-NFT bracket. This rule exists to protect free players from competing against anyone 
+      who has ever had access to NFT-tier advantages, resources, or marketplace profits. It keeps the free bracket 
+      genuinely free. No exceptions, no resets, no workarounds — the blockchain ledger is permanent and so is this 
+      rule. If you're considering buying your first card, understand that this is a one-way door. Once you cross 
+      into the NFT ecosystem, the No-NFT bracket is closed to you forever.
+    </p>
+
+    <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-4">
+      <div className="flex items-start gap-3">
+        <span className="text-red-400 text-lg">⚠</span>
+        <div>
+          <div className="text-xs font-bold text-red-400 tracking-wider mb-1">PERMANENT RULE</div>
+          <p className="text-[11px] text-white/40 leading-relaxed">
+            Wallet ever held ANY NFT → permanently in NFT leaderboard. No reversal. No exceptions. 
+            Protects free players from any NFT-tier crossover.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const RewardsContent = () => (
+  <div className="space-y-4">
+    <p className="text-white/50 text-xs leading-relaxed">
+      The Nebula rewards pool is funded by <span className="text-white/80">30% of all platform fees</span>. 
+      This includes the 3% marketplace fee charged on every secondary card sale, plus a portion of revenue from 
+      primary card sales during launches and drops. These fees accumulate continuously throughout each 40-day season, 
+      building a pool that grows proportionally with platform activity. More trading and more players means a 
+      larger pool. At the end of each season, the Nebula team calculates payout amounts off-chain based on final 
+      leaderboard standings within each division. This means your rewards are determined by your rank relative to 
+      other players in your specific division — not by an absolute score threshold. The top performers in Division V 
+      are rewarded from the Division V allocation, and the same applies up through Division I. Higher divisions 
+      don't automatically guarantee higher individual payouts — the pool allocation per division may vary based on 
+      participation and card distribution. Once payouts are calculated, players claim their rewards on-chain via 
+      <span className="text-white/80">Merkle proof verification</span>. The RewardsVault smart contract deployed 
+      on Sui doesn't know about divisions, player names, or dollar amounts. It only validates the cryptographic 
+      proof you submit and releases the corresponding funds to your wallet. This approach is trustless, transparent, 
+      and verifiable — anyone can audit the Merkle tree to confirm payout accuracy. The claim window remains open 
+      after each season for a reasonable period, giving all eligible players time to collect. Unclaimed rewards 
+      follow the policy set by the team for that season (typically rolling into the next pool or being held in 
+      reserve). The 30% allocation is a launch parameter and may be adjusted by the team as the platform matures, 
+      always with advance notice to the community.
+    </p>
+
+    <div className="grid grid-cols-3 gap-3">
+      {[
+        { value: '30%', label: 'Fees → Pool' },
+        { value: '3%', label: 'Marketplace fee' },
+        { value: 'MERKLE', label: 'On-chain claims' },
+      ].map(item => (
+        <div key={item.label} className="rounded-lg border border-cyan-500/15 bg-cyan-500/5 p-3 text-center">
+          <div className="text-base font-black text-cyan-300" style={{ textShadow: '0 0 10px rgba(102,255,238,0.3)' }}>{item.value}</div>
+          <div className="text-[9px] text-white/30 mt-1 tracking-wider uppercase">{item.label}</div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+const SeasonContent = () => (
+  <div className="space-y-4">
+    <p className="text-white/50 text-xs leading-relaxed">
+      Nebula operates on <span className="text-white/80">40-day competitive seasons</span>. Each season is a 
+      self-contained competition cycle with its own leaderboard standings, reward pool accumulation, and payout 
+      distribution. On Day 1, a new season begins and all leaderboard positions across every division and the 
+      No-NFT bracket reset to zero. Every player starts fresh — no carryover from previous seasons. From Day 1 
+      through Day 40, every ranked match you play contributes to your seasonal standing. Consistency matters more 
+      than single-game spikes: the leaderboard uses your average top-3 scores as the primary ranking metric, which 
+      rewards reliable high performance over lucky outlier runs. During the active season, the rewards pool grows 
+      with every marketplace transaction and card sale. At the end of Day 40, the season closes. Final standings 
+      are locked and the team begins the off-chain payout calculation process. This includes anti-cheat validation 
+      — any flagged accounts are reviewed before rewards are distributed. Once payouts are finalized, the Merkle 
+      tree is published and the claim period opens. Players can then submit their proof to the RewardsVault contract 
+      on Sui to receive their rewards. The claim window stays open for a defined period after season close. Then 
+      the cycle repeats: Day 1 of the new season, clean slate, new pool, same hunger. Season length and structure 
+      may be adjusted during the beta phase based on community feedback and participation data. The team will 
+      communicate any changes in advance. The 40-day cycle is designed to be long enough for meaningful competition 
+      but short enough to keep the meta fresh and give new players regular entry points.
+    </p>
+
+    <div className="rounded-lg border border-purple-500/20 bg-purple-500/5 p-4">
+      <div className="flex items-start gap-3">
+        <span className="text-purple-400 text-lg">🧪</span>
+        <div>
+          <div className="text-xs font-bold text-purple-400 tracking-wider mb-1">BETA STATUS</div>
+          <p className="text-[11px] text-white/40 leading-relaxed">
+            The reward system is live but distribution activates after NFT launch on Sui. 
+            Season structure and pool allocations may be refined during beta based on community feedback.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div className="flex items-center gap-4 text-center">
+      {[
+        { day: 'DAY 1', desc: 'Season begins\nLeaderboards reset' },
+        { day: 'DAY 1-40', desc: 'Active competition\nPool accumulates' },
+        { day: 'DAY 40+', desc: 'Season ends\nClaims open' },
+      ].map((step, i) => (
+        <div key={step.day} className="flex-1">
+          <div className="text-xs font-bold text-purple-300 mb-1">{step.day}</div>
+          <div className="text-[10px] text-white/30 whitespace-pre-line leading-tight">{step.desc}</div>
+          {i < 2 && <div className="text-white/10 mt-2">→</div>}
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+/* ────────────────────────────────────────────────────────── */
+
+const CONTENT_MAP: Record<Tab, () => JSX.Element> = {
+  divisions: DivisionsContent,
+  cards: CardsContent,
+  'no-nft': NoNftContent,
+  rewards: RewardsContent,
+  season: SeasonContent,
+};
 
 const Rewards = () => {
   const navigate = useNavigate();
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [visible, setVisible] = useState<Set<string>>(new Set());
+  const [activeTab, setActiveTab] = useState<Tab>('divisions');
 
-  // Enable scrolling on this page (body has overflow:hidden for the game)
-  useEffect(() => {
-    document.body.style.overflow = 'auto';
-    document.body.style.height = 'auto';
-    document.documentElement.style.overflow = 'auto';
-    return () => {
-      document.body.style.overflow = 'hidden';
-      document.body.style.height = '100vh';
-      document.documentElement.style.overflow = '';
-    };
-  }, []);
-
-  // Galaxy background animation
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    let raf: number;
-    const stars: { x: number; y: number; r: number; speed: number; alpha: number; phase: number }[] = [];
-    const nebulas: { x: number; y: number; radius: number; color: string; phase: number }[] = [];
-
-    const resize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = Math.max(document.documentElement.scrollHeight, window.innerHeight * 5);
-    };
-    resize();
-    // Re-check size after DOM settles
-    const resizeTimer = setTimeout(resize, 500);
-
-    // Generate stars
-    for (let i = 0; i < 300; i++) {
-      stars.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        r: Math.random() * 1.5 + 0.3,
-        speed: Math.random() * 0.3 + 0.05,
-        alpha: Math.random() * 0.7 + 0.3,
-        phase: Math.random() * Math.PI * 2,
-      });
-    }
-
-    // Generate nebulas
-    const nebulaConfigs = [
-      { x: 0.2, y: 0.08, radius: 250, color: '102,255,238' },
-      { x: 0.8, y: 0.15, radius: 200, color: '170,68,255' },
-      { x: 0.5, y: 0.3,  radius: 300, color: '51,136,255' },
-      { x: 0.3, y: 0.45, radius: 180, color: '255,51,68' },
-      { x: 0.7, y: 0.6,  radius: 220, color: '255,221,0' },
-      { x: 0.4, y: 0.75, radius: 260, color: '102,255,238' },
-      { x: 0.6, y: 0.9,  radius: 200, color: '170,68,255' },
-    ];
-    nebulaConfigs.forEach((n, i) => {
-      nebulas.push({ ...n, x: n.x * canvas.width, y: n.y * canvas.height, phase: i * 1.2 });
-    });
-
-    let time = 0;
-    const draw = () => {
-      time += 0.008;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Nebulas
-      nebulas.forEach(n => {
-        const pulse = Math.sin(time + n.phase) * 0.02 + 0.04;
-        const grad = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.radius);
-        grad.addColorStop(0, `rgba(${n.color}, ${pulse})`);
-        grad.addColorStop(1, `rgba(${n.color}, 0)`);
-        ctx.fillStyle = grad;
-        ctx.fillRect(n.x - n.radius, n.y - n.radius, n.radius * 2, n.radius * 2);
-      });
-
-      // Stars
-      stars.forEach(s => {
-        const twinkle = Math.sin(time * 2 + s.phase) * 0.3 + 0.7;
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(220, 240, 255, ${s.alpha * twinkle})`;
-        ctx.fill();
-      });
-
-      raf = requestAnimationFrame(draw);
-    };
-    draw();
-
-    const onResize = () => resize();
-    window.addEventListener('resize', onResize);
-    return () => {
-      cancelAnimationFrame(raf);
-      clearTimeout(resizeTimer);
-      window.removeEventListener('resize', onResize);
-    };
-  }, []);
-
-  // Intersection observer for fade-in sections
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            setVisible(prev => new Set([...prev, entry.target.id]));
-          }
-        });
-      },
-      { threshold: 0.15, rootMargin: '0px 0px -50px 0px' }
-    );
-
-    document.querySelectorAll('[data-reveal]').forEach(el => observer.observe(el));
-    return () => observer.disconnect();
-  }, []);
-
-  const sectionClass = (id: string) =>
-    `transition-all duration-1000 ${visible.has(id) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`;
+  const ContentComponent = CONTENT_MAP[activeTab];
 
   return (
-    <div className="relative min-h-screen bg-[#050510] text-white font-mono overflow-x-hidden">
-      {/* Galaxy canvas background */}
-      <canvas
-        ref={canvasRef}
-        className="fixed inset-0 w-full h-full pointer-events-none"
-        style={{ zIndex: 0 }}
-      />
+    <div
+      className="min-h-screen text-white font-mono flex flex-col"
+      style={{
+        background: 'radial-gradient(ellipse at 30% 20%, rgba(102,255,238,0.04) 0%, transparent 50%), radial-gradient(ellipse at 70% 60%, rgba(170,68,255,0.03) 0%, transparent 50%), #050510',
+      }}
+    >
+      {/* Header */}
+      <header className="flex items-center justify-between px-6 py-3 border-b border-cyan-500/10 backdrop-blur-md bg-[#050510]/70">
+        <button
+          onClick={() => navigate('/')}
+          className="text-cyan-400/60 hover:text-cyan-300 transition-colors text-sm tracking-wider"
+        >
+          ← BACK
+        </button>
+        <div className="text-[10px] uppercase tracking-[0.4em] text-white/20">Nebula Cascade</div>
+        <div className="w-16" />
+      </header>
 
-      {/* Scanline overlay */}
-      <div className="fixed inset-0 pointer-events-none menu-scanlines" style={{ zIndex: 1, opacity: 0.3 }} />
+      {/* Title */}
+      <div className="text-center pt-8 pb-4">
+        <div className="mx-auto w-24 h-px bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent mb-4" />
+        <h1
+          className="text-4xl md:text-5xl font-black uppercase tracking-[0.4em]"
+          style={{ color: '#66ffee', textShadow: '0 0 20px rgba(102,255,238,0.3), 0 0 60px rgba(102,255,238,0.1)' }}
+        >
+          REWARDS
+        </h1>
+        <p className="text-[10px] uppercase tracking-[0.5em] text-white/25 mt-2">System Overview</p>
+        <div className="mx-auto w-24 h-px bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent mt-4" />
+      </div>
 
-      {/* Content */}
-      <div className="relative" style={{ zIndex: 2 }}>
-
-        {/* ═══════════════════════════════════════════
-            HEADER — Sticky nav
-            ═══════════════════════════════════════════ */}
-        <header className="sticky top-0 z-50 backdrop-blur-md bg-[#050510]/70 border-b border-cyan-500/10">
-          <div className="max-w-5xl mx-auto flex items-center justify-between px-6 py-3">
-            <button
-              onClick={() => navigate('/')}
-              className="text-cyan-400/60 hover:text-cyan-300 transition-colors text-sm tracking-wider"
-            >
-              &larr; BACK
-            </button>
-            <div className="text-[10px] uppercase tracking-[0.4em] text-white/20">Nebula Cascade</div>
-            <div className="w-16" />
-          </div>
-        </header>
-
-        {/* ═══════════════════════════════════════════
-            SECTION 1 — HERO
-            ═══════════════════════════════════════════ */}
-        <section className="relative flex flex-col items-center justify-center min-h-[80vh] px-6 text-center">
-          {/* Central glow */}
-          <div
-            className="absolute w-[600px] h-[600px] rounded-full"
-            style={{
-              background: 'radial-gradient(circle, rgba(102,255,238,0.06) 0%, rgba(102,255,238,0) 70%)',
-              filter: 'blur(60px)',
-              animation: 'heroBreathe 6s ease-in-out infinite',
-            }}
-          />
-
-          <div className="relative space-y-6">
-            {/* Decorative line */}
-            <div className="mx-auto menu-divider-line" />
-
-            <h1
-              className="menu-neon-title text-5xl md:text-7xl font-black uppercase tracking-[0.4em]"
-              style={{ letterSpacing: '0.4em' }}
-            >
-              REWARDS
-            </h1>
-
-            <p className="menu-neon-subtitle text-sm md:text-base uppercase tracking-[0.5em]">
-              Compete. Climb. Earn your place.
-            </p>
-
-            {/* Decorative line */}
-            <div className="mx-auto menu-divider-line" />
-
-            {/* Scroll indicator */}
-            <div className="pt-12 animate-bounce">
-              <div className="w-6 h-10 mx-auto rounded-full border border-cyan-500/30 flex items-start justify-center pt-2">
-                <div className="w-1 h-2 rounded-full bg-cyan-400/60 animate-pulse" />
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ═══════════════════════════════════════════
-            SECTION 2 — HOW IT WORKS
-            ═══════════════════════════════════════════ */}
-        <section id="how-it-works" data-reveal className={`py-24 px-6 ${sectionClass('how-it-works')}`}>
-          <div className="max-w-4xl mx-auto">
-            <h2 className="text-center text-xs uppercase tracking-[0.5em] text-cyan-400/60 mb-12">How It Works</h2>
-
-            <div className="grid md:grid-cols-3 gap-6">
-              {[
-                {
-                  step: '01',
-                  title: 'COMPETE',
-                  desc: 'Players compete using cards or as free players. Every match counts toward your standing.',
-                  icon: '⬡',
-                  color: '#66ffee',
-                },
-                {
-                  step: '02',
-                  title: 'CLIMB',
-                  desc: 'Your performance determines your position. Consistency and skill push you through the divisions.',
-                  icon: '△',
-                  color: '#aa44ff',
-                },
-                {
-                  step: '03',
-                  title: 'EARN',
-                  desc: 'Each system has its own leaderboard. Top performers compete for rewards from the pool.',
-                  icon: '◇',
-                  color: '#ffdd00',
-                },
-              ].map((item) => (
-                <div
-                  key={item.step}
-                  className="relative group rounded-2xl border border-white/[0.06] bg-white/[0.02] p-8 text-center transition-all duration-500 hover:border-white/10 hover:bg-white/[0.04]"
-                >
-                  {/* Glow on hover */}
-                  <div
-                    className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                    style={{ background: `radial-gradient(circle at center, ${item.color}08 0%, transparent 70%)` }}
-                  />
-                  <div className="relative">
-                    <div className="text-3xl mb-4" style={{ color: item.color, filter: `drop-shadow(0 0 8px ${item.color})` }}>
-                      {item.icon}
-                    </div>
-                    <div className="text-[10px] tracking-[0.3em] text-white/30 mb-2">{item.step}</div>
-                    <h3 className="text-lg font-bold tracking-[0.2em] mb-3" style={{ color: item.color }}>
-                      {item.title}
-                    </h3>
-                    <p className="text-xs text-white/40 leading-relaxed">{item.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Connecting line */}
-            <div className="hidden md:block mx-auto mt-8 menu-divider-line" />
-          </div>
-        </section>
-
-        {/* ═══════════════════════════════════════════
-            SECTION 3 — DIVISIONS
-            ═══════════════════════════════════════════ */}
-        <section id="divisions" data-reveal className={`py-24 px-6 ${sectionClass('divisions')}`}>
-          <div className="max-w-4xl mx-auto">
-            <h2 className="text-center text-xs uppercase tracking-[0.5em] text-cyan-400/60 mb-3">Divisions</h2>
-            <p className="text-center text-white/25 text-xs tracking-wider mb-12">
-              Higher divisions mean higher competition and greater reward potential
-            </p>
-
-            <div className="space-y-4">
-              {DIVISIONS_ORDERED.map((div, i) => (
-                <div
-                  key={div.key}
-                  className="group relative rounded-xl border transition-all duration-500 hover:scale-[1.01]"
-                  style={{
-                    borderColor: `${div.color}15`,
-                    background: `linear-gradient(135deg, ${div.color}05 0%, transparent 60%)`,
-                  }}
-                >
-                  {/* Glow bar on left */}
-                  <div
-                    className="absolute left-0 top-0 bottom-0 w-1 rounded-l-xl transition-all duration-500 group-hover:w-1.5"
-                    style={{
-                      background: div.color,
-                      boxShadow: `0 0 15px ${div.glow}, 0 0 30px ${div.glow}`,
-                    }}
-                  />
-
-                  <div className="flex items-center gap-6 py-5 px-8 pl-10">
-                    {/* Tier badge */}
-                    <div
-                      className="flex-shrink-0 w-14 h-14 rounded-lg flex items-center justify-center text-2xl font-black"
-                      style={{
-                        color: div.color,
-                        background: `${div.color}10`,
-                        border: `1px solid ${div.color}25`,
-                        textShadow: `0 0 12px ${div.glow}`,
-                      }}
-                    >
-                      {div.tier === 5 ? 'I' : div.tier === 4 ? 'II' : div.tier === 3 ? 'III' : div.tier === 2 ? 'IV' : 'V'}
-                    </div>
-
-                    {/* Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-3 mb-1">
-                        <h3 className="text-base font-bold tracking-[0.15em]" style={{ color: div.color }}>
-                          {div.label}
-                        </h3>
-                        {div.tier === 5 && (
-                          <span className="text-[9px] px-2 py-0.5 rounded-full tracking-widest uppercase"
-                            style={{ background: `${div.color}15`, color: div.color, border: `1px solid ${div.color}30` }}>
-                            Apex
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-white/35 leading-relaxed">{div.desc}</p>
-                    </div>
-
-                    {/* Reward indicator */}
-                    <div className="flex-shrink-0 text-right hidden sm:block">
-                      <div className="text-[10px] uppercase tracking-widest text-white/20 mb-1">Reward Tier</div>
-                      <div className="flex gap-0.5 justify-end">
-                        {Array.from({ length: div.tier }).map((_, j) => (
-                          <div
-                            key={j}
-                            className="w-2.5 h-2.5 rounded-sm"
-                            style={{
-                              background: div.color,
-                              boxShadow: `0 0 6px ${div.glow}`,
-                              opacity: 0.7 + (j * 0.06),
-                            }}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <p className="text-center text-[10px] text-white/20 mt-8 tracking-wider">
-              Players only compete within their own division
-            </p>
-          </div>
-        </section>
-
-        {/* ═══════════════════════════════════════════
-            SECTION 4 — REWARD POOL
-            ═══════════════════════════════════════════ */}
-        <section id="reward-pool" data-reveal className={`py-24 px-6 ${sectionClass('reward-pool')}`}>
-          <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-xs uppercase tracking-[0.5em] text-cyan-400/60 mb-12">The Reward Pool</h2>
-
-            <div className="relative rounded-2xl border border-cyan-500/10 bg-white/[0.02] p-10 overflow-hidden">
-              {/* Background glow */}
-              <div
-                className="absolute inset-0 pointer-events-none"
-                style={{ background: 'radial-gradient(circle at 50% 30%, rgba(102,255,238,0.04) 0%, transparent 60%)' }}
-              />
-
-              <div className="relative space-y-8">
-                {/* 40% indicator */}
-                <div>
-                  <div
-                    className="inline-block text-6xl font-black tracking-tight"
-                    style={{
-                      color: '#66ffee',
-                      textShadow: '0 0 20px rgba(102,255,238,0.4), 0 0 60px rgba(102,255,238,0.15)',
-                    }}
-                  >
-                    40%
-                  </div>
-                  <p className="text-sm text-white/40 mt-3 tracking-wider">
-                    of platform activity flows into the rewards pool
-                  </p>
-                </div>
-
-                {/* Divider */}
-                <div className="mx-auto menu-divider-line" />
-
-                {/* Sources */}
-                <div className="grid grid-cols-2 gap-4 max-w-sm mx-auto">
-                  {[
-                    { label: 'Marketplace Activity', icon: '◈' },
-                    { label: 'Ecosystem Participation', icon: '⬡' },
-                  ].map(s => (
-                    <div key={s.label} className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-4">
-                      <div className="text-xl mb-2" style={{ color: '#66ffee', filter: 'drop-shadow(0 0 6px rgba(102,255,238,0.4))' }}>
-                        {s.icon}
-                      </div>
-                      <div className="text-[10px] text-white/35 tracking-wider uppercase">{s.label}</div>
-                    </div>
-                  ))}
-                </div>
-
-                <p className="text-[10px] text-white/20 tracking-wider max-w-md mx-auto">
-                  The pool grows with platform activity. No fixed amounts. No guarantees. Pure performance.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ═══════════════════════════════════════════
-            SECTION 5 — PLAYER TYPES
-            ═══════════════════════════════════════════ */}
-        <section id="player-types" data-reveal className={`py-24 px-6 ${sectionClass('player-types')}`}>
-          <div className="max-w-4xl mx-auto">
-            <h2 className="text-center text-xs uppercase tracking-[0.5em] text-cyan-400/60 mb-12">Player Types</h2>
-
-            <div className="grid md:grid-cols-2 gap-6">
-              {/* Card Players */}
-              <div className="relative rounded-2xl border border-purple-500/15 bg-purple-500/[0.02] p-8 overflow-hidden group">
-                <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700"
-                  style={{ background: 'radial-gradient(circle, rgba(170,68,255,0.08) 0%, transparent 70%)', filter: 'blur(20px)' }} />
-                <div className="relative">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-lg flex items-center justify-center text-lg"
-                      style={{ background: 'rgba(170,68,255,0.12)', border: '1px solid rgba(170,68,255,0.25)', color: '#aa44ff' }}>
-                      ◆
-                    </div>
-                    <div>
-                      <h3 className="text-base font-bold tracking-[0.15em]" style={{ color: '#aa44ff' }}>CARD PLAYERS</h3>
-                      <span className="text-[9px] px-2 py-0.5 rounded-full tracking-widest uppercase"
-                        style={{ background: 'rgba(170,68,255,0.1)', color: '#aa44ff', border: '1px solid rgba(170,68,255,0.2)' }}>
-                        NFT
-                      </span>
-                    </div>
-                  </div>
-                  <ul className="space-y-3 text-xs text-white/40">
-                    <li className="flex items-start gap-3">
-                      <span className="text-purple-400 mt-0.5">›</span>
-                      <span>Use energy per card to compete</span>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <span className="text-purple-400 mt-0.5">›</span>
-                      <span>Compete within their division tier</span>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <span className="text-purple-400 mt-0.5">›</span>
-                      <span>Higher reward exposure through the pool</span>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <span className="text-purple-400 mt-0.5">›</span>
-                      <span>Must play each card separately</span>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-
-              {/* Free Players */}
-              <div className="relative rounded-2xl border border-cyan-500/15 bg-cyan-500/[0.02] p-8 overflow-hidden group">
-                <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700"
-                  style={{ background: 'radial-gradient(circle, rgba(102,255,238,0.08) 0%, transparent 70%)', filter: 'blur(20px)' }} />
-                <div className="relative">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-lg flex items-center justify-center text-lg"
-                      style={{ background: 'rgba(102,255,238,0.12)', border: '1px solid rgba(102,255,238,0.25)', color: '#66ffee' }}>
-                      ○
-                    </div>
-                    <div>
-                      <h3 className="text-base font-bold tracking-[0.15em]" style={{ color: '#66ffee' }}>FREE PLAYERS</h3>
-                      <span className="text-[9px] px-2 py-0.5 rounded-full tracking-widest uppercase"
-                        style={{ background: 'rgba(102,255,238,0.1)', color: '#66ffee', border: '1px solid rgba(102,255,238,0.2)' }}>
-                        FREE
-                      </span>
-                    </div>
-                  </div>
-                  <ul className="space-y-3 text-xs text-white/40">
-                    <li className="flex items-start gap-3">
-                      <span className="text-cyan-400 mt-0.5">›</span>
-                      <span>No cards required to compete</span>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <span className="text-cyan-400 mt-0.5">›</span>
-                      <span>Can be logged-in or anonymous</span>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <span className="text-cyan-400 mt-0.5">›</span>
-                      <span>Compete in a separate leaderboard</span>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <span className="text-cyan-400 mt-0.5">›</span>
-                      <span>Lower reward exposure</span>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ═══════════════════════════════════════════
-            SECTION 6 — CORE RULE
-            ═══════════════════════════════════════════ */}
-        <section id="core-rule" data-reveal className={`py-24 px-6 ${sectionClass('core-rule')}`}>
-          <div className="max-w-3xl mx-auto">
-            <div className="relative rounded-2xl border border-red-500/15 bg-red-500/[0.02] p-10 overflow-hidden">
-              {/* Warning glow */}
-              <div className="absolute inset-0 pointer-events-none"
-                style={{ background: 'radial-gradient(circle at 50% 50%, rgba(255,51,68,0.03) 0%, transparent 60%)' }} />
-
-              <div className="relative text-center space-y-6">
-                <div className="text-[10px] uppercase tracking-[0.5em] text-red-400/60">Important Rule</div>
-
-                <div className="mx-auto menu-divider-line" style={{
-                  background: 'linear-gradient(90deg, transparent, rgba(255,51,68,0.5), transparent)',
-                  boxShadow: '0 0 8px rgba(255,51,68,0.3)',
-                }} />
-
-                <h3 className="text-xl md:text-2xl font-bold tracking-[0.15em] leading-relaxed"
-                  style={{ color: '#ff6677', textShadow: '0 0 15px rgba(255,51,68,0.3)' }}>
-                  PERMANENT SEGMENTATION
-                </h3>
-
-                <p className="text-sm text-white/50 leading-relaxed max-w-lg mx-auto">
-                  If you have <span style={{ color: '#ff6677' }}>ever owned a card</span>, you are permanently part of
-                  the card-based system and cannot enter the free leaderboard.
-                </p>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-lg mx-auto pt-2">
-                  {['Even with no energy', 'Even with zero cards', 'Even if cards are sold'].map(text => (
-                    <div key={text} className="rounded-lg border border-red-500/10 bg-red-500/[0.03] py-2.5 px-3">
-                      <span className="text-[10px] text-red-400/60 tracking-wider">{text}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <p className="text-[10px] text-white/20 tracking-wider pt-2">
-                  This ensures fair competition across both systems
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ═══════════════════════════════════════════
-            SECTION 7 — REWARD CYCLE
-            ═══════════════════════════════════════════ */}
-        <section id="reward-cycle" data-reveal className={`py-24 px-6 ${sectionClass('reward-cycle')}`}>
-          <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-xs uppercase tracking-[0.5em] text-cyan-400/60 mb-3">Reward Cycle</h2>
-            <p className="text-white/25 text-xs tracking-wider mb-12">Performance is measured over time</p>
-
-            {/* Timeline visual */}
-            <div className="relative max-w-2xl mx-auto">
-              {/* Central line */}
-              <div className="absolute left-1/2 top-0 bottom-0 w-px -translate-x-1/2"
-                style={{ background: 'linear-gradient(to bottom, transparent, rgba(102,255,238,0.3), rgba(102,255,238,0.3), transparent)' }} />
-
-              {[
-                { day: 'DAY 1', title: 'Cycle Begins', desc: 'A new competition period starts. All positions reset.', color: '#66ffee', side: 'left' },
-                { day: 'DAY 10', title: 'Momentum Builds', desc: 'Early leaders emerge. Every match shapes the standings.', color: '#3388ff', side: 'right' },
-                { day: 'DAY 25', title: 'Final Push', desc: 'Positions solidify. Top performers separate from the rest.', color: '#aa44ff', side: 'left' },
-                { day: 'DAY 40', title: 'Cycle Ends', desc: 'Winners are determined. Rewards are distributed from the pool.', color: '#ffdd00', side: 'right' },
-              ].map((phase, i) => (
-                <div key={phase.day} className={`relative flex items-center gap-6 py-8 ${phase.side === 'right' ? 'flex-row-reverse text-right' : ''}`}>
-                  {/* Content */}
-                  <div className="flex-1">
-                    <div className="text-[10px] tracking-[0.3em] mb-1" style={{ color: `${phase.color}80` }}>{phase.day}</div>
-                    <h4 className="text-sm font-bold tracking-[0.15em] mb-1" style={{ color: phase.color }}>{phase.title}</h4>
-                    <p className="text-xs text-white/35">{phase.desc}</p>
-                  </div>
-
-                  {/* Node */}
-                  <div className="relative flex-shrink-0 z-10">
-                    <div
-                      className="w-4 h-4 rounded-full border-2"
-                      style={{
-                        borderColor: phase.color,
-                        background: `${phase.color}30`,
-                        boxShadow: `0 0 12px ${phase.color}50, 0 0 24px ${phase.color}20`,
-                      }}
-                    />
-                  </div>
-
-                  {/* Spacer for alignment */}
-                  <div className="flex-1" />
-                </div>
-              ))}
-
-              {/* Loop indicator */}
-              <div className="relative z-10 flex justify-center pt-4">
-                <div className="rounded-full border border-cyan-500/20 bg-cyan-500/5 px-5 py-2">
-                  <span className="text-[10px] text-cyan-400/60 tracking-[0.3em] uppercase">Then the cycle repeats</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ═══════════════════════════════════════════
-            SECTION 8 — BETA STATUS
-            ═══════════════════════════════════════════ */}
-        <section id="beta-status" data-reveal className={`py-24 px-6 ${sectionClass('beta-status')}`}>
-          <div className="max-w-3xl mx-auto">
-            <div className="relative rounded-2xl border border-yellow-500/15 bg-yellow-500/[0.02] p-10 overflow-hidden text-center">
-              {/* Subtle glow */}
-              <div className="absolute inset-0 pointer-events-none"
-                style={{ background: 'radial-gradient(circle at 50% 50%, rgba(255,221,0,0.03) 0%, transparent 60%)' }} />
-
-              <div className="relative space-y-6">
-                <div className="inline-flex items-center gap-2 rounded-full border border-yellow-500/20 bg-yellow-500/5 px-4 py-1.5">
-                  <div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />
-                  <span className="text-[10px] uppercase tracking-[0.3em] text-yellow-400/80">Beta Phase</span>
-                </div>
-
-                <h3 className="text-xl font-bold tracking-[0.15em]"
-                  style={{ color: '#ffdd00', textShadow: '0 0 15px rgba(255,221,0,0.3)' }}>
-                  REWARDS ARE CURRENTLY INACTIVE
-                </h3>
-
-                <p className="text-sm text-white/40 leading-relaxed max-w-md mx-auto">
-                  The system is fully functional, but reward distribution will
-                  activate after the NFT debut. Everything you do now is building
-                  toward launch.
-                </p>
-
-                <div className="mx-auto menu-divider-line" style={{
-                  background: 'linear-gradient(90deg, transparent, rgba(255,221,0,0.4), transparent)',
-                  boxShadow: '0 0 8px rgba(255,221,0,0.2)',
-                }} />
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-lg mx-auto">
-                  {[
-                    { label: 'System', value: 'LIVE', color: '#66ffee' },
-                    { label: 'Rewards', value: 'PENDING', color: '#ffdd00' },
-                    { label: 'NFT Debut', value: 'SOON', color: '#aa44ff' },
-                  ].map(item => (
-                    <div key={item.label} className="rounded-lg border border-white/[0.06] bg-white/[0.02] py-3 px-4">
-                      <div className="text-[9px] uppercase tracking-widest text-white/20 mb-1">{item.label}</div>
-                      <div className="text-sm font-bold tracking-wider" style={{ color: item.color }}>
-                        {item.value}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ═══════════════════════════════════════════
-            FOOTER — Back to game
-            ═══════════════════════════════════════════ */}
-        <section className="py-20 text-center">
+      {/* Tab buttons */}
+      <div className="flex flex-wrap justify-center gap-2 px-4 pb-4">
+        {TABS.map(tab => (
           <button
-            onClick={() => navigate('/')}
-            className="inline-flex items-center gap-3 px-8 py-3 rounded-xl border border-cyan-500/20 bg-cyan-500/5 text-cyan-400/80 text-sm tracking-[0.2em] uppercase transition-all duration-300 hover:bg-cyan-500/10 hover:border-cyan-500/40 hover:text-cyan-300"
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={`px-4 py-2 rounded-full text-[11px] font-bold uppercase tracking-[0.15em] border transition-all duration-300 ${
+              activeTab === tab.key
+                ? 'border-cyan-400/50 bg-cyan-400/10 text-cyan-300'
+                : 'border-white/10 bg-white/[0.03] text-white/40 hover:text-white/60 hover:border-white/20'
+            }`}
+            style={activeTab === tab.key ? { boxShadow: '0 0 12px rgba(102,255,238,0.15)', textShadow: '0 0 6px rgba(102,255,238,0.3)' } : undefined}
           >
-            &larr; BACK TO GAME
+            {tab.label}
           </button>
-          <div className="mt-6 text-[10px] text-white/15 tracking-wider">
-            Nebula Cascade by ColdLogic
-          </div>
-        </section>
+        ))}
+      </div>
 
+      {/* Content panel */}
+      <div className="flex-1 px-4 pb-10">
+        <div className="max-w-2xl mx-auto rounded-xl border border-white/[0.06] bg-white/[0.02] p-6 backdrop-blur-sm">
+          <ContentComponent />
+        </div>
       </div>
     </div>
   );
