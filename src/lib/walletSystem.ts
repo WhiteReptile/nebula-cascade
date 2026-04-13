@@ -3,26 +3,23 @@
  *
  * Manages the wallet_address field on the player record.
  * Currently stub implementations — no live blockchain connections.
- * Supported wallet types: MetaMask, Coinbase Wallet, WalletConnect, Guest.
+ * Supported wallet types: Thirdweb (Google/email), Guest.
  *
- * Future: Will integrate with Thirdweb SDK for on-chain card ownership
- * and payout distribution on Base chain.
+ * Future: Will integrate with Thirdweb SDK for wallet creation
+ * and on-chain card ownership on Sui blockchain.
  *
  * Database field: `players.wallet_address`
  */
 import { supabase } from '@/integrations/supabase/client';
 
-export type WalletType = 'metamask' | 'coinbase_wallet' | 'walletconnect' | 'guest';
+export type WalletType = 'thirdweb' | 'guest';
 
 export const WALLET_LABELS: Record<WalletType, string> = {
-  metamask: 'MetaMask',
-  coinbase_wallet: 'Coinbase Wallet',
-  walletconnect: 'WalletConnect',
+  thirdweb: 'Thirdweb Wallet',
   guest: 'Guest Wallet',
 };
 
 export async function linkWallet(userId: string, address: string, _type: WalletType): Promise<boolean> {
-  // Stub: updates the wallet_address field on the player record
   const { error } = await supabase
     .from('players')
     .update({ wallet_address: address })

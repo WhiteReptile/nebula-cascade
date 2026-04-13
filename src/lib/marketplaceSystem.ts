@@ -2,10 +2,8 @@
  * marketplaceSystem.ts — Internal card trading marketplace
  *
  * Players can list owned cards for sale and buy listed cards.
- * Dynamic fee structure discourages rapid flipping:
- *   - Base fee: 5%
- *   - 1 resale within 7 days: 7%
- *   - 2+ resales within 7 days: 10%
+ * Flat 3% fee on all secondary sales.
+ * 30% of collected fees flow into the seasonal rewards pool.
  *
  * Listing flow:
  *   1. listCard() → Deactivates card, clears active_card_id, creates listing
@@ -17,6 +15,8 @@
  */
 import { supabase } from '@/integrations/supabase/client';
 import { initCardEnergy } from './energySystem';
+
+export const MARKETPLACE_FEE_PERCENT = 3;
 
 export interface MarketplaceListing {
   id: string;
@@ -31,32 +31,10 @@ export interface MarketplaceListing {
 }
 
 /**
- * Dynamic fee: 5% base, 7% if resold within 7 days, 10% if 2+ fast resales
+ * Flat 3% fee on all secondary sales
  */
-export async function calculateFee(cardId: string): Promise<number> {
-  const { data: recentSales } = await supabase
-    .from('marketplace_listings')
-    .select('sold_at, listed_at')
-    .eq('card_id', cardId)
-    .eq('status', 'sold')
-    .order('sold_at', { ascending: false })
-    .limit(5);
-
-  if (!recentSales || recentSales.length === 0) return 5;
-
-  const now = Date.now();
-  const sevenDays = 7 * 24 * 60 * 60 * 1000;
-  let fastResaleCount = 0;
-
-  for (const sale of recentSales) {
-    if (sale.sold_at && now - new Date(sale.sold_at).getTime() < sevenDays) {
-      fastResaleCount++;
-    }
-  }
-
-  if (fastResaleCount >= 2) return 10;
-  if (fastResaleCount >= 1) return 7;
-  return 5;
+export async function calculateFee(_cardId: string): Promise<number> {
+  return MARKETPLACE_FEE_PERCENT;
 }
 
 export async function listCard(cardId: string, sellerPlayerId: string, priceCents: number): Promise<boolean> {
