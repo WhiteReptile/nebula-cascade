@@ -103,7 +103,6 @@ const MainMenu = ({ onStart }: MainMenuProps) => {
       else if (item === 'OPTIONS') navigate('/options');
       else if (item === 'MARKETPLACE') navigate('/marketplace');
       else if (item === 'RULES') navigate('/rules');
-      else if (item === 'RULES') navigate('/rules');
       else if (item === 'REWARDS') navigate('/rewards');
     }, 500);
   }, [fadingOut, onStart, navigate]);
