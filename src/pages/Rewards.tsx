@@ -24,7 +24,7 @@ const DIVISIONS_ORDERED: { key: Division; roman: string; color: string }[] = [
 
 const DivisionsContent = () => (
   <div className="space-y-5">
-    <p className="text-white text-xs leading-relaxed">
+    <p className="text-white/80 text-xs leading-relaxed">
       Nebula uses a five-tier division system that represents <span className="text-white">rarity only — not skill level</span>. 
       The worst player on the platform can own a Division I card, and the best player can start with Division V. 
       Your card's division determines which leaderboard tier you compete in, but it does not give any gameplay 
@@ -83,7 +83,7 @@ const DivisionsContent = () => (
 
 const CardsContent = () => (
   <div className="space-y-4">
-    <p className="text-white text-xs leading-relaxed">
+    <p className="text-white/80 text-xs leading-relaxed">
       Cards are the core asset in Nebula — each one is an NFT deployed via Thirdweb on the Sui blockchain. 
       Every card generates <span className="text-white">2 energy per day</span>, and each energy point allows 
       you to play one ranked match. That means a single card gives you 2 ranked runs daily. If you own multiple 
@@ -94,14 +94,14 @@ const CardsContent = () => (
       are out of energy, you can still play the game freely, but those matches will not count toward any ranked 
       leaderboard or seasonal standings.
     </p>
-    <p className="text-white text-xs leading-relaxed">
+    <p className="text-white/80 text-xs leading-relaxed">
       <span className="text-white">Points belong to your wallet, not your card.</span> If you sell a card and 
       buy a new one, your accumulated points stay with you. You compete in whatever division your current active 
       card belongs to, using your existing points. When a new card is added to your wallet — whether purchased from 
       the marketplace or received via trade — its energy pool initializes instantly with <span className="text-white">
       2 energy</span>. No waiting, no UTC dependency. The new owner gets to play immediately.
     </p>
-    <p className="text-white text-xs leading-relaxed">
+    <p className="text-white/80 text-xs leading-relaxed">
       <span className="text-white">Primary card selection</span> works automatically: when you start a game, the 
       system checks your wallet and selects the highest division card that still has energy available. If that card 
       runs out of energy, the game does <span className="text-white">not</span> automatically switch to another card. 
@@ -129,7 +129,7 @@ const CardsContent = () => (
 
 const NoNftContent = () => (
   <div className="space-y-4">
-    <p className="text-white text-xs leading-relaxed">
+    <p className="text-white/80 text-xs leading-relaxed">
       You do not need to own any NFT cards to play Nebula. Every account — created via Thirdweb using Google, 
       email, or any supported login method — automatically participates in the <span className="text-white">
       No-NFT bracket</span>. This is a completely separate leaderboard from the division-based NFT tiers. 
@@ -139,7 +139,7 @@ const NoNftContent = () => (
       returns you to the No-NFT bracket. Scores you submitted remain valid in the bracket where they were 
       originally earned.
     </p>
-    <p className="text-white text-xs leading-relaxed">
+    <p className="text-white/80 text-xs leading-relaxed">
       Free players receive <span className="text-white">2 energy per day</span> with a random activation mechanic: 
       each time you start a new game, your energy has a <span className="text-white">50% chance</span> to activate 
       for that run. This keeps the free experience accessible while adding a layer of unpredictability that balances 
@@ -166,7 +166,7 @@ const NoNftContent = () => (
 
 const RewardsContent = () => (
   <div className="space-y-4">
-    <p className="text-white text-xs leading-relaxed">
+    <p className="text-white/80 text-xs leading-relaxed">
       The Nebula rewards pool is funded by <span className="text-white">30% of all platform fees</span>. 
       This includes the 3% marketplace fee charged on every secondary card sale, plus a portion of revenue from 
       primary card sales during launches and drops. These fees accumulate continuously throughout each 40-day season, 
@@ -199,7 +199,7 @@ const RewardsContent = () => (
 
 const SeasonContent = () => (
   <div className="space-y-4">
-    <p className="text-white text-xs leading-relaxed">
+    <p className="text-white/80 text-xs leading-relaxed">
       Nebula operates on <span className="text-white">40-day competitive seasons</span>. Each season is a 
       self-contained competition cycle with its own leaderboard standings, reward pool accumulation, and payout 
       distribution. On Day 1, a new season begins and all leaderboard positions across every division and the 
