@@ -7,7 +7,6 @@ import { getCardEnergy, type CardEnergy } from '@/lib/energySystem';
 import { DIVISION_LABELS, DIVISION_COLORS, getNextDivisionThreshold, type Division } from '@/lib/divisionSystem';
 import { Input } from '@/components/ui/input';
 import WalletConnect from '@/components/wallet/WalletConnect';
-import ThirdwebWalletConnect from '@/components/wallet/ThirdwebWalletConnect';
 import { useToast } from '@/hooks/use-toast';
 
 /* ── Types ── */
