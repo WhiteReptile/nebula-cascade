@@ -17,7 +17,7 @@ const WalletConnect = ({ currentAddress }: WalletConnectProps) => {
   const handleConnect = (type: WalletType) => {
     setConnecting(type);
     setTimeout(() => {
-      toast.info(`${WALLET_LABELS[type]} — Coming soon! toast.info(`${WALLET_LABELS[type]} — Coming soon! Base wallet connection will be available at launch.`);`);
+      toast.info(`${WALLET_LABELS[type]} — Coming soon! Base wallet connection will be available at launch.`);
       setConnecting(null);
     }, 600);
   };
