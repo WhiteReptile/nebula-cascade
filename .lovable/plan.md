@@ -1,32 +1,31 @@
 
 
-# Replace Sui with Base (Coinbase L2)
+# Fix: White Screen in Standalone Tab
 
-Noted: primary RPC `https://mainnet.base.org` is confirmed. Fallback RPCs (`https://base.llamarpc.com`, `https://base-rpc.publicnode.com`) to be added later.
+## Problem
+The app defaults to **light mode** (white background) because the CSS `:root` uses `--background: 0 0% 100%` (white). The Lovable preview iframe may inject a dark class, but a standalone browser tab does not — so you get a white screen with invisible dark-themed content.
 
-## Changes across 6 files — text/comment updates only
+## Solution
+Force dark mode on the `<html>` element so the app always uses the dark color scheme. This is a game with a cosmic dark theme — light mode makes no sense here.
 
-### 1. `src/pages/Rewards.tsx`
-- "Sui blockchain" → "Base blockchain" (2 occurrences)
+### Changes (2 files)
 
-### 2. `src/pages/Marketplace.tsx`
-- "Sui" → "Base" in comments, labels, and descriptions (4 occurrences)
-- "SUI WALLET" → "BASE WALLET"
+**1. `index.html`** — Add `class="dark"` to the `<html>` tag:
+```html
+<html lang="en" class="dark">
+```
 
-### 3. `src/components/wallet/WalletConnect.tsx`
-- "Sui wallet" → "Base wallet" in comments (2 occurrences)
+**2. `src/index.css`** — Add a fallback `background-color` to `html, body` so even before React mounts, the page is dark:
+```css
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background-color: #050510;
+}
+```
 
-### 4. `src/lib/walletSystem.ts`
-- "on Sui blockchain" → "on Base blockchain"
-
-### 5. `src/lib/cardSystem.ts`
-- "on Sui" → "on Base"
-
-### 6. `src/lib/payoutIntegrations.ts`
-- All "Sui" references → "Base"
-- Rename `suiChainConfig` → `baseChainConfig`
-- Set `name: 'Base'`, `rpcUrl: 'https://mainnet.base.org'`, `chainId: 8453`
-- Remove `rewardsVaultAddress` placeholder, replace with `contractAddress: ''`
-
-No dependency changes. No game logic changes.
+No other files change. Game mechanics, menu, and all other components remain untouched.
 
