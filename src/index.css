@@ -106,6 +106,7 @@ All colors MUST be HSL.
     width: 100vw;
     height: 100vh;
     overflow: hidden;
+    background-color: #050510;
   }
 
   body {
