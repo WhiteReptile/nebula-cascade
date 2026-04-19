@@ -4,12 +4,12 @@ import { DIVISION_LABELS, DIVISION_COLORS, DIVISION_RARITY, type Division } from
 
 type Tab = 'divisions' | 'cards' | 'no-nft' | 'rewards' | 'season';
 
-const TABS: { key: Tab; label: string }[] = [
-  { key: 'divisions', label: 'DIVISIONS' },
-  { key: 'cards', label: 'CARDS' },
-  { key: 'no-nft', label: 'NO NFT' },
-  { key: 'rewards', label: 'REWARDS' },
-  { key: 'season', label: 'SEASON' },
+const TABS: { key: Tab; label: string; icon: string }[] = [
+  { key: 'divisions', label: 'Divisions', icon: '💎' },
+  { key: 'cards', label: 'Cards', icon: '🃏' },
+  { key: 'no-nft', label: 'No NFT', icon: '🆓' },
+  { key: 'rewards', label: 'Rewards', icon: '🏆' },
+  { key: 'season', label: 'Season', icon: '⏳' },
 ];
 
 const DIVISIONS_ORDERED: { key: Division; roman: string; color: string }[] = [
@@ -20,24 +20,56 @@ const DIVISIONS_ORDERED: { key: Division; roman: string; color: string }[] = [
   { key: 'gem_v', roman: 'V', color: DIVISION_COLORS.gem_v },
 ];
 
-/* ────────────────────────────────────────────────────────── */
+/* ─── Reusable building blocks ──────────────────────────── */
+
+const SectionTitle = ({ children, color = '#66ffee' }: { children: React.ReactNode; color?: string }) => (
+  <h2
+    className="text-xl md:text-2xl font-black uppercase tracking-[0.2em] mb-3"
+    style={{ color, textShadow: `0 0 12px ${color}55` }}
+  >
+    {children}
+  </h2>
+);
+
+const Para = ({ children }: { children: React.ReactNode }) => (
+  <p className="text-white/90 text-base md:text-[15px] leading-[1.7]">{children}</p>
+);
+
+const Highlight = ({ children, color = '#66ffee' }: { children: React.ReactNode; color?: string }) => (
+  <span className="font-bold" style={{ color, textShadow: `0 0 8px ${color}55` }}>{children}</span>
+);
+
+const KeyFact = ({ icon, value, label, color = '#66ffee' }: { icon: string; value: string; label: string; color?: string }) => (
+  <div
+    className="rounded-xl border p-4 text-center backdrop-blur-sm transition-transform hover:scale-[1.03]"
+    style={{
+      borderColor: `${color}40`,
+      background: `linear-gradient(135deg, ${color}12, rgba(255,255,255,0.02))`,
+      boxShadow: `0 0 16px ${color}15`,
+    }}
+  >
+    <div className="text-2xl mb-1">{icon}</div>
+    <div className="text-lg font-black" style={{ color, textShadow: `0 0 10px ${color}66` }}>{value}</div>
+    <div className="text-[11px] text-white/70 mt-1 tracking-wider uppercase">{label}</div>
+  </div>
+);
+
+/* ─── Tab content ──────────────────────────────────────── */
 
 const DivisionsContent = () => (
-  <div className="space-y-5">
-    <p className="text-white/80 text-xs leading-relaxed">
-      Nebula uses a five-tier division system that represents <span className="text-white">rarity only — not skill level</span>. 
-      The worst player on the platform can own a Division I card, and the best player can start with Division V. 
-      Your card's division determines which leaderboard tier you compete in, but it does not give any gameplay 
-      advantage whatsoever. All cards have identical mechanics — same energy, same game rules, same scoring. 
-      The only difference is scarcity: fewer Division I cards exist in circulation, making them more exclusive 
-      and typically more valuable on the secondary market. Supply percentages listed below are estimates based 
-      on initial design targets. The actual distribution may shift slightly depending on demand, but the ratios 
-      will stay close to these ranges. Ultimately, the market itself determines the real value of every card 
-      regardless of division — a high-demand Division V card from a popular collection could outprice a low-demand 
-      Division II card. Rarity creates the framework, but player demand writes the final price. To earn rewards 
-      from a division's leaderboard, you must earn your rank through consistent gameplay performance. Owning a 
-      rare card gets you into the tier — keeping your rank is entirely on you.
-    </p>
+  <div className="space-y-6">
+    <SectionTitle>Five Tiers of Rarity</SectionTitle>
+    <Para>
+      Nebula uses a five-tier division system that represents <Highlight>rarity only — not skill</Highlight>.
+      The worst player can own a Division I card, and the best player can start with Division V. Your card's
+      division decides which leaderboard you compete in, but gives <Highlight color="#f87171">zero gameplay advantage</Highlight>.
+      All cards share the same energy, rules, and scoring.
+    </Para>
+    <Para>
+      The only real difference is <Highlight>scarcity</Highlight>: fewer Division I cards exist, so they tend to be
+      more valuable on the secondary market. Supply percentages below are launch targets — the market itself sets the
+      final price.
+    </Para>
 
     <div className="grid gap-3">
       {DIVISIONS_ORDERED.map(({ key, roman, color }) => {
@@ -45,33 +77,36 @@ const DivisionsContent = () => (
         return (
           <div
             key={key}
-            className="flex items-center gap-4 rounded-lg border px-4 py-3"
+            className="flex items-center gap-4 rounded-xl border px-5 py-4 transition-transform hover:translate-x-1"
             style={{
-              borderColor: `${color}25`,
-              background: `linear-gradient(135deg, ${color}08 0%, transparent 60%)`,
+              borderColor: `${color}40`,
+              background: `linear-gradient(135deg, ${color}12 0%, transparent 70%)`,
+              boxShadow: `0 0 14px ${color}20`,
             }}
           >
             <div
-              className="flex-shrink-0 w-10 h-10 rounded-md flex items-center justify-center text-lg font-black"
-              style={{ color, background: `${color}12`, border: `1px solid ${color}30`, textShadow: `0 0 8px ${color}` }}
+              className="flex-shrink-0 w-14 h-14 rounded-lg flex items-center justify-center text-2xl font-black"
+              style={{ color, background: `${color}18`, border: `1.5px solid ${color}55`, textShadow: `0 0 12px ${color}` }}
             >
               {roman}
             </div>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-bold tracking-wider" style={{ color }}>{DIVISION_LABELS[key]}</span>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-base md:text-lg font-bold tracking-wider" style={{ color }}>
+                  {DIVISION_LABELS[key]}
+                </span>
                 <span
-                  className="text-[9px] px-1.5 py-0.5 rounded-full tracking-widest uppercase"
-                  style={{ background: `${color}15`, color, border: `1px solid ${color}30` }}
+                  className="text-[10px] px-2 py-0.5 rounded-full tracking-widest uppercase font-bold"
+                  style={{ background: `${color}20`, color, border: `1px solid ${color}50` }}
                 >
                   {rarity.rarity}
                 </span>
               </div>
-              <div className="text-[10px] text-white/50 mt-0.5">Supply: {rarity.supplyPercent} of total cards</div>
+              <div className="text-xs text-white/70 mt-1">Supply: <span className="text-white">{rarity.supplyPercent}</span> of all cards</div>
             </div>
-            <div className="flex gap-0.5">
+            <div className="flex gap-1">
               {Array.from({ length: DIVISIONS_ORDERED.length - DIVISIONS_ORDERED.findIndex(d => d.key === key) }).map((_, j) => (
-                <div key={j} className="w-2 h-2 rounded-sm" style={{ background: color, boxShadow: `0 0 4px ${color}80` }} />
+                <div key={j} className="w-2.5 h-2.5 rounded-sm" style={{ background: color, boxShadow: `0 0 6px ${color}` }} />
               ))}
             </div>
           </div>
@@ -82,81 +117,71 @@ const DivisionsContent = () => (
 );
 
 const CardsContent = () => (
-  <div className="space-y-4">
-    <p className="text-white/80 text-xs leading-relaxed">
-      Cards are the core asset in Nebula — each one is an NFT deployed via Thirdweb on the Base blockchain. 
-      Every card generates <span className="text-white">2 energy per day</span>, and each energy point allows 
-      you to play one ranked match. That means a single card gives you 2 ranked runs daily. If you own multiple 
-      cards, each card has its own independent energy pool — you must play with each card separately to use its 
-      energy. A wallet can hold up to <span className="text-white">10 cards maximum</span>, which means the 
-      theoretical daily cap is 20 ranked runs per player (10 cards × 2 energy each). Energy resets every day at 
-      <span className="text-white">UTC midnight</span> — unused energy does not carry over. If all your cards 
-      are out of energy, you can still play the game freely, but those matches will not count toward any ranked 
-      leaderboard or seasonal standings.
-    </p>
-    <p className="text-white/80 text-xs leading-relaxed">
-      <span className="text-white">Points belong to your wallet, not your card.</span> If you sell a card and 
-      buy a new one, your accumulated points stay with you. You compete in whatever division your current active 
-      card belongs to, using your existing points. When a new card is added to your wallet — whether purchased from 
-      the marketplace or received via trade — its energy pool initializes instantly with <span className="text-white">
-      2 energy</span>. No waiting, no UTC dependency. The new owner gets to play immediately.
-    </p>
-    <p className="text-white/80 text-xs leading-relaxed">
-      <span className="text-white">Primary card selection</span> works automatically: when you start a game, the 
-      system checks your wallet and selects the highest division card that still has energy available. If that card 
-      runs out of energy, the game does <span className="text-white">not</span> automatically switch to another card. 
-      You must manually select a different card to continue earning ranked scores. If you forget or choose not to use 
-      your other cards, that energy goes unused. Consistency is part of the competition. Card art, names, and flavor 
-      text are purely cosmetic — they provide zero gameplay stats or advantages.
-    </p>
+  <div className="space-y-6">
+    <SectionTitle>How Cards Work</SectionTitle>
+    <Para>
+      Each card is an <Highlight>NFT on the Base blockchain</Highlight>, deployed via Thirdweb. Every card produces
+      <Highlight> 2 energy per day</Highlight>, and each energy point lets you play one ranked match. So one card =
+      2 ranked runs daily.
+    </Para>
+    <Para>
+      A wallet can hold up to <Highlight>10 cards</Highlight>, giving a theoretical ceiling of <Highlight>20 ranked runs per day</Highlight>.
+      Energy resets every day at <Highlight>UTC midnight</Highlight> — unused energy doesn't carry over. Out of energy?
+      You can still play freely, but those matches won't count toward the leaderboard.
+    </Para>
+    <Para>
+      <Highlight>Points belong to your wallet, not your card.</Highlight> Sell a card, buy another — your points stay with you.
+      New cards added to your wallet activate <Highlight>instantly</Highlight> with full energy. No waiting.
+    </Para>
+    <Para>
+      <Highlight>Primary card selection</Highlight> is automatic: the system picks your highest-division card with energy.
+      If it runs out, you must manually swap to keep earning ranked scores. Card art and names are purely cosmetic.
+    </Para>
 
-    <div className="grid grid-cols-2 gap-3">
-      {[
-        { label: '2 / DAY', desc: 'Energy per card', icon: '⚡' },
-        { label: '10 MAX', desc: 'Cards per wallet', icon: '🃏' },
-        { label: '20 MAX', desc: 'Daily ranked runs', icon: '🎯' },
-        { label: 'INSTANT', desc: 'Energy on trade', icon: '🔄' },
-      ].map(item => (
-        <div key={item.label} className="rounded-lg border border-white/10 bg-white/[0.03] p-3 text-center">
-          <div className="text-lg mb-1">{item.icon}</div>
-          <div className="text-sm font-bold text-cyan-300" style={{ textShadow: '0 0 8px rgba(102,255,238,0.3)' }}>{item.label}</div>
-          <div className="text-[10px] text-white/50 mt-0.5">{item.desc}</div>
-        </div>
-      ))}
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <KeyFact icon="⚡" value="2 / DAY" label="Energy per card" />
+      <KeyFact icon="🃏" value="10 MAX" label="Cards per wallet" color="#a78bfa" />
+      <KeyFact icon="🎯" value="20 MAX" label="Daily ranked runs" color="#fbbf24" />
+      <KeyFact icon="🔄" value="INSTANT" label="Energy on trade" color="#34d399" />
     </div>
   </div>
 );
 
 const NoNftContent = () => (
-  <div className="space-y-4">
-    <p className="text-white/80 text-xs leading-relaxed">
-      You do not need to own any NFT cards to play Nebula. Every account — created via Thirdweb using Google, 
-      email, or any supported login method — automatically participates in the <span className="text-white">
-      No-NFT bracket</span>. This is a completely separate leaderboard from the division-based NFT tiers. 
-      Bracket placement is determined entirely by your current wallet contents: holding <span className="text-white">
-      zero NFT cards</span> places you in the No-NFT bracket, while holding one or more NFT cards moves you to 
-      the appropriate division bracket. There is no permanent lock-in — selling all your NFT cards immediately 
-      returns you to the No-NFT bracket. Scores you submitted remain valid in the bracket where they were 
-      originally earned.
-    </p>
-    <p className="text-white/80 text-xs leading-relaxed">
-      Free players receive <span className="text-white">2 energy per day</span> with a random activation mechanic: 
-      each time you start a new game, your energy has a <span className="text-white">50% chance</span> to activate 
-      for that run. This keeps the free experience accessible while adding a layer of unpredictability that balances 
-      the playing field across all free participants. The No-NFT leaderboard operates on the same seasonal schedule 
-      as the NFT divisions — 40-day cycles with standings that reset each season. Free players compete exclusively 
-      against other free players, ensuring a fair competitive environment that is never influenced by card ownership 
-      or spending power.
-    </p>
+  <div className="space-y-6">
+    <SectionTitle color="#34d399">Play Free, Compete Fair</SectionTitle>
+    <Para>
+      You don't need a single NFT to play Nebula. Every account — created via Thirdweb (Google, email, etc.) —
+      automatically joins the <Highlight color="#34d399">No-NFT bracket</Highlight>, a fully separate leaderboard
+      from the NFT divisions.
+    </Para>
+    <Para>
+      Bracket placement is <Highlight color="#34d399">wallet-based and live</Highlight>: zero cards = No-NFT bracket,
+      one or more cards = appropriate division bracket. Sell all your cards and you return to No-NFT immediately.
+      Scores stay valid in the bracket where they were earned.
+    </Para>
+    <Para>
+      Free players get <Highlight color="#34d399">2 energy per day</Highlight> with a twist — each new game has a
+      <Highlight color="#34d399"> 50% chance</Highlight> to activate energy. Adds unpredictability and keeps the free
+      bracket fair. Same 40-day seasons, same reset cadence. Free players compete only against other free players.
+    </Para>
 
-    <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-4">
-      <div className="flex items-start gap-3">
-        <span className="text-emerald-400 text-lg">🔄</span>
+    <div
+      className="rounded-xl border-2 p-5 backdrop-blur-sm"
+      style={{
+        borderColor: 'rgba(52,211,153,0.4)',
+        background: 'linear-gradient(135deg, rgba(52,211,153,0.1), rgba(255,255,255,0.02))',
+        boxShadow: '0 0 20px rgba(52,211,153,0.15)',
+      }}
+    >
+      <div className="flex items-start gap-4">
+        <span className="text-3xl">🔄</span>
         <div>
-          <div className="text-xs font-bold text-emerald-400 tracking-wider mb-1">FLUID BRACKETS</div>
-          <p className="text-[11px] text-white/60 leading-relaxed">
-            Bracket placement is wallet-based and updates in real time. Hold 0 NFTs → No-NFT bracket. 
-            Hold ≥1 NFT → NFT division bracket. Sell all cards → return to No-NFT immediately. No permanent lock-in.
+          <div className="text-sm font-black text-emerald-400 tracking-widest mb-2">FLUID BRACKETS</div>
+          <p className="text-sm text-white/85 leading-relaxed">
+            Wallet-based, real-time. <Highlight color="#34d399">0 NFTs</Highlight> → No-NFT bracket.
+            <Highlight color="#34d399"> ≥1 NFT</Highlight> → Division bracket. Sell all → back to No-NFT.
+            No lock-in, ever.
           </p>
         </div>
       </div>
@@ -165,81 +190,88 @@ const NoNftContent = () => (
 );
 
 const RewardsContent = () => (
-  <div className="space-y-4">
-    <p className="text-white/80 text-xs leading-relaxed">
-      The Nebula rewards pool is funded by <span className="text-white">30% of all platform fees</span>. 
-      This includes the 3% marketplace fee charged on every secondary card sale, plus a portion of revenue from 
-      primary card sales during launches and drops. These fees accumulate continuously throughout each 40-day season, 
-      building a pool that grows proportionally with platform activity. More trading and more players means a 
-      larger pool. At the end of each season, the Nebula team calculates payout amounts off-chain based on final 
-      leaderboard standings within each division. This means your rewards are determined by your rank relative to 
-      other players in your specific division — not by an absolute score threshold. The top performers in Division V 
-      are rewarded from the Division V allocation, and the same applies up through Division I. Higher divisions 
-      don't automatically guarantee higher individual payouts — the pool allocation per division may vary based on 
-      participation and card distribution. Once payouts are calculated, the team <span className="text-white">
-      sends rewards directly to player wallets</span>. No complex claiming process required — rewards are distributed 
-      by the team after each season closes. The 30% allocation is a launch parameter and may be adjusted by the team 
-      as the platform matures, always with advance notice to the community.
-    </p>
+  <div className="space-y-6">
+    <SectionTitle color="#fbbf24">How Rewards Are Funded</SectionTitle>
+    <Para>
+      The Nebula rewards pool is funded by <Highlight color="#fbbf24">30% of all platform fees</Highlight>:
+      the 3% marketplace fee on every secondary sale plus a portion of primary card revenue.
+      Fees accumulate continuously across each 40-day season — more trading means a bigger pool.
+    </Para>
+    <Para>
+      At season's end, the team calculates payouts <Highlight color="#fbbf24">off-chain</Highlight> based on final
+      leaderboard standings within each division. Your reward is determined by <Highlight color="#fbbf24">your rank
+      relative to your division</Highlight>, not an absolute score.
+    </Para>
+    <Para>
+      Higher divisions don't automatically pay more — pool allocation per division varies with participation. Once
+      payouts are calculated, the team <Highlight color="#fbbf24">sends rewards directly to your wallet</Highlight>.
+      No claiming process. The 30% allocation may be adjusted as the platform matures, with advance notice.
+    </Para>
 
     <div className="grid grid-cols-3 gap-3">
-      {[
-        { value: '30%', label: 'Fees → Pool' },
-        { value: '3%', label: 'Marketplace fee' },
-        { value: 'DIRECT', label: 'Team sends rewards' },
-      ].map(item => (
-        <div key={item.label} className="rounded-lg border border-cyan-500/15 bg-cyan-500/5 p-3 text-center">
-          <div className="text-base font-black text-cyan-300" style={{ textShadow: '0 0 10px rgba(102,255,238,0.3)' }}>{item.value}</div>
-          <div className="text-[9px] text-white/50 mt-1 tracking-wider uppercase">{item.label}</div>
-        </div>
-      ))}
+      <KeyFact icon="💰" value="30%" label="Fees → Pool" color="#fbbf24" />
+      <KeyFact icon="🛒" value="3%" label="Marketplace fee" color="#fbbf24" />
+      <KeyFact icon="📬" value="DIRECT" label="Wallet payout" color="#fbbf24" />
     </div>
   </div>
 );
 
 const SeasonContent = () => (
-  <div className="space-y-4">
-    <p className="text-white/80 text-xs leading-relaxed">
-      Nebula operates on <span className="text-white">40-day competitive seasons</span>. Each season is a 
-      self-contained competition cycle with its own leaderboard standings, reward pool accumulation, and payout 
-      distribution. On Day 1, a new season begins and all leaderboard positions across every division and the 
-      No-NFT bracket reset to zero. Every player starts fresh — no carryover from previous seasons. From Day 1 
-      through Day 40, every ranked match you play contributes to your seasonal standing. Consistency matters more 
-      than single-game spikes: the leaderboard uses your average top-3 scores as the primary ranking metric, which 
-      rewards reliable high performance over lucky outlier runs. During the active season, the rewards pool grows 
-      with every marketplace transaction and card sale. At the end of Day 40, the season closes. Final standings 
-      are locked and the team begins the off-chain payout calculation process. This includes anti-cheat validation 
-      — any flagged accounts are reviewed before rewards are distributed. Once payouts are finalized, the team 
-      <span className="text-white">sends rewards directly to player wallets</span>. Then 
-      the cycle repeats: Day 1 of the new season, clean slate, new pool, same hunger. Season length and structure 
-      may be adjusted during the beta phase based on community feedback and participation data. The team will 
-      communicate any changes in advance. The 40-day cycle is designed to be long enough for meaningful competition 
-      but short enough to keep the meta fresh and give new players regular entry points.
-    </p>
+  <div className="space-y-6">
+    <SectionTitle color="#a78bfa">40-Day Competitive Cycles</SectionTitle>
+    <Para>
+      Nebula runs on <Highlight color="#a78bfa">40-day seasons</Highlight>. Each is a self-contained competition with
+      its own leaderboards, pool, and payout. <Highlight color="#a78bfa">Day 1</Highlight>: every standing resets to
+      zero. Everyone starts fresh.
+    </Para>
+    <Para>
+      From Day 1 → Day 40, every ranked match counts. The leaderboard ranks by your <Highlight color="#a78bfa">average
+      top-3 scores</Highlight>, rewarding consistency over lucky single runs. The reward pool grows with every
+      marketplace transaction throughout the season.
+    </Para>
+    <Para>
+      On <Highlight color="#a78bfa">Day 40</Highlight>, standings lock and the team begins off-chain payout calculation,
+      including anti-cheat validation. Once finalized, rewards are sent directly to wallets. Then the cycle repeats:
+      clean slate, new pool, same hunger.
+    </Para>
 
-    <div className="rounded-lg border border-purple-500/20 bg-purple-500/5 p-4">
-      <div className="flex items-start gap-3">
-        <span className="text-purple-400 text-lg">🧪</span>
+    <div
+      className="rounded-xl border-2 p-5 backdrop-blur-sm"
+      style={{
+        borderColor: 'rgba(167,139,250,0.4)',
+        background: 'linear-gradient(135deg, rgba(167,139,250,0.1), rgba(255,255,255,0.02))',
+        boxShadow: '0 0 20px rgba(167,139,250,0.15)',
+      }}
+    >
+      <div className="flex items-start gap-4">
+        <span className="text-3xl">🧪</span>
         <div>
-          <div className="text-xs font-bold text-purple-400 tracking-wider mb-1">BETA STATUS</div>
-          <p className="text-[11px] text-white/60 leading-relaxed">
-            The reward system is live but distribution activates after NFT launch on Base. 
-            Season structure and pool allocations may be refined during beta based on community feedback.
+          <div className="text-sm font-black text-purple-300 tracking-widest mb-2">BETA STATUS</div>
+          <p className="text-sm text-white/85 leading-relaxed">
+            The reward system is live but distribution activates after NFT launch on Base.
+            Season structure may be refined during beta based on community feedback.
           </p>
         </div>
       </div>
     </div>
 
-    <div className="flex items-center gap-4 text-center">
+    <div className="grid grid-cols-3 gap-3">
       {[
-        { day: 'DAY 1', desc: 'Season begins\nLeaderboards reset' },
-        { day: 'DAY 1-40', desc: 'Active competition\nPool accumulates' },
-        { day: 'DAY 40+', desc: 'Season ends\nRewards distributed' },
-      ].map((step, i) => (
-        <div key={step.day} className="flex-1">
-          <div className="text-xs font-bold text-purple-300 mb-1">{step.day}</div>
-          <div className="text-[10px] text-white/50 whitespace-pre-line leading-tight">{step.desc}</div>
-          {i < 2 && <div className="text-white/10 mt-2">→</div>}
+        { day: 'DAY 1', desc: 'Season begins\nLeaderboards reset', icon: '🚀' },
+        { day: 'DAY 1–40', desc: 'Active competition\nPool grows daily', icon: '⚔️' },
+        { day: 'DAY 40+', desc: 'Standings lock\nRewards sent', icon: '🏆' },
+      ].map((step) => (
+        <div
+          key={step.day}
+          className="rounded-xl border p-4 text-center backdrop-blur-sm"
+          style={{
+            borderColor: 'rgba(167,139,250,0.35)',
+            background: 'linear-gradient(135deg, rgba(167,139,250,0.08), transparent)',
+          }}
+        >
+          <div className="text-2xl mb-1">{step.icon}</div>
+          <div className="text-sm font-black text-purple-300 tracking-wider mb-1.5">{step.day}</div>
+          <div className="text-xs text-white/75 whitespace-pre-line leading-snug">{step.desc}</div>
         </div>
       ))}
     </div>
@@ -264,57 +296,71 @@ const Rewards = () => {
 
   return (
     <div
-      className="min-h-screen text-white font-mono flex flex-col"
+      className="min-h-screen w-full overflow-y-auto text-white font-mono flex flex-col"
       style={{
-        background: 'radial-gradient(ellipse at 30% 20%, rgba(102,255,238,0.04) 0%, transparent 50%), radial-gradient(ellipse at 70% 60%, rgba(170,68,255,0.03) 0%, transparent 50%), #050510',
+        background:
+          'radial-gradient(ellipse at 30% 20%, rgba(102,255,238,0.06) 0%, transparent 50%), radial-gradient(ellipse at 70% 60%, rgba(170,68,255,0.05) 0%, transparent 50%), #050510',
       }}
     >
-      {/* Header */}
-      <header className="flex items-center justify-between px-6 py-3 border-b border-cyan-500/10 backdrop-blur-md bg-[#050510]/70">
+      {/* Sticky Header */}
+      <header className="sticky top-0 z-20 flex items-center justify-between px-6 py-3 border-b border-cyan-500/15 backdrop-blur-md bg-[#050510]/80">
         <button
           onClick={() => navigate('/')}
-          className="text-cyan-400/60 hover:text-cyan-300 transition-colors text-sm tracking-wider"
+          className="rounded-lg border border-red-500/50 bg-red-500/15 px-4 py-2 text-red-200 hover:bg-red-500/25 transition-colors text-sm uppercase tracking-widest"
+          style={{ textShadow: '0 0 8px #ff3333' }}
         >
-          ← BACK
+          ← Back
         </button>
-        <div className="text-[10px] uppercase tracking-[0.4em] text-white/20">Nebula Cascade</div>
-        <div className="w-16" />
+        <div className="text-[10px] uppercase tracking-[0.4em] text-white/40">Nebula Cascade</div>
+        <div className="w-20" />
       </header>
 
       {/* Title */}
-      <div className="text-center pt-8 pb-4">
-        <div className="mx-auto w-24 h-px bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent mb-4" />
+      <div className="text-center pt-10 pb-6">
+        <div className="mx-auto w-24 h-px bg-gradient-to-r from-transparent via-cyan-500/40 to-transparent mb-4" />
         <h1
-          className="text-4xl md:text-5xl font-black uppercase tracking-[0.4em]"
-          style={{ color: '#66ffee', textShadow: '0 0 20px rgba(102,255,238,0.3), 0 0 60px rgba(102,255,238,0.1)' }}
+          className="text-4xl md:text-6xl font-black uppercase tracking-[0.4em]"
+          style={{ color: '#66ffee', textShadow: '0 0 20px rgba(102,255,238,0.5), 0 0 60px rgba(102,255,238,0.2)' }}
         >
           REWARDS & RULES
         </h1>
-        <p className="text-[10px] uppercase tracking-[0.5em] text-red-500 mt-2">System Overview</p>
-        <div className="mx-auto w-24 h-px bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent mt-4" />
+        <p className="text-xs uppercase tracking-[0.5em] text-red-400 mt-3">Everything you need to know</p>
+        <div className="mx-auto w-24 h-px bg-gradient-to-r from-transparent via-cyan-500/40 to-transparent mt-4" />
       </div>
 
       {/* Tab buttons */}
-      <div className="flex flex-wrap justify-center gap-2 px-4 pb-4">
-        {TABS.map(tab => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={`px-4 py-2 rounded-full text-[11px] font-bold uppercase tracking-[0.15em] border transition-all duration-300 ${
-              activeTab === tab.key
-                ? 'border-cyan-400/50 bg-cyan-400/10 text-cyan-300'
-                : 'border-white/10 bg-white/[0.03] text-white/60 hover:text-white/60 hover:border-white/20'
-            }`}
-            style={activeTab === tab.key ? { boxShadow: '0 0 12px rgba(102,255,238,0.15)', textShadow: '0 0 6px rgba(102,255,238,0.3)' } : undefined}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="sticky top-[60px] z-10 flex flex-wrap justify-center gap-2 px-4 py-3 backdrop-blur-md bg-[#050510]/70 border-b border-white/5">
+        {TABS.map(tab => {
+          const isActive = activeTab === tab.key;
+          return (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`px-5 py-2.5 rounded-full text-sm font-bold uppercase tracking-[0.15em] border transition-all duration-300 flex items-center gap-2 ${
+                isActive
+                  ? 'border-cyan-400/60 bg-cyan-400/15 text-cyan-200 scale-105'
+                  : 'border-white/10 bg-white/[0.03] text-white/70 hover:text-white hover:border-white/30 hover:bg-white/[0.06]'
+              }`}
+              style={
+                isActive
+                  ? { boxShadow: '0 0 18px rgba(102,255,238,0.3)', textShadow: '0 0 8px rgba(102,255,238,0.5)' }
+                  : undefined
+              }
+            >
+              <span className="text-base">{tab.icon}</span>
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
 
       {/* Content panel */}
-      <div className="flex-1 px-4 pb-10">
-        <div className="max-w-2xl mx-auto rounded-xl border border-white/[0.06] bg-white/[0.02] p-6 backdrop-blur-sm">
+      <div className="flex-1 px-4 py-8 pb-20">
+        <div
+          key={activeTab}
+          className="max-w-3xl mx-auto rounded-2xl border border-white/10 bg-white/[0.025] p-6 md:p-8 backdrop-blur-sm animate-in fade-in slide-in-from-bottom-2 duration-500"
+          style={{ boxShadow: '0 0 30px rgba(102,255,238,0.05)' }}
+        >
           <ContentComponent />
         </div>
       </div>
