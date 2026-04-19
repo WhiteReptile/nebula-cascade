@@ -212,6 +212,7 @@ export class GameScene extends Phaser.Scene {
     else this.gravityDir = 0;                 // 20% down (faster)
     // Strength scales with level: starts at 0.35, grows ~+0.06 per level, capped at 0.95
     this.gravityStrength = Math.min(0.35 + (this.level - 1) * 0.06, 0.95);
+    gameEvents.emit('gravity', { dir: this.gravityDir, strength: this.gravityStrength });
   }
 
   private getCells(p: ActivePiece) { return p.def.shapes[p.rotation % p.def.shapes.length]; }
