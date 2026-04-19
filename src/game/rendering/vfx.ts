@@ -22,6 +22,74 @@
 import { COLS, ROWS, CELL, COLORS } from '../pieces';
 import type { Particle, OrbState } from '../types';
 
+// ── Shared helper: expanding shockwave ring ──
+export function addShockwaveRing(
+  particles: Particle[],
+  cx: number,
+  cy: number,
+  color: number,
+  intensity: number, // 1.0 = base
+  delay = 0,
+  ringColor: number = 0xffffff,
+) {
+  const count = Math.floor(24 * intensity);
+  const speed = 6 + intensity * 2;
+  for (let i = 0; i < count; i++) {
+    const angle = (i / count) * Math.PI * 2;
+    particles.push({
+      x: cx, y: cy,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      life: 26 + Math.random() * 8, maxLife: 34,
+      color: ringColor, size: 2.5 + intensity * 0.8,
+      delay,
+      drag: 0.94,
+      gravity: 0,
+    });
+  }
+  // Inner colored ring
+  const innerCount = Math.floor(18 * intensity);
+  for (let i = 0; i < innerCount; i++) {
+    const angle = (i / innerCount) * Math.PI * 2;
+    particles.push({
+      x: cx, y: cy,
+      vx: Math.cos(angle) * (speed * 0.65),
+      vy: Math.sin(angle) * (speed * 0.65),
+      life: 22 + Math.random() * 6, maxLife: 28,
+      color, size: 3 + intensity,
+      delay,
+      drag: 0.93,
+      gravity: 0,
+    });
+  }
+}
+
+// ── Shared helper: glow trail ambient particles ──
+function addGlowTrails(
+  particles: Particle[],
+  cx: number,
+  cy: number,
+  color: number,
+  count: number,
+  spread: number,
+) {
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const dist = Math.random() * spread;
+    particles.push({
+      x: cx + Math.cos(angle) * dist,
+      y: cy + Math.sin(angle) * dist,
+      vx: Math.cos(angle) * (0.3 + Math.random() * 0.6),
+      vy: Math.sin(angle) * (0.3 + Math.random() * 0.6) - 0.4,
+      life: 40 + Math.random() * 30, maxLife: 70,
+      color, size: 2 + Math.random() * 2.5,
+      gravity: 0.01,
+      drag: 0.985,
+    });
+  }
+}
+
+
 export function createForceDropParticles(
   particles: Particle[],
   cells: number[][],
