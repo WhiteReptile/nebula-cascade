@@ -309,6 +309,7 @@ export class GameScene extends Phaser.Scene {
       this.lastChainElement = currentElement;
 
       gameEvents.emit('chainCombo', this.chainStep);
+      this.emitHypeForChain(this.chainStep);
       this.emitHUD();
       this.time.delayedCall(350 + this.chainStep * 50, () => this.resolveChains());
       return;
@@ -334,6 +335,7 @@ export class GameScene extends Phaser.Scene {
       this.lastChainElement = currentElement;
 
       gameEvents.emit('chainCombo', this.chainStep);
+      this.emitHypeForChain(this.chainStep);
       this.emitHUD();
       this.time.delayedCall(300 + this.chainStep * 50, () => this.resolveChains());
       return;
@@ -357,6 +359,7 @@ export class GameScene extends Phaser.Scene {
       this.lastChainElement = null;
       gameEvents.emit('chainCombo', this.chainStep);
       gameEvents.emit('triColor', this.chainStep);
+      gameEvents.emit('hype', { text: 'OMNI FUSION!', tier: 4 });
       this.emitHUD();
       this.time.delayedCall(450 + this.chainStep * 50, () => this.resolveChains());
       return;
@@ -389,6 +392,13 @@ export class GameScene extends Phaser.Scene {
       }
       this.lastChainElement = null;
       gameEvents.emit('chainCombo', this.chainStep);
+      if (lineResult.cosmicWipe) {
+        gameEvents.emit('hype', { text: 'GOD OF NEBULA!', tier: 6 });
+      } else if (lineResult.rows.length >= 3) {
+        gameEvents.emit('hype', { text: 'MEGA CLEAR!', tier: 3 });
+      } else {
+        this.emitHypeForChain(this.chainStep);
+      }
       this.emitHUD();
       this.time.delayedCall(400 + this.chainStep * 50, () => this.resolveChains());
       return;
@@ -443,6 +453,15 @@ export class GameScene extends Phaser.Scene {
     this.flashAlpha = fx.flashAlpha;
     this.slowMo = true;
     this.slowMoTimer = fx.slowMoTimer;
+  }
+
+  private emitHypeForChain(chainStep: number) {
+    if (chainStep >= 7) { gameEvents.emit('hype', { text: 'GOD OF NEBULA!', tier: 6 }); return; }
+    if (chainStep === 6) { gameEvents.emit('hype', { text: 'GOD OF PUZZLE!', tier: 5 }); return; }
+    if (chainStep === 5) { gameEvents.emit('hype', { text: 'UNBELIEVABLE!', tier: 4 }); return; }
+    if (chainStep === 4) { gameEvents.emit('hype', { text: 'EXCELLENT!', tier: 3 }); return; }
+    if (chainStep === 3) { gameEvents.emit('hype', { text: 'GREAT!', tier: 2 }); return; }
+    if (chainStep === 2) { gameEvents.emit('hype', { text: 'NICE!', tier: 1 }); return; }
   }
 
   private getCellBounds(cells: [number, number][]): [number, number, number] {
@@ -540,11 +559,21 @@ export class GameScene extends Phaser.Scene {
     if (this.flashAlpha > 0) this.flashAlpha *= 0.92;
     if (this.flashAlpha < 0.01) this.flashAlpha = 0;
 
-    // Particles
+    // Particles — respect optional delay, gravity, drag
     this.particles = this.particles.filter(p => {
-      p.x += p.vx; p.y += p.vy; p.vy += 0.06; p.vx *= 0.99; p.life--;
+      if (p.delay && p.delay > 0) { p.delay--; return true; }
+      const drag = p.drag ?? 0.99;
+      const grav = p.gravity ?? 0.06;
+      p.x += p.vx; p.y += p.vy;
+      p.vy += grav;
+      p.vx *= drag;
+      p.life--;
       return p.life > 0;
     });
+    // Performance cap: drop oldest if exceeding 600 active particles
+    if (this.particles.length > 600) {
+      this.particles.splice(0, this.particles.length - 600);
+    }
 
     // Shooting stars
     const sw = this.scale.width, sh = this.scale.height;
