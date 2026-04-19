@@ -445,6 +445,15 @@ export class GameScene extends Phaser.Scene {
     this.slowMoTimer = fx.slowMoTimer;
   }
 
+  private emitHypeForChain(chainStep: number) {
+    if (chainStep >= 7) { gameEvents.emit('hype', { text: 'GOD OF NEBULA!', tier: 6 }); return; }
+    if (chainStep === 6) { gameEvents.emit('hype', { text: 'GOD OF PUZZLE!', tier: 5 }); return; }
+    if (chainStep === 5) { gameEvents.emit('hype', { text: 'UNBELIEVABLE!', tier: 4 }); return; }
+    if (chainStep === 4) { gameEvents.emit('hype', { text: 'EXCELLENT!', tier: 3 }); return; }
+    if (chainStep === 3) { gameEvents.emit('hype', { text: 'GREAT!', tier: 2 }); return; }
+    if (chainStep === 2) { gameEvents.emit('hype', { text: 'NICE!', tier: 1 }); return; }
+  }
+
   private getCellBounds(cells: [number, number][]): [number, number, number] {
     let minCol = COLS, maxCol = 0, maxRow = 0;
     for (const [r, c] of cells) {
