@@ -6,6 +6,7 @@ import { logMatch } from '@/lib/matchLogger';
 import DivisionBadge from './DivisionBadge';
 import { usePlayerProfile } from '@/hooks/usePlayerProfile';
 import HypeOverlay from './HypeOverlay';
+import GravityCompass from './GravityCompass';
 
 
 const GameHUD = () => {
@@ -132,6 +133,7 @@ const GameHUD = () => {
       <div className="menu-scanlines fixed inset-0 pointer-events-none" style={{ zIndex: 1 }} />
       <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 1, background: 'radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.6) 100%)' }} />
       <HypeOverlay />
+      <GravityCompass />
 
       {/* Unified 3-column layout */}
       <div className="fixed inset-0 flex items-center justify-center" style={{ zIndex: 2 }}>
