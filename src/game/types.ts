@@ -68,4 +68,7 @@ export interface Particle {
   maxLife: number;
   color: number;
   size: number;
+  delay?: number;
+  gravity?: number;
+  drag?: number;
 }
