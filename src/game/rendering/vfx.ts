@@ -174,9 +174,16 @@ export function blockImplosionVFX(
     }
   }
 
+  // Layered amplification: shockwave + glow trails + delayed secondary pulse
+  addShockwaveRing(particles, cx, cy, color, Math.min(1 + chainStep * 0.25, 2.2));
+  addGlowTrails(particles, cx, cy, color, Math.floor(20 * scale), 60);
+  if (chainStep >= 2) {
+    addShockwaveRing(particles, cx, cy, color, Math.min(0.7 + chainStep * 0.2, 1.6), 6, color);
+  }
+
   return {
-    shakeAmount: Math.min(6 * (1 + chainStep * 0.4), 20),
-    flashAlpha: Math.min(0.25 * (1 + chainStep * 0.3), 0.9),
+    shakeAmount: Math.min(7 * (1 + chainStep * 0.45), 22),
+    flashAlpha: Math.min(0.32 * (1 + chainStep * 0.3), 0.95),
     slowMoTimer: 20 + chainStep * 10,
   };
 }
@@ -245,9 +252,19 @@ export function triColorFusionVFX(
     }
   }
 
+  // Tri-color amplification: rainbow shockwaves + glow trails + delayed pulses
+  const colorList = COLORS.map(c => c.color);
+  for (let ci = 0; ci < colorList.length; ci++) {
+    addShockwaveRing(particles, cx, cy, colorList[ci], Math.min(0.8 + chainStep * 0.2, 1.8), ci * 3, colorList[ci]);
+  }
+  addGlowTrails(particles, cx, cy, 0xffffff, Math.floor(30 * scale), 80);
+  if (chainStep >= 2) {
+    addShockwaveRing(particles, cx, cy, 0xffffff, Math.min(1 + chainStep * 0.25, 2.0), 10);
+  }
+
   return {
-    shakeAmount: Math.min(10 * (1 + chainStep * 0.4), 25),
-    flashAlpha: Math.min(0.35 * (1 + chainStep * 0.3), 0.9),
+    shakeAmount: Math.min(11 * (1 + chainStep * 0.45), 28),
+    flashAlpha: Math.min(0.42 * (1 + chainStep * 0.3), 0.95),
     slowMoTimer: 30 + chainStep * 10,
   };
 }
@@ -278,9 +295,19 @@ export function lineDestroyVFX(
       }
     }
   }
+  // Per-row shockwaves at row centers + glow trails along row
+  for (const row of rows) {
+    const cy = offsetY + row * CELL + CELL / 2;
+    const cx = offsetX + (COLS * CELL) / 2;
+    addShockwaveRing(particles, cx, cy, 0xffffff, Math.min(1 + chainStep * 0.25, 2.0));
+    addGlowTrails(particles, cx, cy, 0xffffff, Math.floor(15 * scale), COLS * CELL * 0.4);
+    if (chainStep >= 2) {
+      addShockwaveRing(particles, cx, cy, 0xffffff, Math.min(0.7 + chainStep * 0.2, 1.5), 6);
+    }
+  }
   return {
-    shakeAmount: Math.min(5 * (1 + chainStep * 0.4), 20),
-    flashAlpha: Math.min(0.4 * (1 + chainStep * 0.3), 0.9),
+    shakeAmount: Math.min(6 * (1 + chainStep * 0.45), 22),
+    flashAlpha: Math.min(0.48 * (1 + chainStep * 0.3), 0.95),
     slowMoTimer: 35 + chainStep * 10,
   };
 }
@@ -305,9 +332,15 @@ export function cosmicWipeVFX(
     const dist = 150 + Math.random() * 100;
     particles.push({ x: cx + Math.cos(angle) * dist, y: cy + Math.sin(angle) * dist, vx: -Math.cos(angle) * 4, vy: -Math.sin(angle) * 4, life: 40, maxLife: 40, color: 0xffffff, size: 2 + Math.random() * 3 });
   }
+  // Cosmic supernova: triple-stacked shockwaves + massive glow trails
+  addShockwaveRing(particles, cx, cy, 0xffdd00, 2.5);
+  addShockwaveRing(particles, cx, cy, 0xff3344, 2.2, 6, 0xff3344);
+  addShockwaveRing(particles, cx, cy, 0x3388ff, 2.0, 12, 0x3388ff);
+  addGlowTrails(particles, cx, cy, 0xffffff, 60, 200);
+
   return {
-    shakeAmount: Math.min(18 * scale, 30),
-    flashAlpha: Math.min(0.8 * scale, 1),
+    shakeAmount: Math.min(22 * scale, 35),
+    flashAlpha: Math.min(0.95 * scale, 1),
     slowMoTimer: 50 + chainStep * 10,
   };
 }
@@ -399,9 +432,13 @@ export function proximityBurstVFX(
     });
   }
 
+  // Proximity amplification: shockwave + glow trails
+  addShockwaveRing(particles, cx, cy, color, Math.min(0.8 + chainStep * 0.2, 1.6), 0, color);
+  addGlowTrails(particles, cx, cy, color, Math.floor(12 * scale), 50);
+
   return {
-    shakeAmount: Math.min(4 * (1 + chainStep * 0.3), 12),
-    flashAlpha: Math.min(0.15 * (1 + chainStep * 0.2), 0.5),
+    shakeAmount: Math.min(5 * (1 + chainStep * 0.35), 14),
+    flashAlpha: Math.min(0.2 * (1 + chainStep * 0.25), 0.6),
     slowMoTimer: 15 + chainStep * 5,
   };
 }
@@ -452,9 +489,14 @@ export function elementalCascadeVFX(
     });
   }
 
+  // Cascade amplification: shockwave at top + bottom + glow trails
+  addShockwaveRing(particles, cx, offsetY, color, Math.min(1 + chainStep * 0.2, 1.7), 0, color);
+  addShockwaveRing(particles, cx, offsetY + ROWS * CELL, color, Math.min(0.8 + chainStep * 0.15, 1.4), 4);
+  addGlowTrails(particles, cx, offsetY + (ROWS * CELL) / 2, color, Math.floor(15 * scale), 30);
+
   return {
-    shakeAmount: Math.min(7 * (1 + chainStep * 0.3), 18),
-    flashAlpha: Math.min(0.3 * (1 + chainStep * 0.2), 0.7),
+    shakeAmount: Math.min(8 * (1 + chainStep * 0.35), 20),
+    flashAlpha: Math.min(0.35 * (1 + chainStep * 0.25), 0.75),
     slowMoTimer: 25 + chainStep * 8,
   };
 }
