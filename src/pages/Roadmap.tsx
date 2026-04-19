@@ -53,15 +53,15 @@ const ROADMAP_DATA: RoadmapMonth[] = [
     color: '#3b82f6',
     glow: 'rgba(59,130,246,0.4)',
     milestones: [
-      { text: 'Marketplace functional (buy/list/sell cards)', done: false },
-      { text: '3% trading fee implemented', done: false },
-      { text: 'Fee routing to rewards pool tracked', done: false },
-      { text: 'Card ownership transfers with energy reset', done: false },
-      { text: 'Marketplace reaches 90% completion', done: false },
-      { text: 'Swap functionality added', done: false },
-      { text: 'Public registration opens', done: false },
-      { text: 'Additional 50-100 cards minted across divisions', done: false },
-      { text: 'First season concludes (40-day cycle ends)', done: false },
+      { text: 'Marketplace functional (buy/list/sell cards)', done: true },
+      { text: '3% trading fee implemented', done: true },
+      { text: 'Fee routing to rewards pool tracked', done: true },
+      { text: 'Card ownership transfers with energy reset', done: true },
+      { text: 'Marketplace reaches 90% completion', done: true },
+      { text: 'Swap functionality added', done: true },
+      { text: 'Public registration opens', done: true },
+      { text: 'Additional 50-100 cards minted across divisions', done: true },
+      { text: 'First season concludes (40-day cycle ends)', done: true },
       { text: 'Manual rewards distribution to beta players', done: false },
     ],
     deliverable: 'Marketplace live. Public can join and trade. First rewards paid.',
@@ -224,6 +224,19 @@ const Roadmap = () => {
                       >
                         {month.month} {month.year}
                       </span>
+                      {month.month === 'MAY' && (
+                        <span
+                          className="text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest animate-pulse"
+                          style={{
+                            backgroundColor: 'rgba(16,185,129,0.18)',
+                            color: '#34d399',
+                            border: '1px solid rgba(52,211,153,0.5)',
+                            textShadow: '0 0 8px rgba(52,211,153,0.6)',
+                          }}
+                        >
+                          🚀 Ahead of schedule!
+                        </span>
+                      )}
                       {isComplete && (
                         <span
                           className="text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest"
@@ -237,7 +250,7 @@ const Roadmap = () => {
                         </span>
                       )}
                     </div>
-                    <p className="text-white/80 text-sm mt-1">{month.goal}</p>
+                    <p className="text-white/85 text-base mt-1.5 leading-relaxed">{month.goal}</p>
                   </div>
                   <div className="flex items-center gap-3 flex-shrink-0">
                     <span
