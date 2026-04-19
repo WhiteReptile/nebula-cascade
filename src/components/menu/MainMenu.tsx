@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { playTick, playSelect } from '@/lib/sfx';
 
 interface MainMenuProps {
   onStart: () => void;
@@ -86,8 +87,8 @@ const MainMenu = ({ onStart }: MainMenuProps) => {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (fadingOut) return;
-      if (e.key === 'ArrowDown') setSelected(s => (s + 1) % MENU_ITEMS.length);
-      else if (e.key === 'ArrowUp') setSelected(s => (s - 1 + MENU_ITEMS.length) % MENU_ITEMS.length);
+      if (e.key === 'ArrowDown') { playTick(); setSelected(s => (s + 1) % MENU_ITEMS.length); }
+      else if (e.key === 'ArrowUp') { playTick(); setSelected(s => (s - 1 + MENU_ITEMS.length) % MENU_ITEMS.length); }
       else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleSelect(selected); }
     };
     window.addEventListener('keydown', handler);
@@ -96,6 +97,7 @@ const MainMenu = ({ onStart }: MainMenuProps) => {
 
   const handleSelect = useCallback((index: number) => {
     if (fadingOut) return;
+    playSelect();
     setFadingOut(true);
     setTimeout(() => {
       const item = MENU_ITEMS[index];
@@ -109,8 +111,8 @@ const MainMenu = ({ onStart }: MainMenuProps) => {
   // Mouse wheel on viewport — looping
   const handleWheel = useCallback((e: React.WheelEvent) => {
     if (fadingOut) return;
-    if (e.deltaY > 0) setSelected(s => (s + 1) % MENU_ITEMS.length);
-    else if (e.deltaY < 0) setSelected(s => (s - 1 + MENU_ITEMS.length) % MENU_ITEMS.length);
+    if (e.deltaY > 0) { playTick(); setSelected(s => (s + 1) % MENU_ITEMS.length); }
+    else if (e.deltaY < 0) { playTick(); setSelected(s => (s - 1 + MENU_ITEMS.length) % MENU_ITEMS.length); }
   }, [fadingOut]);
 
   const translateY = -(selected * ITEM_HEIGHT);
@@ -178,7 +180,7 @@ const MainMenu = ({ onStart }: MainMenuProps) => {
               <button
                 key={item}
                 onClick={() => handleSelect(i)}
-                onMouseEnter={() => setSelected(i)}
+                onMouseEnter={() => { if (selected !== i) { playTick(); setSelected(i); } }}
                 className={`font-mono uppercase tracking-[0.25em] text-lg md:text-xl bg-transparent border-none cursor-pointer select-none flex items-center justify-center gap-3 transition-all duration-300 ${
                   selected === i ? 'menu-item-glow-red scale-105' : 'text-red-900/60 hover:text-red-400/80'
                 }`}
