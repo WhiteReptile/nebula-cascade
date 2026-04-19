@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { gameEvents } from '../../game/events';
+import { gameEvents } from '@/game/events';
 
 type GravityState = { dir: -1 | 0 | 1; strength: number };
 
