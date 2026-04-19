@@ -540,11 +540,21 @@ export class GameScene extends Phaser.Scene {
     if (this.flashAlpha > 0) this.flashAlpha *= 0.92;
     if (this.flashAlpha < 0.01) this.flashAlpha = 0;
 
-    // Particles
+    // Particles — respect optional delay, gravity, drag
     this.particles = this.particles.filter(p => {
-      p.x += p.vx; p.y += p.vy; p.vy += 0.06; p.vx *= 0.99; p.life--;
+      if (p.delay && p.delay > 0) { p.delay--; return true; }
+      const drag = p.drag ?? 0.99;
+      const grav = p.gravity ?? 0.06;
+      p.x += p.vx; p.y += p.vy;
+      p.vy += grav;
+      p.vx *= drag;
+      p.life--;
       return p.life > 0;
     });
+    // Performance cap: drop oldest if exceeding 600 active particles
+    if (this.particles.length > 600) {
+      this.particles.splice(0, this.particles.length - 600);
+    }
 
     // Shooting stars
     const sw = this.scale.width, sh = this.scale.height;
