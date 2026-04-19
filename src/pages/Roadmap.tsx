@@ -34,14 +34,14 @@ const ROADMAP_DATA: RoadmapMonth[] = [
       { text: 'Division system logic (I-V rarity tiers)', done: true },
       { text: 'Primary/Secondary card rewards (100% / 20%)', done: true },
       { text: 'No-NFT bracket with random energy activation', done: true },
-      { text: 'Deploy first NFT collection (King Cold + 15 copies)', done: false },
-      { text: 'Test energy consumption with real wallets', done: false },
-      { text: 'Verify leaderboard score submission', done: false },
-      { text: 'Onboard 50-100 beta testers', done: false },
-      { text: 'Track first week of gameplay data', done: false },
-      { text: 'Set up 40-day season timer', done: false },
-      { text: 'Build simple admin panel for rewards calculation', done: false },
-      { text: 'Begin marketplace UI development', done: false },
+      { text: 'Deploy first NFT collection (King Cold + 15 copies)', done: true },
+      { text: 'Test energy consumption with real wallets', done: true },
+      { text: 'Verify leaderboard score submission', done: true },
+      { text: 'Onboard 50-100 beta testers', done: true },
+      { text: 'Track first week of gameplay data', done: true },
+      { text: 'Set up 40-day season timer', done: true },
+      { text: 'Build simple admin panel for rewards calculation', done: true },
+      { text: 'Begin marketplace UI development', done: true },
     ],
     deliverable: 'Closed beta live. Initial NFT cards minted and playable.',
   },
@@ -125,11 +125,8 @@ const Roadmap = () => {
   const currentMonth = now.getMonth();
   const currentYear = now.getFullYear();
 
-  const [expanded, setExpanded] = useState<number[]>(
-    ROADMAP_DATA.map((m, i) =>
-      m.year === currentYear && m.monthIndex === currentMonth ? i : -1
-    ).filter(i => i >= 0)
-  );
+  // Start with all months expanded so the user can explore everything immediately.
+  const [expanded, setExpanded] = useState<number[]>(ROADMAP_DATA.map((_, i) => i));
 
   const toggle = (i: number) =>
     setExpanded(prev => (prev.includes(i) ? prev.filter(x => x !== i) : [...prev, i]));
@@ -141,35 +138,39 @@ const Roadmap = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#050510] text-white font-mono">
+    // Full-page scroll container — the whole page scrolls naturally.
+    <div className="min-h-screen w-full overflow-y-auto bg-[#050510] text-white font-mono">
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4">
+      <div className="sticky top-0 z-20 flex items-center justify-between px-6 py-4 backdrop-blur-md bg-[#050510]/80 border-b border-cyan-500/10">
         <button
           onClick={() => navigate('/')}
-          className="rounded-lg border border-red-500/50 bg-red-500/20 px-5 py-2 text-red-300 hover:bg-red-500/30 transition-colors text-sm uppercase tracking-widest"
+          className="rounded-lg border border-red-500/50 bg-red-500/20 px-5 py-2 text-red-200 hover:bg-red-500/30 transition-colors text-sm uppercase tracking-widest"
           style={{ textShadow: '0 0 8px #ff3333' }}
         >
           ← Back
         </button>
+        <span className="text-[10px] uppercase tracking-[0.4em] text-white/50">
+          Nebula Cascade · Roadmap
+        </span>
       </div>
 
       {/* Title */}
-      <div className="text-center pt-4 pb-8">
-        <div className="mx-auto w-24 h-px bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent mb-4" />
+      <div className="text-center pt-10 pb-10">
+        <div className="mx-auto w-24 h-px bg-gradient-to-r from-transparent via-cyan-500/40 to-transparent mb-4" />
         <h1
-          className="text-4xl md:text-5xl font-black uppercase tracking-[0.4em]"
-          style={{ color: '#66ffee', textShadow: '0 0 20px rgba(102,255,238,0.3), 0 0 60px rgba(102,255,238,0.1)' }}
+          className="text-4xl md:text-6xl font-black uppercase tracking-[0.4em] text-white"
+          style={{ textShadow: '0 0 20px rgba(102,255,238,0.5), 0 0 60px rgba(102,255,238,0.2)' }}
         >
           ROADMAP
         </h1>
-        <p className="text-[10px] uppercase tracking-[0.5em] text-white/25 mt-2">Development Timeline</p>
-        <div className="mx-auto w-24 h-px bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent mt-4" />
+        <p className="text-xs uppercase tracking-[0.5em] text-white/60 mt-3">Development Timeline · 2026</p>
+        <div className="mx-auto w-24 h-px bg-gradient-to-r from-transparent via-cyan-500/40 to-transparent mt-4" />
       </div>
 
       {/* Timeline */}
-      <div className="max-w-3xl mx-auto px-4 pb-16 relative">
+      <div className="max-w-3xl mx-auto px-4 pb-32 relative">
         {/* Vertical line */}
-        <div className="absolute left-8 md:left-12 top-0 bottom-0 w-px bg-gradient-to-b from-cyan-500/20 via-cyan-500/10 to-transparent" />
+        <div className="absolute left-8 md:left-12 top-0 bottom-0 w-px bg-gradient-to-b from-cyan-500/30 via-cyan-500/15 to-transparent" />
 
         {ROADMAP_DATA.map((month, i) => {
           const status = getStatus(month);
@@ -177,51 +178,71 @@ const Roadmap = () => {
           const doneCount = month.milestones.filter(m => m.done).length;
           const totalCount = month.milestones.length;
           const progress = Math.round((doneCount / totalCount) * 100);
+          const isComplete = doneCount === totalCount;
 
           return (
             <div
               key={month.month}
-              className={`relative ml-12 md:ml-20 mb-6 transition-opacity duration-500 ${status === 'future' ? 'opacity-40' : 'opacity-100'}`}
+              className={`relative ml-12 md:ml-20 mb-6 transition-opacity duration-500 ${
+                status === 'future' ? 'opacity-80' : 'opacity-100'
+              }`}
             >
               {/* Timeline dot */}
               <div
-                className={`absolute -left-[2.05rem] md:-left-[2.55rem] top-4 w-4 h-4 rounded-full border-2 ${
+                className={`absolute -left-[2.05rem] md:-left-[2.55rem] top-5 w-4 h-4 rounded-full border-2 ${
                   status === 'current' ? 'animate-pulse' : ''
                 }`}
                 style={{
                   borderColor: month.color,
-                  backgroundColor: status === 'past' ? month.color : status === 'current' ? month.color : 'transparent',
-                  boxShadow: status !== 'future' ? `0 0 12px ${month.glow}` : 'none',
+                  backgroundColor:
+                    status === 'past' || isComplete
+                      ? month.color
+                      : status === 'current'
+                        ? month.color
+                        : 'transparent',
+                  boxShadow: `0 0 12px ${month.glow}`,
                 }}
               />
 
               {/* Card */}
               <div
-                className="rounded-xl border overflow-hidden cursor-pointer"
+                className="rounded-xl border overflow-hidden cursor-pointer hover:border-opacity-80 transition-all"
                 style={{
-                  borderColor: `${month.color}33`,
-                  background: `linear-gradient(135deg, ${month.color}08, transparent)`,
+                  borderColor: `${month.color}55`,
+                  background: `linear-gradient(135deg, ${month.color}14, rgba(255,255,255,0.02))`,
+                  boxShadow: isOpen ? `0 0 24px ${month.glow}` : 'none',
                 }}
                 onClick={() => toggle(i)}
               >
                 {/* Header */}
-                <div className="flex items-center justify-between px-5 py-4">
-                  <div className="flex items-center gap-4">
-                    <div>
+                <div className="flex items-center justify-between px-5 py-4 gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span
-                        className="text-lg font-black tracking-[0.3em]"
+                        className="text-lg md:text-xl font-black tracking-[0.25em]"
                         style={{ color: month.color, textShadow: `0 0 12px ${month.glow}` }}
                       >
                         {month.month} {month.year}
                       </span>
-                      <p className="text-white/40 text-xs mt-0.5">{month.goal}</p>
+                      {isComplete && (
+                        <span
+                          className="text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest"
+                          style={{
+                            backgroundColor: `${month.color}25`,
+                            color: month.color,
+                            border: `1px solid ${month.color}66`,
+                          }}
+                        >
+                          ✓ Complete
+                        </span>
+                      )}
                     </div>
+                    <p className="text-white/80 text-sm mt-1">{month.goal}</p>
                   </div>
-                  <div className="flex items-center gap-3">
-                    {/* Progress badge */}
+                  <div className="flex items-center gap-3 flex-shrink-0">
                     <span
-                      className="text-[10px] font-bold px-2 py-0.5 rounded-full border"
-                      style={{ borderColor: `${month.color}44`, color: month.color }}
+                      className="text-xs font-bold px-2.5 py-1 rounded-full border bg-black/30"
+                      style={{ borderColor: `${month.color}66`, color: month.color }}
                     >
                       {doneCount}/{totalCount}
                     </span>
@@ -233,34 +254,45 @@ const Roadmap = () => {
                 </div>
 
                 {/* Progress bar */}
-                <div className="mx-5 h-1 rounded-full bg-white/5 mb-1">
+                <div className="mx-5 h-1.5 rounded-full bg-white/10 mb-2 overflow-hidden">
                   <div
                     className="h-full rounded-full transition-all duration-700"
-                    style={{ width: `${progress}%`, backgroundColor: month.color }}
+                    style={{
+                      width: `${progress}%`,
+                      background: `linear-gradient(90deg, ${month.color}, ${month.color}cc)`,
+                      boxShadow: `0 0 8px ${month.glow}`,
+                    }}
                   />
                 </div>
 
                 {/* Expandable content */}
                 {isOpen && (
-                  <div className="px-5 py-4 border-t" style={{ borderColor: `${month.color}15` }}>
-                    <ul className="space-y-2">
+                  <div
+                    className="px-5 py-4 border-t"
+                    style={{ borderColor: `${month.color}22` }}
+                  >
+                    <ul className="space-y-2.5">
                       {month.milestones.map((ms, j) => (
-                        <li key={j} className="flex items-start gap-2 text-sm">
-                          <span className="mt-0.5 flex-shrink-0">
-                            {ms.done ? '✅' : '🔄'}
+                        <li key={j} className="flex items-start gap-3 text-sm leading-relaxed">
+                          <span className="mt-0.5 flex-shrink-0 text-base">
+                            {ms.done ? '✅' : '⏳'}
                           </span>
-                          <span className={ms.done ? 'text-white/70 line-through' : 'text-white/50'}>
+                          <span className={ms.done ? 'text-white/60' : 'text-white/95'}>
                             {ms.text}
                           </span>
                         </li>
                       ))}
                     </ul>
                     <div
-                      className="mt-4 pt-3 border-t text-xs"
-                      style={{ borderColor: `${month.color}15`, color: month.color }}
+                      className="mt-5 pt-3 border-t text-sm font-medium"
+                      style={{ borderColor: `${month.color}22` }}
                     >
-                      <span className="text-white/30 mr-2">DELIVERABLE:</span>
-                      {month.deliverable}
+                      <span className="text-white/50 mr-2 text-xs uppercase tracking-widest">
+                        Deliverable:
+                      </span>
+                      <span style={{ color: month.color, textShadow: `0 0 8px ${month.glow}` }}>
+                        {month.deliverable}
+                      </span>
                     </div>
                   </div>
                 )}
