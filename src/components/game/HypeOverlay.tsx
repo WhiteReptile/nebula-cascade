@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { gameEvents } from '../../game/events';
+import { gameEvents } from '@/game/events';
 
 interface HypeMessage {
   id: number;
