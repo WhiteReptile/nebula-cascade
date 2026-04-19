@@ -59,6 +59,11 @@ export class GameScene extends Phaser.Scene {
   private readonly MAX_FALL_SPEED = 0.09;
   private fallAge = 0;
 
+  // Directional gravity (per piece) — -1 left, +1 right, 0 down
+  private gravityDir: -1 | 0 | 1 = 0;
+  private gravityStrength = 0; // 0..1 horizontal pull intensity
+  private lateralAccum = 0;    // sub-cell horizontal drift accumulator
+
   private score = 0;
   private level = 1;
   private combo = 0;
