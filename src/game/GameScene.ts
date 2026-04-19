@@ -309,6 +309,7 @@ export class GameScene extends Phaser.Scene {
       this.lastChainElement = currentElement;
 
       gameEvents.emit('chainCombo', this.chainStep);
+      this.emitHypeForChain(this.chainStep);
       this.emitHUD();
       this.time.delayedCall(350 + this.chainStep * 50, () => this.resolveChains());
       return;
@@ -334,6 +335,7 @@ export class GameScene extends Phaser.Scene {
       this.lastChainElement = currentElement;
 
       gameEvents.emit('chainCombo', this.chainStep);
+      this.emitHypeForChain(this.chainStep);
       this.emitHUD();
       this.time.delayedCall(300 + this.chainStep * 50, () => this.resolveChains());
       return;
@@ -357,6 +359,7 @@ export class GameScene extends Phaser.Scene {
       this.lastChainElement = null;
       gameEvents.emit('chainCombo', this.chainStep);
       gameEvents.emit('triColor', this.chainStep);
+      gameEvents.emit('hype', { text: 'OMNI FUSION!', tier: 4 });
       this.emitHUD();
       this.time.delayedCall(450 + this.chainStep * 50, () => this.resolveChains());
       return;
@@ -389,6 +392,13 @@ export class GameScene extends Phaser.Scene {
       }
       this.lastChainElement = null;
       gameEvents.emit('chainCombo', this.chainStep);
+      if (lineResult.cosmicWipe) {
+        gameEvents.emit('hype', { text: 'GOD OF NEBULA!', tier: 6 });
+      } else if (lineResult.rows.length >= 3) {
+        gameEvents.emit('hype', { text: 'MEGA CLEAR!', tier: 3 });
+      } else {
+        this.emitHypeForChain(this.chainStep);
+      }
       this.emitHUD();
       this.time.delayedCall(400 + this.chainStep * 50, () => this.resolveChains());
       return;
