@@ -188,6 +188,8 @@ export class GameScene extends Phaser.Scene {
     this.nextPieceDef = randomOrbPiece(this.getBoardDominantColor());
     this.activePiece = { def, rotation: 0, row: 0, col: Math.floor(COLS / 2) - 1 };
     this.snapScale = 1; this.fallSpeed = 0; this.fallAccum = 0; this.fallAge = 0;
+    this.lateralAccum = 0;
+    this.rollGravityBias();
     this.initFallingOrbs(def.shapes[0].length);
     if (!this.isValid(this.activePiece)) {
       this.gameOver = true;
@@ -200,6 +202,16 @@ export class GameScene extends Phaser.Scene {
       });
     }
     gameEvents.emit('nextPiece', this.nextPieceDef);
+  }
+
+  /** Roll a fresh gravity bias for the active piece. Higher level = stronger pull. */
+  private rollGravityBias() {
+    const r = Math.random();
+    if (r < 0.4) this.gravityDir = -1;        // 40% left
+    else if (r < 0.8) this.gravityDir = 1;    // 40% right
+    else this.gravityDir = 0;                 // 20% down (faster)
+    // Strength scales with level: starts at 0.35, grows ~+0.06 per level, capped at 0.95
+    this.gravityStrength = Math.min(0.35 + (this.level - 1) * 0.06, 0.95);
   }
 
   private getCells(p: ActivePiece) { return p.def.shapes[p.rotation % p.def.shapes.length]; }
