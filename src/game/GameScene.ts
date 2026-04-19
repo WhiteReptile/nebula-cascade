@@ -553,10 +553,12 @@ export class GameScene extends Phaser.Scene {
       const dtSec = dt * 0.001;
       const levelBoost = 1 + (this.level - 1) * 0.045;
       const timeBoost = this.getGravityMultiplier();
+      // Down-bias falls 20% faster
+      const dirBoost = this.gravityDir === 0 ? 1.2 : 1.0;
 
       this.fallSpeed = Math.min(
-        this.fallSpeed + this.BASE_GRAVITY * 1000 * levelBoost * timeBoost * dtSec,
-        this.MAX_FALL_SPEED * 60 * Math.min(timeBoost, 3), // cap terminal velocity scaling
+        this.fallSpeed + this.BASE_GRAVITY * 1000 * levelBoost * timeBoost * dirBoost * dtSec,
+        this.MAX_FALL_SPEED * 60 * Math.min(timeBoost, 3) * dirBoost,
       );
       this.fallSpeed *= Math.pow(0.992, dtSec * 60);
 
@@ -567,6 +569,31 @@ export class GameScene extends Phaser.Scene {
         const test = { ...this.activePiece, row: this.activePiece.row + 1 };
         if (this.isValid(test)) { this.activePiece = test; }
         else { this.fallAccum = 0; this.lockPiece(); break; }
+      }
+
+      // Lateral gravity drift (L/R bias) — accumulate sub-cell, auto-shift on overflow
+      if (this.gravityDir !== 0) {
+        // Lateral pull rate ~ 1.6 cells/sec at strength=1, scales with strength
+        const lateralRate = 1.6 * this.gravityStrength;
+        this.lateralAccum += this.gravityDir * lateralRate * dtSec;
+        while (Math.abs(this.lateralAccum) >= 1) {
+          const step = this.lateralAccum > 0 ? 1 : -1;
+          const test = { ...this.activePiece, col: this.activePiece.col + step };
+          if (this.isValid(test)) {
+            this.activePiece = test;
+            this.lateralAccum -= step;
+          } else {
+            this.lateralAccum = step * 0.999; // park at edge
+            break;
+          }
+        }
+      }
+
+      // Higher levels: small chance to re-roll bias mid-fall (more chaotic)
+      const rerollChance = Math.max(0, (this.level - 3)) * 0.0015 * dt; // per-frame
+      if (rerollChance > 0 && Math.random() < rerollChance) {
+        this.rollGravityBias();
+        this.lateralAccum = 0;
       }
     }
 
