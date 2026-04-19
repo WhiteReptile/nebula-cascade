@@ -1,31 +1,54 @@
 
 
-# Fix: White Screen in Standalone Tab
+# Enhanced Explosion VFX + Comic-Book Hype Text
 
-## Problem
-The app defaults to **light mode** (white background) because the CSS `:root` uses `--background: 0 0% 100%` (white). The Lovable preview iframe may inject a dark class, but a standalone browser tab does not — so you get a white screen with invisible dark-themed content.
+Two coordinated upgrades: amp every destruction VFX in `src/game/rendering/vfx.ts` and add an animated comic-book overlay in the React HUD that pops on big plays.
 
-## Solution
-Force dark mode on the `<html>` element so the app always uses the dark color scheme. This is a game with a cosmic dark theme — light mode makes no sense here.
+## 1. Amplified Explosion VFX (`src/game/rendering/vfx.ts`)
 
-### Changes (2 files)
+Add layered effects to every explosion function, scaled by `chainStep`:
 
-**1. `index.html`** — Add `class="dark"` to the `<html>` tag:
-```html
-<html lang="en" class="dark">
-```
+- **Shockwave ring**: new helper `addShockwaveRing()` — expanding white/colored ring particles (24 evenly-spaced fast outward particles with longer life and additive glow).
+- **Energy burst core**: brighter white center burst (2× current count, larger size).
+- **Debris**: heavier colored chunks with gravity + spin (reuse particle, larger size + longer life).
+- **Glow trails**: spawn lingering low-velocity particles that fade slowly (additive look via existing alpha-glow draw).
+- **Secondary ring** at +6 frames (delayed second pulse) for chains ≥ 2 — implemented by adding a `delay` field to `Particle` (skips physics until delay elapses).
+- **Tighter screen feedback**: bump `shakeAmount`, `flashAlpha` slightly; keep slow-mo same to avoid overload.
 
-**2. `src/index.css`** — Add a fallback `background-color` to `html, body` so even before React mounts, the page is dark:
-```css
-html, body, #root {
-  margin: 0;
-  padding: 0;
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
-  background-color: #050510;
-}
-```
+Apply to: `blockImplosionVFX`, `triColorFusionVFX`, `lineDestroyVFX`, `cosmicWipeVFX`, `proximityBurstVFX`, `elementalCascadeVFX`. Performance guard: cap total particles at 600 (drop oldest if exceeded) inside `GameScene.update`.
 
-No other files change. Game mechanics, menu, and all other components remain untouched.
+Add minor `Particle.delay?: number` to `src/game/types.ts` and respect it in the particle update loop in `GameScene.ts`.
+
+## 2. Comic-Book Hype Text Overlay
+
+New event `gameEvents.emit('hype', { text, tier })` fired from `GameScene.resolveChains()` at key thresholds:
+
+| Trigger | Text | Tier |
+|---|---|---|
+| chainStep = 2 | NICE! | 1 |
+| chainStep = 3 | GREAT! | 2 |
+| chainStep = 4 | EXCELLENT! | 3 |
+| chainStep = 5 | UNBELIEVABLE! | 4 |
+| chainStep = 6 | GOD OF PUZZLE! | 5 |
+| chainStep ≥ 7 OR cosmicWipe | GOD OF NEBULA! | 6 |
+| triColor match | OMNI FUSION! | 4 |
+| line clear ≥ 3 rows | MEGA CLEAR! | 3 |
+
+New component `src/components/game/HypeOverlay.tsx`:
+- Listens to `gameEvents.on('hype', ...)`, queues messages, displays one at a time.
+- Animation: pop-in (scale 0.3 → 1.2 → 1.0), tiny rotate jitter (-4°→+2°), 900ms hold, fade+drift up out (total ~1.4s).
+- Style: heavy uppercase italic display font (Bebas Neue / system fallback `Impact`), thick white fill, 4px black outline (`text-stroke`), tier-colored glow (yellow→orange→red→magenta→cyan→rainbow gradient for tier 6), dropshadow, slight skew for comic energy. Burst halo behind text using a radial gradient div.
+- Position: above the game board, `z-index: 12` (above chain combo counter), pointer-events none.
+- Synced with explosion: emitted on the same frame as the VFX call, so flash/shake and pop-in coincide.
+
+Mount `<HypeOverlay />` once in `src/components/game/GameHUD.tsx` next to the existing chain combo overlay.
+
+## Files Touched
+- `src/game/rendering/vfx.ts` — new `addShockwaveRing` helper + amplified per-VFX functions
+- `src/game/types.ts` — add optional `delay` to `Particle`
+- `src/game/GameScene.ts` — particle delay handling, particle cap, `hype` event emission in `resolveChains` + cosmicWipe + triColor + line branches
+- `src/components/game/HypeOverlay.tsx` — new file
+- `src/components/game/GameHUD.tsx` — mount `<HypeOverlay />`
+
+No gameplay/scoring/economy changes. Performance protected by particle cap and reuse of existing draw pipeline.
 
