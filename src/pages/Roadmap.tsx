@@ -224,6 +224,19 @@ const Roadmap = () => {
                       >
                         {month.month} {month.year}
                       </span>
+                      {month.month === 'MAY' && (
+                        <span
+                          className="text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest animate-pulse"
+                          style={{
+                            backgroundColor: 'rgba(16,185,129,0.18)',
+                            color: '#34d399',
+                            border: '1px solid rgba(52,211,153,0.5)',
+                            textShadow: '0 0 8px rgba(52,211,153,0.6)',
+                          }}
+                        >
+                          🚀 Ahead of schedule!
+                        </span>
+                      )}
                       {isComplete && (
                         <span
                           className="text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest"
@@ -237,7 +250,7 @@ const Roadmap = () => {
                         </span>
                       )}
                     </div>
-                    <p className="text-white/80 text-sm mt-1">{month.goal}</p>
+                    <p className="text-white/85 text-base mt-1.5 leading-relaxed">{month.goal}</p>
                   </div>
                   <div className="flex items-center gap-3 flex-shrink-0">
                     <span
