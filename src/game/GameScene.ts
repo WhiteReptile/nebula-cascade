@@ -701,11 +701,12 @@ export class GameScene extends Phaser.Scene {
 
       // Visual interpolation: use fallAccum for smooth sub-cell offset
       const visualYOffset = this.fallAccum * CELL;
+      const visualXOffset = this.lateralAccum * CELL;
       const looseness = Math.min(this.fallAge / 3.0, 1);
       for (let i = 0; i < cells.length; i++) {
         const [r, c] = cells[i];
         const fo = this.fallingOrbs[i] || { dx: 0, dy: 0 };
-        const px = ox + (this.activePiece.col + c) * CELL + CELL / 2 + this.bounceOffset + fo.dx;
+        const px = ox + (this.activePiece.col + c) * CELL + CELL / 2 + this.bounceOffset + fo.dx + visualXOffset;
         const py = oy + (this.activePiece.row + r) * CELL + CELL / 2 + visualYOffset + fo.dy;
         drawOrb(this.pieceGraphics, px, py, orbRadius, clr, 1, this.globalTime * 3 + fo.dx);
       }
@@ -719,13 +720,16 @@ export class GameScene extends Phaser.Scene {
           const j1 = this.fallingOrbs[i] || { dx: 0, dy: 0 };
           const j2 = this.fallingOrbs[i + 1] || { dx: 0, dy: 0 };
           this.pieceGraphics.lineBetween(
-            ox + (this.activePiece.col + c1) * CELL + CELL / 2 + this.bounceOffset + j1.dx,
+            ox + (this.activePiece.col + c1) * CELL + CELL / 2 + this.bounceOffset + j1.dx + visualXOffset,
             oy + (this.activePiece.row + r1) * CELL + CELL / 2 + visualYOffset + j1.dy,
-            ox + (this.activePiece.col + c2) * CELL + CELL / 2 + this.bounceOffset + j2.dx,
+            ox + (this.activePiece.col + c2) * CELL + CELL / 2 + this.bounceOffset + j2.dx + visualXOffset,
             oy + (this.activePiece.row + r2) * CELL + CELL / 2 + visualYOffset + j2.dy,
           );
         }
       }
+
+      // Gravity direction arrow — small chevron above the piece
+      this.drawGravityArrow(ox, oy, cells, visualXOffset, visualYOffset, clr);
     }
 
     // VFX
