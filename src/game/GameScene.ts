@@ -743,4 +743,61 @@ export class GameScene extends Phaser.Scene {
       drawUrgencyOverlay(this.vfxGraphics, urgency, w, h, this.globalTime);
     }
   }
+
+  /**
+   * Draws a small chevron arrow above the active piece showing gravity bias.
+   * Down-bias = ↓, left-bias = ↙, right-bias = ↘. Arrow length/opacity scales
+   * with gravityStrength (so higher levels feel visually heavier).
+   */
+  private drawGravityArrow(
+    ox: number, oy: number,
+    cells: [number, number][],
+    visualXOffset: number, visualYOffset: number,
+    color: number,
+  ) {
+    if (!this.activePiece) return;
+
+    // Find horizontal center + topmost row of the piece for arrow anchor
+    let minR = Infinity, sumC = 0;
+    for (const [r, c] of cells) {
+      if (r < minR) minR = r;
+      sumC += c;
+    }
+    const avgC = sumC / cells.length;
+    const cx = ox + (this.activePiece.col + avgC) * CELL + CELL / 2 + visualXOffset;
+    const cy = oy + (this.activePiece.row + minR) * CELL + visualYOffset - CELL * 0.55;
+
+    // Arrow vector based on gravity direction
+    let vx = 0, vy = 1;
+    if (this.gravityDir === -1) { vx = -0.7; vy = 0.7; }
+    else if (this.gravityDir === 1) { vx = 0.7; vy = 0.7; }
+    // normalize
+    const len = Math.hypot(vx, vy) || 1;
+    vx /= len; vy /= len;
+
+    const arrowLen = CELL * (0.55 + this.gravityStrength * 0.45);
+    const pulse = 0.7 + Math.sin(this.globalTime * 6) * 0.15;
+    const baseAlpha = (0.45 + this.gravityStrength * 0.4) * pulse;
+
+    const tipX = cx + vx * arrowLen;
+    const tipY = cy + vy * arrowLen;
+
+    // Shaft
+    this.pieceGraphics.lineStyle(2, color, baseAlpha);
+    this.pieceGraphics.lineBetween(cx, cy, tipX, tipY);
+
+    // Arrowhead (two short lines)
+    const headLen = CELL * 0.28;
+    const headAngle = Math.PI / 5;
+    const baseAngle = Math.atan2(vy, vx);
+    const a1 = baseAngle + Math.PI - headAngle;
+    const a2 = baseAngle + Math.PI + headAngle;
+    this.pieceGraphics.lineStyle(2.5, color, baseAlpha);
+    this.pieceGraphics.lineBetween(tipX, tipY, tipX + Math.cos(a1) * headLen, tipY + Math.sin(a1) * headLen);
+    this.pieceGraphics.lineBetween(tipX, tipY, tipX + Math.cos(a2) * headLen, tipY + Math.sin(a2) * headLen);
+
+    // Soft glow dot at tip
+    this.pieceGraphics.fillStyle(color, baseAlpha * 0.6);
+    this.pieceGraphics.fillCircle(tipX, tipY, 3);
+  }
 }
