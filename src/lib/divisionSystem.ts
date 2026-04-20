@@ -42,11 +42,11 @@ export const DIVISION_PRIORITY: Record<Division, number> = {
 };
 
 export const DIVISION_RARITY: Record<Division, { rarity: string; supplyPercent: string }> = {
-  gem_i:   { rarity: 'Super Rare', supplyPercent: '~1%' },
-  gem_ii:  { rarity: 'Very Rare',  supplyPercent: '~4%' },
-  gem_iii: { rarity: 'Rare',       supplyPercent: '~10%' },
-  gem_iv:  { rarity: 'Uncommon',   supplyPercent: '~25%' },
-  gem_v:   { rarity: 'Common',     supplyPercent: '~60%' },
+  gem_i:   { rarity: 'Legendary', supplyPercent: '~1%' },
+  gem_ii:  { rarity: 'Very Rare', supplyPercent: '~4%' },
+  gem_iii: { rarity: 'Rare',      supplyPercent: '~10%' },
+  gem_iv:  { rarity: 'Uncommon',  supplyPercent: '~25%' },
+  gem_v:   { rarity: 'Common',    supplyPercent: '~60%' },
 };
 
 // Monthly period string (YYYY-MM)

@@ -1,27 +1,25 @@
-import { useState } from 'react';
-import { WALLET_LABELS, type WalletType } from '@/lib/walletSystem';
-import { toast } from 'sonner';
-
-const WALLET_ICONS: Record<WalletType, string> = {
-  thirdweb: '🔗',
-  guest: '👤',
-};
+/**
+ * WalletConnect — Thirdweb-powered connect panel.
+ * Supports in-app (email/Google) + external wallets (MetaMask, Coinbase, Rainbow).
+ * Locked to Base (chain 8453) with auto-switch via useWalletSync.
+ */
+import { ConnectButton } from 'thirdweb/react';
+import { inAppWallet, createWallet } from 'thirdweb/wallets';
+import { thirdwebClient } from '@/lib/thirdweb/client';
+import { nebulaChain } from '@/lib/thirdweb/chains';
 
 interface WalletConnectProps {
   currentAddress?: string | null;
 }
 
+const wallets = [
+  inAppWallet({ auth: { options: ['email', 'google'] } }),
+  createWallet('io.metamask'),
+  createWallet('com.coinbase.wallet'),
+  createWallet('me.rainbow'),
+];
+
 const WalletConnect = ({ currentAddress }: WalletConnectProps) => {
-  const [connecting, setConnecting] = useState<WalletType | null>(null);
-
-  const handleConnect = (type: WalletType) => {
-    setConnecting(type);
-    setTimeout(() => {
-      toast.info(`${WALLET_LABELS[type]} — Coming soon! Base wallet connection will be available at launch.`);
-      setConnecting(null);
-    }, 600);
-  };
-
   return (
     <div
       className="rounded-xl border border-cyan-500/15 bg-black/50 p-6 backdrop-blur-sm"
@@ -36,26 +34,45 @@ const WalletConnect = ({ currentAddress }: WalletConnectProps) => {
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-3">
-        {(Object.keys(WALLET_LABELS) as WalletType[]).map(type => (
-          <button
-            key={type}
-            onClick={() => handleConnect(type)}
-            disabled={connecting !== null}
-            className="flex flex-col items-center gap-2 rounded-lg border border-cyan-500/15 bg-white/3 px-4 py-4 hover:bg-cyan-500/5 hover:border-cyan-500/25 transition-all disabled:opacity-50"
-            style={{ boxShadow: '0 0 15px rgba(0, 200, 255, 0.02)' }}
-          >
-            <span className="text-2xl">{WALLET_ICONS[type]}</span>
-            <span className="text-xs font-mono text-white/70">{WALLET_LABELS[type]}</span>
-            {connecting === type && (
-              <span className="text-[10px] text-cyan-400/60 animate-pulse">Connecting...</span>
-            )}
-          </button>
-        ))}
+      <div className="flex justify-center">
+        <ConnectButton
+          client={thirdwebClient}
+          chain={nebulaChain}
+          chains={[nebulaChain]}
+          wallets={wallets}
+          theme="dark"
+          connectButton={{
+            label: 'Connect Wallet',
+            style: {
+              minWidth: '100%',
+              background: 'rgba(0,0,0,0.4)',
+              border: '1px solid rgba(255, 51, 68, 0.4)',
+              color: '#ff8899',
+              fontFamily: 'monospace',
+              letterSpacing: '0.2em',
+              textTransform: 'uppercase',
+              fontWeight: 700,
+              boxShadow: '0 0 20px rgba(255, 51, 68, 0.25)',
+            },
+          }}
+          connectModal={{
+            size: 'compact',
+            title: 'Enter Nebula',
+            titleIcon: '',
+            showThirdwebBranding: false,
+          }}
+          appMetadata={{
+            name: 'Nebula Cascade',
+            description: 'Cosmic skill-based card competition on Base.',
+            url: typeof window !== 'undefined' ? window.location.origin : 'https://nebula.app',
+          }}
+        />
       </div>
 
-      <p className="text-[10px] text-white/20 mt-4 text-center font-mono">
-        Base wallet integration via Thirdweb is not yet live. Your progress is saved to your account. Your progress is saved to your account.
+      <p className="text-[10px] text-white/30 mt-4 text-center font-mono leading-relaxed">
+        Locked to Base · Chain 8453 · Auto-switch on connect.
+        <br />
+        One wallet = one Nebula account.
       </p>
     </div>
   );

@@ -98,6 +98,29 @@ export async function getActiveCard(playerId: string): Promise<CardMetadata | nu
   return card ? mapRow(card) : null;
 }
 
+/**
+ * Designate a player's "Main Card" — the sticky card that qualifies them
+ * for 100% of its division's reward pool. Separate from `active_card_id`
+ * which can change per match. Verifies ownership before writing.
+ */
+export async function setMainCard(playerId: string, cardId: string): Promise<boolean> {
+  const { data: card } = await supabase
+    .from('cards')
+    .select('id')
+    .eq('id', cardId)
+    .eq('owner_player_id', playerId)
+    .single();
+
+  if (!card) return false;
+
+  const { error } = await supabase
+    .from('players')
+    .update({ main_card_id: cardId } as never)
+    .eq('id', playerId);
+
+  return !error;
+}
+
 export async function setActiveCard(playerId: string, cardId: string): Promise<boolean> {
   // Verify ownership
   const { data: card } = await supabase
