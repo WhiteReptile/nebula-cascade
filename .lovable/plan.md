@@ -1,87 +1,101 @@
 
 
-## Update Rewards & Rules — Economy Corrections + Scroll Fix + Marketplace Roadmap
+## Phase 3a — Live NFT Mint Grid (read-only, metadata-driven, paginated)
 
-### 1. Content updates in `src/pages/Rewards.tsx`
-
-**Divisions tab — fix the "only difference is scarcity" claim**
-
-Replace the current paragraph that says scarcity is the only difference. The two real differences are **rarity** (supply) and **reward pool eligibility** (Main Card = 100%, Secondary Cards = 20%). Updated copy:
-
-> "Two things separate divisions: **rarity** (how many cards exist) and **reward pool access** (how the season prize money flows to you). Gameplay itself is identical across all five tiers — same rules, same energy, same scoring. A Division V player can outscore a Division I player. What changes is which leaderboard you compete in and how you earn from the prize pool."
->
-> "Your **Main Card** earns you **100%** of its division's reward pool (if you rank). Any other cards you hold from different divisions earn **20%** of those pools. Hold a deep roster, earn from multiple brackets — but each extra card costs energy to activate."
-
-**Cards tab — full rewrite to match locked economy**
-
-Current copy is wrong on several key rules. Replace with:
-- **2 energy per match-start roll**: each match has a **40% chance** to consume 2 energy from your active card (not "2 per day automatic")
-- **24-hour rolling reset per card** (not UTC midnight global) — each card's energy refills 24h after last consumption
-- **Max 10 cards per wallet**, **max 2 copies of any single token_id**
-- **Main Card vs Active Card**: Main = sticky designation for 100% reward pool eligibility; Active = per-match card driving VFX & division placement
-- **24h sale-lock**: listing or transferring a card locks it from in-game use for 24 hours (anti-flip)
-- **Energy depleted = card unusable** until its rolling reset
-- Replace KeyFacts grid with: `40% ROLL` / `2 ENERGY` / `10 MAX CARDS` / `2 COPY CAP`
-
-**No-NFT tab — minor correction**
-- Energy mechanics: free players use `player_energy` fallback; same 40% trigger logic, same fluid wallet-based bracket
-- Keep existing copy mostly intact, just align the "50% chance" line with the **40%** locked rule
-
-**Rewards tab — add Main/Secondary split clarity**
-- Keep 30% pool funding from fees
-- Add explicit callout: "**Main Card** = 100% of one division's pool. **Secondary Cards** = 20% of each additional division's pool. Both require leaderboard placement."
-- Add "Pricing displayed in **ETH + USD equivalent** (live CoinGecko feed)"
-
-**Season tab** — keep mostly intact, no major rule changes
-
-### 2. Scroll fix (the actual bug)
-
-Root cause: the page uses `min-h-screen` + `overflow-y-auto` on the outermost div with multiple `sticky` headers. At 120% browser zoom the sticky elements + flex layout collapse the scroll context.
-
-Fix:
-- Change outermost wrapper from `min-h-screen w-full overflow-y-auto flex flex-col` to `min-h-screen w-full` (let the document body handle scroll naturally)
-- Remove `flex-1` on content area, replace with normal block layout
-- Keep sticky header + sticky tab bar but verify their `top` offsets stack correctly (header `top-0`, tabs `top-[60px]`)
-- Add `pb-32` to bottom of content for safe scroll-past room at any zoom
-
-This makes scroll work at 100%, 120%, 150% zoom and on all viewport sizes.
-
-### 3. Memory update
-- `mem://project/documentation` — refresh to reflect the corrected Rewards content (rarity + rewards pool as the two differentiators, 40% energy roll, 24h rolling reset, Main/Secondary split, ETH+USD display)
-
-### Files touched
-- `src/pages/Rewards.tsx` — content rewrites for Divisions/Cards/No-NFT/Rewards tabs + scroll layout fix
-- `mem://project/documentation` — sync to new copy
-
-### Files untouched
-Everything else — game, marketplace, wallet, DB, edge functions.
+Locked decisions: division read from NFT metadata `attributes`, 12 per page, reuse existing `cards` table.
 
 ---
 
-## What's next for Marketplace × Thirdweb
+### What ships
 
-Phase 2 (wallet connect + DB schema) is live. Recommended next step:
+**1. Marketplace tab refactor** (`src/pages/Marketplace.tsx`)
+- Add tab bar at top: **Mint** (primary, live from contract) / **Trade** (existing peer-to-peer listings UI, untouched)
+- Default tab: Mint
+- Cyber-retro red neon styling, matches Rewards tabs
 
-### Phase 3 — Live NFT Grid (read-only)
-Pull your collection from Base (`0xa89C…aa07e`) and render it inside the Marketplace.
+**2. Live NFT data layer** (`src/lib/thirdweb/nftQueries.ts` — new)
+- `useCollectionNFTs(page, pageSize=12)` — wraps `getNFTs(contract, { start, count })` from `thirdweb/extensions/erc1155`
+- `useTokenClaimCondition(tokenId)` — wraps `getActiveClaimCondition` (price, currency, max claimable, start time)
+- `useTokenSupply(tokenId)` — wraps ERC-1155 `totalSupply`
+- All hooks built on Thirdweb's `useReadContract` (built-in React Query caching, deduping, stale-time)
+- Stale time: 60s for metadata, 30s for claim conditions
 
-**What it does**
-- Fetch all token IDs from your ERC-1155 contract via Thirdweb's `getNFTs()` / `getActiveClaimCondition()`
-- For each token: image, name, description, total minted, max supply, current claim phase (price + start time)
-- Render as a grid card layout matching Nebula's red neon aesthetic
-- Show ETH price + live USD equivalent (using the `priceFeed.ts` already built)
-- "Claim" button is visible but disabled (Phase 4 wires it live)
+**3. Division extractor** (`src/lib/thirdweb/divisionFromMetadata.ts` — new)
+- `extractDivisionFromNFT(nft): Division | null`
+- Reads `nft.metadata.attributes` array, finds `trait_type === 'Division'`, normalizes value (`"I"`, `"Division I"`, `"gem_i"` → `'gem_i'`)
+- Returns null + console warn if missing/unrecognized → card renders without badge instead of crashing
 
-**Why this before claim/mint**
-- Lets you visually QA the contract integration before money moves
-- Confirms metadata, images, supply numbers match what's deployed on Base
-- Gets the UI shell ready so Phase 4 is just wiring the transaction
+**4. NFT grid components**
+- `src/components/marketplace/NFTGrid.tsx` — grid container
+  - Loading state: 12 skeleton cards (matches card dimensions)
+  - Empty state: "No cards deployed yet" with neon styling
+  - Error state: retry button + error message
+  - Pagination controls: Previous / Next + "Page X of Y" (uses existing `Pagination` UI component)
+- `src/components/marketplace/NFTCard.tsx` — single card
+  - NFT image with red neon border + glow on hover
+  - Name (heading)
+  - `<DivisionBadge />` if division extracted from metadata
+  - Supply: "X / Y minted" (Y from `max_supply` claim condition)
+  - Price: **ETH primary** + **USD muted secondary** (uses `useEthUsdPrice()` from `priceFeed.ts`)
+  - Claim window status pill: `LIVE` (green glow) / `STARTS IN Xh` (yellow) / `ENDED` (gray)
+  - "Claim" button — visible, **disabled**, tooltip: "Live in Phase 4"
+  - Subtle scale + glow intensification on hover
 
-**After Phase 3**
-- **Phase 3.5**: Main Card selector UI + 24h cooldown countdown widgets
-- **Phase 4**: Live `claimTo` mint flow + DB sync to `cards` table on success
-- **Phase 5**: Match-start 40% energy roll integration (`generate-session` edge fn)
+**5. Wallet Mismatch modal upgrade** (`src/components/wallet/WalletMismatchModal.tsx` — new)
+- Replace toast in `useWalletSync` with proper Radix Dialog
+- Title: "Wallet Already Linked"
+- Body: "This wallet is bound to another Nebula account. Sign out and switch accounts to use it."
+- Single CTA: "Sign Out" → triggers Supabase signOut + Thirdweb disconnect
+- Triggered from `useWalletSync` when collision detected
+- Cyber-retro red neon styling
+
+---
+
+### Files touched
+
+**New**
+- `src/lib/thirdweb/nftQueries.ts`
+- `src/lib/thirdweb/divisionFromMetadata.ts`
+- `src/components/marketplace/NFTGrid.tsx`
+- `src/components/marketplace/NFTCard.tsx`
+- `src/components/wallet/WalletMismatchModal.tsx`
+
+**Modified**
+- `src/pages/Marketplace.tsx` — add Mint/Trade tab structure, mount `<NFTGrid />` in Mint tab
+- `src/hooks/useWalletSync.ts` — replace mismatch toast with modal trigger (lifted state via small Zustand-free React context or boolean state in Marketplace)
+
+**Memory**
+- `mem://features/marketplace` — add Mint tab spec, metadata-driven division mapping, pagination rules
+
+### Files untouched
+DB (no migration), wallet connect button, auth, game, edge functions, all other pages, existing listings/Trade UI logic.
+
+---
+
+### Performance guarantees
+- Max **13 RPC calls per page load**: 1 `getNFTs` batch + 12 individual `getActiveClaimCondition` (Thirdweb dedupes/caches automatically)
+- CoinGecko: 1 call per 60s shared across all cards (already cached)
+- Pagination prevents the 200+ call scenario
+- Skeleton loaders so UI never feels frozen
+
+### What you'll see after Phase 3a
+- Marketplace opens to **Mint** tab with up to 12 live NFT cards from Base contract
+- Each card: image, name, division badge (from metadata), supply count, ETH+USD price, claim status
+- Pagination at bottom if >12 tokens deployed
+- **Trade** tab still shows existing peer-to-peer listings, unchanged
+- Connecting an already-linked wallet → proper modal (not toast) with Sign Out CTA
+- Claim button visible everywhere, inert (Phase 4 wires it)
+
+### Metadata requirement (one-time setup on your end)
+Each NFT's metadata JSON needs an `attributes` entry like:
+```json
+{ "trait_type": "Division", "value": "I" }
+```
+Accepted values: `I`/`II`/`III`/`IV`/`V`, `Division I`...`Division V`, or `gem_i`...`gem_v`. If missing, card renders without a badge + console warn — no crash.
+
+### Queued after Phase 3a
+- **Phase 3b**: Main Card selector UI + 24h cooldown countdown widgets
+- **Phase 4**: Live `claimTo` mint flow + DB sync to `cards`
+- **Phase 5**: 40% energy roll integration in `generate-session`
 - **Phase 6**: 100%/20% reward split math in payout calculator
-
-Approve this plan and I'll execute the Rewards updates + scroll fix in one pass, then we line up Phase 3 separately.
 
