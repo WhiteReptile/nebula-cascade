@@ -35,11 +35,11 @@ import { drawBackground, drawGrid, drawAsteroidBorder } from './rendering/backgr
 import { drawOrb } from './rendering/orbRenderer';
 import {
   createForceDropParticles, blockImplosionVFX, triColorFusionVFX,
-  lineDestroyVFX, cosmicWipeVFX, reorganizeVFX, drawParticles, drawFlashOverlay,
+  cosmicWipeVFX, reorganizeVFX, drawParticles, drawFlashOverlay,
   proximityBurstVFX, elementalCascadeVFX, gravityCrushVFX, drawUrgencyOverlay,
 } from './rendering/vfx';
 import {
-  findBlockMatch, findTriColorMatch, findLineMatch, getChainMultiplier,
+  findBlockMatch, findTriColorMatch, getChainMultiplier,
   findProximityBurst, findElementalCascade, applyGravityCrush, findNearMissOrbs,
 } from './logic/chainResolver';
 import { reorganizeOrbs, gravityCollapse } from './logic/orbReorganizer';
@@ -333,16 +333,37 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    // 2. Proximity Burst (5+ adjacent same-color cluster)
+    // 2. Proximity Burst (8+ adjacent same-color cluster)
+    //    NEBULA: a single burst that destroys 20+ orbs triggers COSMIC WIPE
+    //    (replaces the old "5+ line combo" wipe trigger after line-clears were removed)
     const proximityResult = findProximityBurst(this.grid);
     if (proximityResult) {
       this.chainStep++;
       const currentElement = this.getElementForColor(proximityResult.color);
       const mult = getChainMultiplier(this.chainStep);
+      const isCosmicWipe = proximityResult.cells.length >= 20;
+
+      if (isCosmicWipe) {
+        const wipeScore = Math.min(Math.floor(800 * mult * this.level), 1000);
+        this.score += wipeScore; this.matchComboPoints += wipeScore;
+        this.matchMaxCombo = Math.max(this.matchMaxCombo, this.chainStep);
+        const fx = cosmicWipeVFX(this.particles, this.chainStep, this.offsetX, this.offsetY);
+        this.applyVFX(fx);
+        this.grid = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
+        this.combo = 0;
+        gameEvents.emit('chainCombo', this.chainStep);
+        gameEvents.emit('hype', { text: 'GOD OF NEBULA!', tier: 6 });
+        this.lastChainElement = null;
+        this.emitHUD();
+        this.time.delayedCall(450 + this.chainStep * 50, () => this.resolveChains());
+        return;
+      }
+
       const baseScore = Math.min(proximityResult.cells.length * 25, 500);
       const chainScore = Math.min(Math.floor(baseScore * mult * this.level), 500);
       this.score += chainScore; this.matchComboPoints += chainScore;
       this.matchMaxCombo = Math.max(this.matchMaxCombo, this.chainStep);
+      this.matchLinesCleared += 1; // count bursts in the same metric for HUD/logging continuity
       const fx = proximityBurstVFX(this.particles, proximityResult.cells, proximityResult.color, this.chainStep, this.offsetX, this.offsetY);
       this.applyVFX(fx);
       // Destroy the cluster
@@ -383,44 +404,9 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    // 4. Line match
-    const lineResult = findLineMatch(this.grid, this.combo);
-    if (lineResult) {
-      this.chainStep++;
-      const mult = getChainMultiplier(this.chainStep);
-      if (lineResult.cosmicWipe) {
-        this.score += Math.min(Math.floor(800 * mult * this.level), 1000);
-        this.matchComboPoints += Math.min(Math.floor(800 * mult * this.level), 1000);
-        this.matchMaxCombo = Math.max(this.matchMaxCombo, this.chainStep);
-        const fx = cosmicWipeVFX(this.particles, this.chainStep, this.offsetX, this.offsetY);
-        this.applyVFX(fx);
-        this.grid = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
-        this.combo = 0;
-      } else {
-        const baseScore = lineResult.rows.length * 80;
-        const chainScore = Math.min(Math.floor(baseScore * mult * this.level), 500);
-        this.score += chainScore; this.matchComboPoints += chainScore;
-        this.matchMaxCombo = Math.max(this.matchMaxCombo, this.chainStep);
-        this.matchLinesCleared += lineResult.rows.length;
-        const fx = lineDestroyVFX(this.particles, lineResult.rows, this.chainStep, this.offsetX, this.offsetY, this.grid);
-        this.applyVFX(fx);
-        const sorted = [...new Set(lineResult.rows)].sort((a, b) => a - b);
-        for (const row of sorted) { this.grid.splice(row, 1); this.grid.unshift(Array(COLS).fill(null)); }
-        this.combo += lineResult.rows.length;
-      }
-      this.lastChainElement = null;
-      gameEvents.emit('chainCombo', this.chainStep);
-      if (lineResult.cosmicWipe) {
-        gameEvents.emit('hype', { text: 'GOD OF NEBULA!', tier: 6 });
-      } else if (lineResult.rows.length >= 3) {
-        gameEvents.emit('hype', { text: 'MEGA CLEAR!', tier: 3 });
-      } else {
-        this.emitHypeForChain(this.chainStep);
-      }
-      this.emitHUD();
-      this.time.delayedCall(400 + this.chainStep * 50, () => this.resolveChains());
-      return;
-    }
+    // ── DE-TETRIS-IFIED: full-row line clears removed. ──
+    // Region/color/burst/cluster clearing is now the ONLY destruction path.
+    // Cosmic Wipe is triggered above by a 20+ orb Proximity Burst.
 
     // No matches found — end chain
     this.chainResolving = false;
