@@ -55,11 +55,17 @@ const Marketplace = () => {
 
   /* ── Navigation ── */
   const [section, setSection] = useState<Section>('marketplace');
+  const [marketTab, setMarketTab] = useState<'mint' | 'trade'>('mint');
+
+  /* ── Wallet mismatch modal ── */
+  const [mismatchOpen, setMismatchOpen] = useState(false);
+  const [mismatchAddr, setMismatchAddr] = useState<string | null>(null);
 
   /* ── Wallet sync (Thirdweb ↔ Supabase) ── */
   useWalletSync({
     userId: user?.id ?? null,
     onLinked: (addr) => setWalletAddress(addr),
+    onMismatch: (addr) => { setMismatchAddr(addr); setMismatchOpen(true); },
   });
 
   /* ── Auth listener ── */
