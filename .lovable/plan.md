@@ -1,140 +1,87 @@
 
 
-## Phase 2 Plan — Locked & Ready (with Economy Schema Foundations)
+## Update Rewards & Rules — Economy Corrections + Scroll Fix + Marketplace Roadmap
 
-All economy answers locked. Bundling Phase 2 (real wallet connect) with the **schema foundations** needed for the rules you just gave me, so the DB is shaped correctly before NFT data starts flowing in.
+### 1. Content updates in `src/pages/Rewards.tsx`
 
----
+**Divisions tab — fix the "only difference is scarcity" claim**
 
-### Phase 2A — Real Wallet Connect (Thirdweb)
+Replace the current paragraph that says scarcity is the only difference. The two real differences are **rarity** (supply) and **reward pool eligibility** (Main Card = 100%, Secondary Cards = 20%). Updated copy:
 
-**Provider**
-- Wrap `<App />` with `<ThirdwebProvider>` in `src/main.tsx`
+> "Two things separate divisions: **rarity** (how many cards exist) and **reward pool access** (how the season prize money flows to you). Gameplay itself is identical across all five tiers — same rules, same energy, same scoring. A Division V player can outscore a Division I player. What changes is which leaderboard you compete in and how you earn from the prize pool."
+>
+> "Your **Main Card** earns you **100%** of its division's reward pool (if you rank). Any other cards you hold from different divisions earn **20%** of those pools. Hold a deep roster, earn from multiple brackets — but each extra card costs energy to activate."
 
-**WalletConnect rewrite** (`src/components/wallet/WalletConnect.tsx`)
-- Replace stub with Thirdweb `<ConnectButton />`
-- Wallets: `inAppWallet({ auth: ['email', 'google'] })` + `createWallet('io.metamask')`, `createWallet('com.coinbase.wallet')`, `createWallet('me.rainbow')`
-- `chain={nebulaChain}` (Base 8453) with auto-switch
-- Themed to red neon glass-panel aesthetic
+**Cards tab — full rewrite to match locked economy**
 
-**New hook** `src/hooks/useWalletSync.ts`
-- Watches `useActiveAccount()`
-- On connect:
-  1. Pre-check: `players.wallet_address = address AND user_id != current` → if hit, force disconnect + toast: *"This wallet is already linked to another Nebula account."*
-  2. If clean → `linkWallet(userId, address, 'thirdweb')` + toast *"Wallet linked ✓"*
-- On disconnect → `unlinkWallet(userId)` + toast
-- On wrong chain → auto `switchChain(base)`
+Current copy is wrong on several key rules. Replace with:
+- **2 energy per match-start roll**: each match has a **40% chance** to consume 2 energy from your active card (not "2 per day automatic")
+- **24-hour rolling reset per card** (not UTC midnight global) — each card's energy refills 24h after last consumption
+- **Max 10 cards per wallet**, **max 2 copies of any single token_id**
+- **Main Card vs Active Card**: Main = sticky designation for 100% reward pool eligibility; Active = per-match card driving VFX & division placement
+- **24h sale-lock**: listing or transferring a card locks it from in-game use for 24 hours (anti-flip)
+- **Energy depleted = card unusable** until its rolling reset
+- Replace KeyFacts grid with: `40% ROLL` / `2 ENERGY` / `10 MAX CARDS` / `2 COPY CAP`
 
-**Marketplace cleanup**
-- Remove Phase 1 verification `useEffect` + toast from `src/pages/Marketplace.tsx`
-- Mount `useWalletSync()` at the page level
+**No-NFT tab — minor correction**
+- Energy mechanics: free players use `player_energy` fallback; same 40% trigger logic, same fluid wallet-based bracket
+- Keep existing copy mostly intact, just align the "50% chance" line with the **40%** locked rule
 
----
+**Rewards tab — add Main/Secondary split clarity**
+- Keep 30% pool funding from fees
+- Add explicit callout: "**Main Card** = 100% of one division's pool. **Secondary Cards** = 20% of each additional division's pool. Both require leaderboard placement."
+- Add "Pricing displayed in **ETH + USD equivalent** (live CoinGecko feed)"
 
-### Phase 2B — Economy Schema Foundations (DB migration)
+**Season tab** — keep mostly intact, no major rule changes
 
-These are needed before Phase 3 NFT data lands. None of them break existing functionality.
+### 2. Scroll fix (the actual bug)
 
-**1. Wallet uniqueness (anti-abuse)**
-```sql
-CREATE UNIQUE INDEX players_wallet_address_unique
-  ON players (LOWER(wallet_address))
-  WHERE wallet_address IS NOT NULL;
-```
+Root cause: the page uses `min-h-screen` + `overflow-y-auto` on the outermost div with multiple `sticky` headers. At 120% browser zoom the sticky elements + flex layout collapse the scroll context.
 
-**2. Main card vs. active card split**
-```sql
-ALTER TABLE players ADD COLUMN main_card_id UUID;
--- active_card_id stays as-is (per-match dynamic)
--- main_card_id = sticky designation, drives 100% reward pool eligibility
-```
+Fix:
+- Change outermost wrapper from `min-h-screen w-full overflow-y-auto flex flex-col` to `min-h-screen w-full` (let the document body handle scroll naturally)
+- Remove `flex-1` on content area, replace with normal block layout
+- Keep sticky header + sticky tab bar but verify their `top` offsets stack correctly (header `top-0`, tabs `top-[60px]`)
+- Add `pb-32` to bottom of content for safe scroll-past room at any zoom
 
-**3. 24-hour rolling locks (anti-flip + energy)**
-```sql
-ALTER TABLE cards ADD COLUMN sale_lock_until TIMESTAMPTZ;
-ALTER TABLE card_energy ADD COLUMN next_reset_at TIMESTAMPTZ;
--- Migrate existing card_energy.last_reset_at semantics to rolling 24h via app logic
-```
+This makes scroll work at 100%, 120%, 150% zoom and on all viewport sizes.
 
-**4. Two-copy holding limit per token_id**
-- Replace existing `enforce_max_cards_per_player` trigger with one that checks BOTH:
-  - Total cards owned ≤ 10
-  - Cards owned with same `token_id` ≤ 2
-
-**5. Division correction**
-- `src/lib/divisionSystem.ts`: `gem_i.rarity` → `'Legendary'` (was `'Super Rare'`)
-
-**6. ERC-1155 readiness**
-- `cards.token_id` already INTEGER ✓ — works for ERC-1155 token IDs
-- Add `cards.contract_standard TEXT DEFAULT 'erc1155'` for future-proofing
-- Add `cards.max_supply INTEGER` (e.g. King Cold = 80) — informational, contract is source of truth
-
----
-
-### Phase 2C — ETH/USD Price Display (CoinGecko)
-
-**New module** `src/lib/priceFeed.ts`
-- Fetches `https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd`
-- Cached 60s in `localStorage` to respect free-tier rate limits (10–30 req/min)
-- Exports `useEthUsdPrice()` hook returning `{ ethUsd, loading, error }`
-- No API key needed (CoinGecko free tier)
-
-**Memory update**
-- `mem://index.md` core line: remove *"NEVER display dollar estimates"* → *"Always display ETH + USD equivalent (CoinGecko feed)"*
-- Update `mem://features/card-economy` with all new rules above
-
-*(Actual price rendering in card UIs comes in Phase 3 — this just lays the rails.)*
-
----
+### 3. Memory update
+- `mem://project/documentation` — refresh to reflect the corrected Rewards content (rarity + rewards pool as the two differentiators, 40% energy roll, 24h rolling reset, Main/Secondary split, ETH+USD display)
 
 ### Files touched
-
-**New**
-- `src/hooks/useWalletSync.ts`
-- `src/lib/priceFeed.ts`
-
-**Modified**
-- `src/main.tsx` — add `ThirdwebProvider`
-- `src/components/wallet/WalletConnect.tsx` — full rewrite, real ConnectButton
-- `src/pages/Marketplace.tsx` — remove temp verification, mount `useWalletSync()`
-- `src/lib/divisionSystem.ts` — Legendary rename
-- `src/lib/cardSystem.ts` — add `mainCardId` to types, helper `setMainCard()`
-
-**DB migration** (one file)
-- Unique index on `players.wallet_address`
-- `players.main_card_id` column
-- `cards.sale_lock_until` + `cards.contract_standard` + `cards.max_supply` columns
-- `card_energy.next_reset_at` column
-- Updated `enforce_max_cards_per_player` trigger (10 total + 2-per-token cap)
-
-**Memory**
-- `mem://features/card-economy` (full rewrite with new rules)
-- `mem://index.md` (core line update)
+- `src/pages/Rewards.tsx` — content rewrites for Divisions/Cards/No-NFT/Rewards tabs + scroll layout fix
+- `mem://project/documentation` — sync to new copy
 
 ### Files untouched
-Game logic, auth, Phaser scenes, edge functions, all other pages, leaderboard, marketplace listings UI.
+Everything else — game, marketplace, wallet, DB, edge functions.
 
 ---
 
-### What NOT in this phase (queued)
-- **Phase 3**: NFT grid live from Base (image, name, supply, claim phase, ETH+USD display)
-- **Phase 3.5**: Main-card UI selector + 24h cooldown countdown widgets
-- **Phase 4**: Live `claimTo` mint flow + DB sync to `cards`
-- **Phase 5**: 40% energy roll integration with match start (`generate-session` edge fn)
+## What's next for Marketplace × Thirdweb
+
+Phase 2 (wallet connect + DB schema) is live. Recommended next step:
+
+### Phase 3 — Live NFT Grid (read-only)
+Pull your collection from Base (`0xa89C…aa07e`) and render it inside the Marketplace.
+
+**What it does**
+- Fetch all token IDs from your ERC-1155 contract via Thirdweb's `getNFTs()` / `getActiveClaimCondition()`
+- For each token: image, name, description, total minted, max supply, current claim phase (price + start time)
+- Render as a grid card layout matching Nebula's red neon aesthetic
+- Show ETH price + live USD equivalent (using the `priceFeed.ts` already built)
+- "Claim" button is visible but disabled (Phase 4 wires it live)
+
+**Why this before claim/mint**
+- Lets you visually QA the contract integration before money moves
+- Confirms metadata, images, supply numbers match what's deployed on Base
+- Gets the UI shell ready so Phase 4 is just wiring the transaction
+
+**After Phase 3**
+- **Phase 3.5**: Main Card selector UI + 24h cooldown countdown widgets
+- **Phase 4**: Live `claimTo` mint flow + DB sync to `cards` table on success
+- **Phase 5**: Match-start 40% energy roll integration (`generate-session` edge fn)
 - **Phase 6**: 100%/20% reward split math in payout calculator
 
-### What you'll see after Phase 2 lands
-- Marketplace "Connect Wallet" panel shows real Thirdweb modal
-- Connect → address persists, survives refresh, wrong chain auto-prompts switch to Base
-- Wallet already on another account → blocked with clear toast
-- Division I now correctly labeled "Legendary" everywhere
-- DB ready to receive NFT data, main-card designations, sale locks, and 24h rolling resets
-- ETH/USD price feed hook ready for Phase 3 to consume
-
-### Open mini-question before I execute
-**Wallet disconnect behavior** — when a user clicks disconnect:
-- (a) Unlink from account immediately (next login = no wallet)
-- (b) Just disconnect UI session, keep `wallet_address` saved (next login auto-shows linked wallet)
-
-Recommend **(b)** — the wallet is bound to the account; "disconnect" is just session-level. Re-linking a different wallet would require explicit unlink action. Confirm or pick (a), then I execute Phase 2 in one pass.
+Approve this plan and I'll execute the Rewards updates + scroll fix in one pass, then we line up Phase 3 separately.
 
