@@ -21,6 +21,7 @@ export type Database = {
           id: string
           last_reset_at: string
           max_energy: number
+          next_reset_at: string | null
         }
         Insert: {
           card_id: string
@@ -28,6 +29,7 @@ export type Database = {
           id?: string
           last_reset_at?: string
           max_energy?: number
+          next_reset_at?: string | null
         }
         Update: {
           card_id?: string
@@ -35,6 +37,7 @@ export type Database = {
           id?: string
           last_reset_at?: string
           max_energy?: number
+          next_reset_at?: string | null
         }
         Relationships: [
           {
@@ -49,47 +52,56 @@ export type Database = {
       cards: {
         Row: {
           color_hex: string
+          contract_standard: string
           created_at: string | null
           division: Database["public"]["Enums"]["gem_division"]
           flavor_text: string
           id: string
           image_url: string | null
           is_active: boolean
+          max_supply: number | null
           metadata: Json | null
           name: string
           owner_player_id: string | null
           owner_wallet: string | null
           price_cents: number
+          sale_lock_until: string | null
           token_id: number
         }
         Insert: {
           color_hex: string
+          contract_standard?: string
           created_at?: string | null
           division: Database["public"]["Enums"]["gem_division"]
           flavor_text?: string
           id?: string
           image_url?: string | null
           is_active?: boolean
+          max_supply?: number | null
           metadata?: Json | null
           name: string
           owner_player_id?: string | null
           owner_wallet?: string | null
           price_cents?: number
+          sale_lock_until?: string | null
           token_id: number
         }
         Update: {
           color_hex?: string
+          contract_standard?: string
           created_at?: string | null
           division?: Database["public"]["Enums"]["gem_division"]
           flavor_text?: string
           id?: string
           image_url?: string | null
           is_active?: boolean
+          max_supply?: number | null
           metadata?: Json | null
           name?: string
           owner_player_id?: string | null
           owner_wallet?: string | null
           price_cents?: number
+          sale_lock_until?: string | null
           token_id?: number
         }
         Relationships: [
@@ -364,6 +376,7 @@ export type Database = {
           division_points: number
           id: string
           is_banned: boolean
+          main_card_id: string | null
           total_matches: number
           updated_at: string
           user_id: string
@@ -377,6 +390,7 @@ export type Database = {
           division_points?: number
           id?: string
           is_banned?: boolean
+          main_card_id?: string | null
           total_matches?: number
           updated_at?: string
           user_id: string
@@ -390,6 +404,7 @@ export type Database = {
           division_points?: number
           id?: string
           is_banned?: boolean
+          main_card_id?: string | null
           total_matches?: number
           updated_at?: string
           user_id?: string

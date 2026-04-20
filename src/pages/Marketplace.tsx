@@ -8,8 +8,7 @@ import { DIVISION_LABELS, type Division } from '@/lib/divisionSystem';
 import { Input } from '@/components/ui/input';
 import WalletConnect from '@/components/wallet/WalletConnect';
 import { useToast } from '@/hooks/use-toast';
-import { nebulaCollection } from '@/lib/thirdweb/contracts';
-import { getContractMetadata } from 'thirdweb/extensions/common';
+import { useWalletSync } from '@/hooks/useWalletSync';
 
 /* ── Types ── */
 type EnrichedListing = MarketplaceListing & { cardName?: string; cardDivision?: Division; cardColor?: string };
@@ -55,18 +54,11 @@ const Marketplace = () => {
   /* ── Navigation ── */
   const [section, setSection] = useState<Section>('marketplace');
 
-  /* ── Thirdweb verification (Phase 1) ── */
-  useEffect(() => {
-    let cancelled = false;
-    getContractMetadata({ contract: nebulaCollection })
-      .then(meta => {
-        if (cancelled) return;
-        console.log('[Thirdweb] Nebula Collection metadata:', meta);
-        toast({ title: 'Connected to Nebula Collection on Base ✓', description: meta?.name ?? 'Live on chain 8453' });
-      })
-      .catch(err => console.warn('[Thirdweb] metadata fetch failed:', err));
-    return () => { cancelled = true; };
-  }, [toast]);
+  /* ── Wallet sync (Thirdweb ↔ Supabase) ── */
+  useWalletSync({
+    userId: user?.id ?? null,
+    onLinked: (addr) => setWalletAddress(addr),
+  });
 
   /* ── Auth listener ── */
   useEffect(() => {
