@@ -66,9 +66,15 @@ const DivisionsContent = () => (
       All cards share the same energy, rules, and scoring.
     </Para>
     <Para>
-      The only real difference is <Highlight>scarcity</Highlight>: fewer Division I cards exist, so they tend to be
-      more valuable on the secondary market. Supply percentages below are launch targets — the market itself sets the
-      final price.
+      Two things actually separate divisions: <Highlight>rarity</Highlight> (how many cards exist) and
+      <Highlight> reward pool access</Highlight> (how the season prize money flows to you). Gameplay is identical
+      across all five tiers — a Division V player can absolutely outscore a Division I player. What changes is
+      which leaderboard you compete in and how you earn from the pool.
+    </Para>
+    <Para>
+      Your <Highlight>Main Card</Highlight> earns you <Highlight>100%</Highlight> of its division's reward pool
+      (if you rank). Any other cards you hold from different divisions earn <Highlight>20%</Highlight> of those
+      pools. Hold a deep roster, earn from multiple brackets — but each extra card costs energy to activate.
     </Para>
 
     <div className="grid gap-3">
@@ -120,29 +126,37 @@ const CardsContent = () => (
   <div className="space-y-6">
     <SectionTitle>How Cards Work</SectionTitle>
     <Para>
-      Each card is an <Highlight>NFT on the Base blockchain</Highlight>, deployed via Thirdweb. Every card produces
-      <Highlight> 2 energy per day</Highlight>, and each energy point lets you play one ranked match. So one card =
-      2 ranked runs daily.
+      Each card is an <Highlight>ERC-1155 NFT on the Base blockchain</Highlight>, deployed via Thirdweb. Cards
+      carry an internal energy reserve. At the start of every match there is a <Highlight>40% chance</Highlight>
+      to consume <Highlight>2 energy</Highlight> from your active card. No roll = free play, full leaderboard
+      eligibility. Roll hits = energy spent.
     </Para>
     <Para>
-      A wallet can hold up to <Highlight>10 cards</Highlight>, giving a theoretical ceiling of <Highlight>20 ranked runs per day</Highlight>.
-      Energy resets every day at <Highlight>UTC midnight</Highlight> — unused energy doesn't carry over. Out of energy?
-      You can still play freely, but those matches won't count toward the leaderboard.
+      Energy refills on a <Highlight>rolling 24-hour timer per card</Highlight> — not a global midnight reset.
+      Each card refills exactly 24 hours after its last consumption. Run a card dry and it's
+      <Highlight color="#f87171"> unusable</Highlight> until its individual reset. Cycle between cards to keep playing.
     </Para>
     <Para>
-      <Highlight>Points belong to your wallet, not your card.</Highlight> Sell a card, buy another — your points stay with you.
-      New cards added to your wallet activate <Highlight>instantly</Highlight> with full energy. No waiting.
+      A wallet can hold up to <Highlight>10 cards</Highlight> total, and a maximum of <Highlight>2 copies</Highlight>
+      of any single token ID. This keeps rosters deep but stops single-token hoarding. Points belong to your
+      <Highlight> wallet</Highlight>, not your card — sell a card, points stay with you.
     </Para>
     <Para>
-      <Highlight>Primary card selection</Highlight> is automatic: the system picks your highest-division card with energy.
-      If it runs out, you must manually swap to keep earning ranked scores. Card art and names are purely cosmetic.
+      <Highlight>Main Card vs Active Card</Highlight>: your Main Card is a sticky designation you choose — it
+      qualifies you for <Highlight>100%</Highlight> of its division's reward pool. Your Active Card is per-match,
+      drives in-game VFX, and decides which division leaderboard each run lands on.
+    </Para>
+    <Para>
+      <Highlight color="#f87171">24-hour sale lock</Highlight>: listing or transferring a card triggers a
+      24-hour in-game lock on it (anti-flip protection). The card stays in your wallet but can't be played
+      until the lock expires.
     </Para>
 
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-      <KeyFact icon="⚡" value="2 / DAY" label="Energy per card" />
+      <KeyFact icon="🎲" value="40% ROLL" label="Energy chance / match" />
+      <KeyFact icon="⚡" value="2 ENERGY" label="Cost when roll hits" color="#fbbf24" />
       <KeyFact icon="🃏" value="10 MAX" label="Cards per wallet" color="#a78bfa" />
-      <KeyFact icon="🎯" value="20 MAX" label="Daily ranked runs" color="#fbbf24" />
-      <KeyFact icon="🔄" value="INSTANT" label="Energy on trade" color="#34d399" />
+      <KeyFact icon="♻️" value="2 COPY CAP" label="Per token ID" color="#34d399" />
     </div>
   </div>
 );
@@ -161,9 +175,10 @@ const NoNftContent = () => (
       Scores stay valid in the bracket where they were earned.
     </Para>
     <Para>
-      Free players get <Highlight color="#34d399">2 energy per day</Highlight> with a twist — each new game has a
-      <Highlight color="#34d399"> 50% chance</Highlight> to activate energy. Adds unpredictability and keeps the free
-      bracket fair. Same 40-day seasons, same reset cadence. Free players compete only against other free players.
+      Free players use the same energy mechanic as card holders: every match has a <Highlight color="#34d399">40%
+      chance</Highlight> to consume 2 energy from a shared <Highlight color="#34d399">player energy pool</Highlight>.
+      Same rolling reset, same fair competition — just no card-specific mechanics. Free players compete only
+      against other free players.
     </Para>
 
     <div
@@ -203,15 +218,22 @@ const RewardsContent = () => (
       relative to your division</Highlight>, not an absolute score.
     </Para>
     <Para>
-      Higher divisions don't automatically pay more — pool allocation per division varies with participation. Once
-      payouts are calculated, the team <Highlight color="#fbbf24">sends rewards directly to your wallet</Highlight>.
-      No claiming process. The 30% allocation may be adjusted as the platform matures, with advance notice.
+      <Highlight color="#fbbf24">Main Card</Highlight> = 100% of one division's pool.
+      <Highlight color="#fbbf24"> Secondary Cards</Highlight> = 20% of each additional division's pool you hold a
+      card in. Both require leaderboard placement — holding alone doesn't pay. Once payouts are calculated, the
+      team <Highlight color="#fbbf24">sends rewards directly to your wallet</Highlight>. No claiming process.
+    </Para>
+    <Para>
+      All marketplace and reward values display in <Highlight color="#fbbf24">ETH + live USD equivalent</Highlight>
+      (CoinGecko feed, refreshed every minute). The 30% allocation may be adjusted as the platform matures, with
+      advance notice.
     </Para>
 
-    <div className="grid grid-cols-3 gap-3">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
       <KeyFact icon="💰" value="30%" label="Fees → Pool" color="#fbbf24" />
       <KeyFact icon="🛒" value="3%" label="Marketplace fee" color="#fbbf24" />
-      <KeyFact icon="📬" value="DIRECT" label="Wallet payout" color="#fbbf24" />
+      <KeyFact icon="👑" value="100%" label="Main card pool" color="#fbbf24" />
+      <KeyFact icon="🃏" value="20%" label="Secondary pools" color="#fbbf24" />
     </div>
   </div>
 );
@@ -296,7 +318,7 @@ const Rewards = () => {
 
   return (
     <div
-      className="min-h-screen w-full overflow-y-auto text-white font-mono flex flex-col"
+      className="min-h-screen w-full text-white font-mono"
       style={{
         background:
           'radial-gradient(ellipse at 30% 20%, rgba(102,255,238,0.06) 0%, transparent 50%), radial-gradient(ellipse at 70% 60%, rgba(170,68,255,0.05) 0%, transparent 50%), #050510',
@@ -355,7 +377,7 @@ const Rewards = () => {
       </div>
 
       {/* Content panel */}
-      <div className="flex-1 px-4 py-8 pb-20">
+      <div className="px-4 py-8 pb-32">
         <div
           key={activeTab}
           className="max-w-3xl mx-auto rounded-2xl border border-white/10 bg-white/[0.025] p-6 md:p-8 backdrop-blur-sm animate-in fade-in slide-in-from-bottom-2 duration-500"
