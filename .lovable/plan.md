@@ -1,46 +1,48 @@
 
-Let me check the current Marketplace state to plan the polish properly.
-<lov-tool-use id="toolu_vrtx_01Upmbv3HsnLvD4oEtSqauyR" name="code--view" integration-id="code" data="{\"file_path\": \"src/pages/Marketplace.tsx\", \"lines\": \"1-120\"}">
-</lov-tool-use>
 
-<lov-tool-use id="toolu_vrtx_01GKQT2vKBtKvWvNb71CDS5x" name="code--view" integration-id="code" data="{\"file_path\": \"src/pages/Marketplace.tsx\", \"lines\": \"1-200\"}">
-</lov-tool-use>
-<lov-plan>
+## Confirmed: Yes — Part A + B integrate directly into your existing Nebula Marketplace
 
-## Plan: Marketplace Polish (pre-Thirdweb)
+Same plan as approved, just confirming scope so there's zero ambiguity.
 
-Apply the cinematic galaxy + glow standards already added to `index.css` across the entire Marketplace UI. No logic changes — pure visual pass.
+### Where this lives in your app
+- **Same page**: `src/pages/Marketplace.tsx` (your existing "Nebula Hub")
+- **Same UI shell**: galaxy background, red neon title, sidebar, glow panels — all untouched
+- **Same routes**: `/marketplace` stays as-is
+- **Same auth + Supabase flow**: untouched
 
-### 1. Background cinematography
-- Replace the inline radial-gradient `<div>` wrapper with the new animated `.market-galaxy` layer.
-- Add a subtle parallax starfield (slow drift) on top of the existing star dots.
-- Add a faint nebula glow vignette around the viewport edges for depth.
+### Part A — Sui → Base purge (project-wide)
+- Memory: rewrite `mem://tech/web3-readiness`, update `mem://index.md` core line, sweep marketplace/card-economy/no-nft memory files
+- Code: search-and-replace any `Sui` / `SUI` strings referring to chain → `Base` / `BASE`
+- UI copy: any visible "Sui" text in Marketplace, Roadmap, Rewards, WalletConnect → "Base"
 
-### 2. Text glow pass — every single label
-Apply only the 3-color palette: **yellow / blue / white**.
-- **Page title + section headers** → `glow-yellow`, larger sizes (text-3xl → text-4xl, text-xl → text-2xl).
-- **Card names, prices, division labels** → `glow-yellow` for prices, `glow-blue` for names, `glow-white` for meta.
-- **Sidebar nav items** → `glow-blue` default, `glow-yellow` when active, bumped to text-base.
-- **Buttons (Buy / List / Cancel / Set Active)** → `glow-yellow` text on dark transparent bg with `glow-border-yellow`.
-- **Filter chips (ALL / V / IV / III…)** → `glow-white` default, `glow-yellow` active.
-- **Form labels / inputs / fee preview** → `glow-blue` labels, `glow-white` values, `glow-yellow` totals.
-- **Auth form** → all labels glow-blue, submit button glow-yellow.
+### Part B — Thirdweb foundation (wired into Marketplace)
+- Install `thirdweb` v5 SDK
+- Add `VITE_THIRDWEB_CLIENT_ID=0ee0974906e5b6b9d18c8f635d4a3df0` to `.env`
+- New folder `src/lib/thirdweb/`:
+  - `client.ts` — shared Thirdweb client
+  - `chains.ts` — locked to Base (chain 8453)
+  - `contracts.ts` — your collection `0xa89C9d428321291fF9b3609D62861123690aa07e`
+- **Inside `src/pages/Marketplace.tsx`**: add one `useEffect` that on mount fetches `getContractMetadata()` from your Base contract, logs to console, and shows a toast: **"Connected to Nebula Collection on Base ✓"**
 
-### 3. Module containers (cards / panels)
-- Wrap listing cards, sidebar, profile panel, wallet panel, auth form in semi-transparent dark panels with `glow-border-blue`.
-- Hover state on listing cards: swap to `glow-border-yellow` + slight scale (`hover-scale`).
-- Add `animate-fade-in` on section switches.
+### What you'll see after this lands
+- Marketplace looks identical (red neon title, animated galaxy, glow panels)
+- Open it → toast confirms live connection to your Base contract
+- Console shows your collection's name, symbol, image
+- Zero Sui references anywhere in the app or memory
 
-### 4. Interaction polish
-- Larger tap targets: buttons min-height 44px.
-- Clear visual hover/active states on every interactive element.
-- Sidebar nav: add active glow bar on the left edge.
-- Toast styling already global — leave alone.
+### What is NOT in this step (queued for next)
+- Phase 2: real `ConnectButton` replacing the wallet stub
+- Phase 3: NFT grid rendering your collection
+- Phase 4: claim/mint flow
+- Phase 5: wallet ↔ in-game card sync
 
-### 5. Files touched
-- `src/pages/Marketplace.tsx` — class swap + structural panel wrapping (no logic change)
-- `src/index.css` — already has utilities; add 1-2 helpers if needed (parallax stars, panel base)
+### Files touched
+- `package.json`, `.env`
+- `src/lib/thirdweb/client.ts`, `chains.ts`, `contracts.ts` (new)
+- `src/pages/Marketplace.tsx` (one `useEffect` only — no UI change)
+- `src/lib/walletSystem.ts`, `src/components/wallet/WalletConnect.tsx` (Sui→Base copy if present)
+- `src/pages/Roadmap.tsx`, `src/pages/Rewards.tsx` (Sui→Base copy if present)
+- Memory files listed above
 
-### Untouched
-All marketplace logic, routes, supabase calls, listing flow, auth flow, wallet system. Thirdweb integration is the **next** step after this polish lands.
+Approve and I'll execute Part A + B in one pass.
 
