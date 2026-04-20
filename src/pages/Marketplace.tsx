@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { getActiveListings, buyCard, cancelListing, listCard, calculateFee, type MarketplaceListing } from '@/lib/marketplaceSystem';
 import { getCardsForPlayer, setActiveCard, type CardMetadata } from '@/lib/cardSystem';
 import { getCardEnergy, type CardEnergy } from '@/lib/energySystem';
-import { DIVISION_LABELS, DIVISION_COLORS, type Division } from '@/lib/divisionSystem';
+import { DIVISION_LABELS, type Division } from '@/lib/divisionSystem';
 import { Input } from '@/components/ui/input';
 import WalletConnect from '@/components/wallet/WalletConnect';
 import { useToast } from '@/hooks/use-toast';
@@ -43,7 +43,7 @@ const Marketplace = () => {
   const [estimatedFee, setEstimatedFee] = useState(5);
   const [listingSubmitting, setListingSubmitting] = useState(false);
 
-  /* ── Auth form (inline) ── */
+  /* ── Auth form ── */
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -100,18 +100,16 @@ const Marketplace = () => {
     const cardMap = new Map(listingCards?.map(c => [c.id, c]) ?? []);
     setListings(active.map(l => {
       const card = cardMap.get(l.cardId);
-      return { ...l, cardName: card?.name ?? 'Unknown', cardDivision: (card?.division as Division) ?? 'gem_v', cardColor: card?.color_hex ?? '#ffffff' };
+      return { ...l, cardName: card?.name ?? 'Unknown', cardDivision: (card?.division as Division) ?? 'gem_v', cardColor: card?.color_hex ?? '#5599ff' };
     }));
     setLoading(false);
   }, [user]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  /* ── Fee preview on card select ── */
+  /* ── Fee preview ── */
   useEffect(() => {
-    if (listingCardId) {
-      calculateFee(listingCardId).then(setEstimatedFee);
-    }
+    if (listingCardId) calculateFee(listingCardId).then(setEstimatedFee);
   }, [listingCardId]);
 
   /* ── Handlers ── */
@@ -121,18 +119,15 @@ const Marketplace = () => {
     if (ok) { toast({ title: 'Card purchased!' }); loadData(); }
     else toast({ title: 'Purchase failed', variant: 'destructive' });
   };
-
   const handleCancel = async (id: string) => {
     const ok = await cancelListing(id);
     if (ok) { toast({ title: 'Listing cancelled' }); setListings(prev => prev.filter(l => l.id !== id)); }
   };
-
   const handleSetActive = async (cardId: string) => {
     if (!playerId) return;
     const ok = await setActiveCard(playerId, cardId);
     if (ok) setActiveCardId(cardId);
   };
-
   const handleList = async () => {
     if (!playerId || !listingCardId || !listPrice) return;
     setListingSubmitting(true);
@@ -143,7 +138,6 @@ const Marketplace = () => {
     else toast({ title: 'Listing failed', variant: 'destructive' });
     setListingSubmitting(false);
   };
-
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthSubmitting(true);
@@ -161,7 +155,6 @@ const Marketplace = () => {
       toast({ title: 'Error', description: err.message, variant: 'destructive' });
     } finally { setAuthSubmitting(false); }
   };
-
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setUser(null); setPlayerId(null); setPlayerData(null);
@@ -170,13 +163,10 @@ const Marketplace = () => {
 
   /* ── Derived ── */
   const filteredListings = divFilter === 'all' ? listings : listings.filter(l => l.cardDivision === divFilter);
-  const listableCards = cards.filter(c => !listings.some(l => l.cardId === c.id));
   const priceCents = Math.round((parseFloat(listPrice) || 0) * 100);
   const feeAmount = priceCents * estimatedFee / 100;
   const sellerReceives = priceCents - feeAmount;
-  const nextThreshold = null;
 
-  /* ── Sidebar nav items ── */
   const navItems: { key: Section; label: string; icon: string }[] = [
     { key: 'marketplace', label: 'MARKET', icon: '🏪' },
     { key: 'my-cards', label: 'MY CARDS', icon: '🃏' },
@@ -184,21 +174,19 @@ const Marketplace = () => {
     { key: 'wallet', label: 'WALLET', icon: '💎' },
   ];
 
+  /* ── Shared classes ── */
+  const panel = "rounded-xl border border-white/10 bg-black/55 backdrop-blur-md glow-border-blue";
+  const btnPrimary = "min-h-[44px] px-5 rounded-lg border bg-black/40 glow-yellow glow-border-yellow text-sm tracking-[0.2em] font-bold hover:bg-yellow-400/10 hover:scale-[1.03] transition-all disabled:opacity-40";
+  const btnSecondary = "min-h-[44px] px-5 rounded-lg border bg-black/40 glow-blue glow-border-blue text-sm tracking-[0.2em] font-bold hover:bg-blue-400/10 hover:scale-[1.03] transition-all disabled:opacity-40";
+
   return (
-    <div
-      className="min-h-screen text-white font-mono relative"
-      style={{
-        background: `
-          radial-gradient(ellipse at 20% 0%, rgba(100, 60, 255, 0.12) 0%, transparent 50%),
-          radial-gradient(ellipse at 80% 100%, rgba(0, 200, 255, 0.08) 0%, transparent 50%),
-          radial-gradient(ellipse at 50% 50%, rgba(20, 0, 40, 0.5) 0%, transparent 70%),
-          #050510
-        `,
-      }}
-    >
+    <div className="min-h-screen font-mono relative overflow-x-hidden" style={{ background: '#050510' }}>
+      {/* Cinematic galaxy background */}
+      <div className="market-galaxy" />
+
       {/* Starfield dots */}
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        {Array.from({ length: 60 }).map((_, i) => (
+      <div className="pointer-events-none fixed inset-0 overflow-hidden z-[1]">
+        {Array.from({ length: 80 }).map((_, i) => (
           <div
             key={i}
             className="absolute rounded-full"
@@ -207,59 +195,56 @@ const Marketplace = () => {
               height: `${1 + Math.random() * 2}px`,
               top: `${Math.random() * 100}%`,
               left: `${Math.random() * 100}%`,
-              background: 'white',
-              opacity: 0.1 + Math.random() * 0.3,
-              animation: `pulse ${2 + Math.random() * 4}s ease-in-out infinite`,
-              animationDelay: `${Math.random() * 3}s`,
+              background: i % 5 === 0 ? '#ffdd00' : i % 3 === 0 ? '#5599ff' : '#e8f4ff',
+              opacity: 0.15 + Math.random() * 0.5,
+              boxShadow: '0 0 4px currentColor',
+              animation: `pulse ${2 + Math.random() * 5}s ease-in-out infinite`,
+              animationDelay: `${Math.random() * 4}s`,
             }}
           />
         ))}
       </div>
 
       {/* ── Header ── */}
-      <div className="relative flex items-center justify-between px-6 py-4 border-b border-cyan-500/10 bg-black/20 backdrop-blur-sm">
-        <button onClick={() => navigate('/')} className="text-cyan-400/70 hover:text-cyan-400 text-sm transition-colors">← Back</button>
-        <h1
-          className="text-lg font-bold tracking-[0.4em]"
-          style={{
-            background: 'linear-gradient(135deg, #66ffee, #a78bfa, #66ffee)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            textShadow: 'none',
-            filter: 'drop-shadow(0 0 20px rgba(102, 255, 238, 0.3))',
-          }}
-        >
+      <div className="relative z-10 flex items-center justify-between px-6 py-4 border-b border-blue-500/20 bg-black/40 backdrop-blur-md">
+        <button onClick={() => navigate('/')} className="glow-blue text-sm tracking-widest hover:scale-110 transition-transform min-h-[44px] px-3">
+          ← BACK
+        </button>
+        <h1 className="text-3xl md:text-4xl font-bold tracking-[0.5em] glow-yellow">
           NEBULA HUB
         </h1>
-        <div className="w-14" />
+        <div className="w-20" />
       </div>
 
-      <div className="relative flex min-h-[calc(100vh-57px)]">
+      <div className="relative z-10 flex min-h-[calc(100vh-73px)]">
         {/* ── Sidebar ── */}
-        <nav className="w-44 flex-shrink-0 border-r border-cyan-500/10 bg-black/40 backdrop-blur-sm flex flex-col">
-          <div className="flex-1 py-4 space-y-1">
-            {navItems.map(item => (
-              <button
-                key={item.key}
-                onClick={() => setSection(item.key)}
-                className={`w-full text-left px-5 py-3 text-xs tracking-[0.2em] uppercase transition-all flex items-center gap-3 ${
-                  section === item.key
-                    ? 'text-cyan-300 border-r-2 border-cyan-400'
-                    : 'text-white/40 hover:text-white/70 hover:bg-white/5'
-                }`}
-                style={section === item.key ? {
-                  background: 'linear-gradient(90deg, transparent, rgba(0, 200, 255, 0.08))',
-                  textShadow: '0 0 10px rgba(0, 200, 255, 0.4)',
-                } : {}}
-              >
-                <span className="text-sm">{item.icon}</span>
-                {item.label}
-              </button>
-            ))}
+        <nav className="w-52 flex-shrink-0 border-r border-blue-500/20 bg-black/50 backdrop-blur-md flex flex-col">
+          <div className="flex-1 py-6 space-y-2">
+            {navItems.map(item => {
+              const active = section === item.key;
+              return (
+                <button
+                  key={item.key}
+                  onClick={() => setSection(item.key)}
+                  className={`relative w-full text-left px-5 py-4 text-base tracking-[0.25em] uppercase font-bold transition-all flex items-center gap-3 min-h-[52px] ${
+                    active ? 'glow-yellow bg-yellow-400/5' : 'glow-blue opacity-70 hover:opacity-100 hover:bg-blue-400/5'
+                  }`}
+                >
+                  {active && (
+                    <span
+                      className="absolute left-0 top-2 bottom-2 w-1 rounded-r"
+                      style={{ background: '#ffdd00', boxShadow: '0 0 12px #ffdd00, 0 0 24px #ffdd00' }}
+                    />
+                  )}
+                  <span className="text-xl">{item.icon}</span>
+                  {item.label}
+                </button>
+              );
+            })}
           </div>
           {user && (
-            <div className="p-4 border-t border-white/5">
-              <button onClick={handleLogout} className="w-full text-xs text-red-400/60 hover:text-red-400 transition-colors tracking-widest uppercase py-2">
+            <div className="p-4 border-t border-blue-500/20">
+              <button onClick={handleLogout} className="w-full glow-white text-sm tracking-widest uppercase py-3 hover:glow-yellow transition-all min-h-[44px]">
                 LOG OUT
               </button>
             </div>
@@ -267,94 +252,81 @@ const Marketplace = () => {
         </nav>
 
         {/* ── Content ── */}
-        <main className="flex-1 p-6 overflow-y-auto">
+        <main className="flex-1 p-8 overflow-y-auto">
           {/* ════════ MARKETPLACE ════════ */}
           {section === 'marketplace' && (
-            <div className="max-w-4xl mx-auto space-y-6">
+            <div className="max-w-5xl mx-auto space-y-8 animate-fade-in">
               <div className="flex items-center justify-between">
-                <h2 className="text-sm uppercase tracking-[0.3em] text-cyan-300/60">Card Marketplace</h2>
-                <span className="text-[10px] text-white/30">{filteredListings.length} listing{filteredListings.length !== 1 ? 's' : ''}</span>
+                <h2 className="text-3xl uppercase tracking-[0.3em] glow-yellow font-bold">Card Marketplace</h2>
+                <span className="text-sm glow-white tracking-widest">{filteredListings.length} LISTING{filteredListings.length !== 1 ? 'S' : ''}</span>
               </div>
 
               {/* Division filter */}
-              <div className="flex gap-2">
-                {DIVISIONS.map(d => (
-                  <button
-                    key={d}
-                    onClick={() => setDivFilter(d)}
-                    className={`px-3 py-1.5 text-[10px] tracking-widest rounded-md border transition-all ${
-                      divFilter === d
-                        ? 'border-cyan-400/50 bg-cyan-400/10 text-cyan-300'
-                        : 'border-white/10 text-white/30 hover:text-white/60 hover:border-white/20'
-                    }`}
-                    style={divFilter === d ? { boxShadow: '0 0 10px rgba(0, 200, 255, 0.15)' } : {}}
-                  >
-                    {DIV_FILTER_LABELS[d]}
-                  </button>
-                ))}
+              <div className="flex gap-3 flex-wrap">
+                {DIVISIONS.map(d => {
+                  const active = divFilter === d;
+                  return (
+                    <button
+                      key={d}
+                      onClick={() => setDivFilter(d)}
+                      className={`min-h-[44px] px-5 py-2 text-sm tracking-[0.2em] font-bold rounded-lg border bg-black/40 transition-all hover:scale-105 ${
+                        active ? 'glow-yellow glow-border-yellow' : 'glow-white glow-border-blue opacity-70 hover:opacity-100'
+                      }`}
+                    >
+                      {DIV_FILTER_LABELS[d]}
+                    </button>
+                  );
+                })}
               </div>
 
               {loading ? (
-                <div className="text-center text-white/30 py-16">Loading listings…</div>
+                <div className="text-center glow-blue text-lg tracking-widest py-20 animate-pulse">LOADING LISTINGS…</div>
               ) : filteredListings.length === 0 ? (
-                <div className="flex flex-col items-center py-16 text-white/20 space-y-3">
+                <div className={`${panel} flex flex-col items-center py-20 space-y-4`}>
                   <div
-                    className="w-16 h-16 rounded-full"
+                    className="w-20 h-20 rounded-full"
                     style={{
-                      background: 'radial-gradient(circle at 40% 40%, rgba(102, 255, 238, 0.3), rgba(167, 139, 250, 0.1), transparent)',
-                      boxShadow: '0 0 30px rgba(102, 255, 238, 0.15), 0 0 60px rgba(167, 139, 250, 0.08)',
+                      background: 'radial-gradient(circle at 40% 40%, rgba(85,153,255,0.5), rgba(255,221,0,0.2), transparent)',
+                      boxShadow: '0 0 40px rgba(85,153,255,0.3), 0 0 80px rgba(255,221,0,0.15)',
                     }}
                   />
-                  <span className="text-sm tracking-widest">NO ACTIVE LISTINGS</span>
-                  <span className="text-[10px] text-white/15">Cards listed for trade will appear here</span>
+                  <span className="text-xl tracking-[0.3em] glow-blue font-bold">NO ACTIVE LISTINGS</span>
+                  <span className="text-sm glow-white tracking-widest">Cards listed for trade will appear here</span>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                   {filteredListings.map(listing => (
                     <div
                       key={listing.id}
-                      className="rounded-xl border border-white/8 bg-black/50 p-5 backdrop-blur-sm transition-all group hover:scale-[1.02]"
-                      style={{
-                        boxShadow: `0 0 0 1px ${listing.cardColor}10, 0 4px 20px ${listing.cardColor}08`,
-                      }}
-                      onMouseEnter={e => {
-                        (e.currentTarget as HTMLDivElement).style.boxShadow = `0 0 0 1px ${listing.cardColor}30, 0 4px 30px ${listing.cardColor}20, 0 0 60px ${listing.cardColor}10`;
-                        (e.currentTarget as HTMLDivElement).style.borderColor = `${listing.cardColor}30`;
-                      }}
-                      onMouseLeave={e => {
-                        (e.currentTarget as HTMLDivElement).style.boxShadow = `0 0 0 1px ${listing.cardColor}10, 0 4px 20px ${listing.cardColor}08`;
-                        (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(255,255,255,0.08)';
-                      }}
+                      className={`${panel} p-5 transition-all group hover:scale-[1.03] hover:glow-border-yellow cursor-pointer`}
                     >
                       {/* Card orb */}
-                      <div className="flex items-center gap-4 mb-4">
+                      <div className="flex items-center gap-4 mb-5">
                         <div
-                          className="w-12 h-12 rounded-full flex-shrink-0 transition-transform group-hover:scale-110"
+                          className="w-14 h-14 rounded-full flex-shrink-0 transition-transform group-hover:scale-110"
                           style={{
-                            background: `radial-gradient(circle at 35% 35%, ${listing.cardColor}cc, ${listing.cardColor}40)`,
-                            boxShadow: `0 0 20px ${listing.cardColor}30, 0 0 40px ${listing.cardColor}15, inset 0 -2px 6px ${listing.cardColor}20`,
+                            background: `radial-gradient(circle at 35% 35%, ${listing.cardColor}ee, ${listing.cardColor}50)`,
+                            boxShadow: `0 0 25px ${listing.cardColor}60, 0 0 50px ${listing.cardColor}30, inset 0 -2px 6px ${listing.cardColor}30`,
                           }}
                         />
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm font-bold truncate" style={{ color: listing.cardColor }}>{listing.cardName}</div>
-                          <div className="text-[10px] text-white/35 flex items-center gap-2">
-                            <span style={{ color: DIVISION_COLORS[listing.cardDivision!] }}>
-                              {DIVISION_LABELS[listing.cardDivision!]}
-                            </span>
+                          <div className="text-base font-bold truncate glow-blue">{listing.cardName}</div>
+                          <div className="text-xs glow-white tracking-widest mt-1">
+                            {DIVISION_LABELS[listing.cardDivision!]}
                           </div>
                         </div>
                       </div>
 
                       {/* Price + fee */}
-                      <div className="flex items-end justify-between mb-4">
+                      <div className="flex items-end justify-between mb-5">
                         <div>
-                          <div className="text-[10px] text-white/25 uppercase tracking-widest">Price</div>
-                          <div className="text-lg font-bold text-cyan-300" style={{ textShadow: '0 0 10px rgba(0, 200, 255, 0.3)' }}>
+                          <div className="text-xs glow-white uppercase tracking-widest mb-1">Price</div>
+                          <div className="text-2xl font-bold glow-yellow">
                             ${(listing.priceCents / 100).toFixed(2)}
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="text-[10px] tracking-widest text-emerald-400">
+                          <div className="text-xs glow-white tracking-widest">
                             {listing.feePercent}% FEE
                           </div>
                         </div>
@@ -362,27 +334,17 @@ const Marketplace = () => {
 
                       {/* Actions */}
                       {playerId && listing.sellerPlayerId !== playerId && (
-                        <button
-                          onClick={() => handleBuy(listing.id)}
-                          className="w-full py-2 rounded-lg border border-cyan-500/30 text-cyan-300 text-xs tracking-widest hover:bg-cyan-500/10 transition-all"
-                          style={{ boxShadow: '0 0 15px rgba(0, 200, 255, 0.05)' }}
-                        >
+                        <button onClick={() => handleBuy(listing.id)} className={`w-full ${btnPrimary}`}>
                           BUY
                         </button>
                       )}
                       {playerId && listing.sellerPlayerId === playerId && (
-                        <button
-                          onClick={() => handleCancel(listing.id)}
-                          className="w-full py-2 rounded-lg border border-red-500/20 text-red-400/70 text-xs tracking-widest hover:bg-red-500/10 transition-all"
-                        >
+                        <button onClick={() => handleCancel(listing.id)} className={`w-full ${btnSecondary}`}>
                           CANCEL LISTING
                         </button>
                       )}
                       {!playerId && (
-                        <button
-                          onClick={() => setSection('profile')}
-                          className="w-full py-2 rounded-lg border border-white/10 text-white/30 text-xs tracking-widest hover:text-white/50 transition-all"
-                        >
+                        <button onClick={() => setSection('profile')} className={`w-full ${btnSecondary}`}>
                           SIGN IN TO BUY
                         </button>
                       )}
@@ -395,39 +357,38 @@ const Marketplace = () => {
 
           {/* ════════ MY CARDS ════════ */}
           {section === 'my-cards' && (
-            <div className="max-w-4xl mx-auto space-y-6">
+            <div className="max-w-5xl mx-auto space-y-8 animate-fade-in">
               {!user ? (
-                <div className="flex flex-col items-center py-16 text-white/20 space-y-4">
+                <div className={`${panel} flex flex-col items-center py-20 space-y-5`}>
                   <div
-                    className="w-14 h-14 rounded-full"
+                    className="w-20 h-20 rounded-full"
                     style={{
-                      background: 'radial-gradient(circle at 40% 40%, rgba(167, 139, 250, 0.4), rgba(102, 255, 238, 0.1), transparent)',
-                      boxShadow: '0 0 30px rgba(167, 139, 250, 0.15)',
+                      background: 'radial-gradient(circle at 40% 40%, rgba(255,221,0,0.4), rgba(85,153,255,0.2), transparent)',
+                      boxShadow: '0 0 40px rgba(255,221,0,0.2), 0 0 80px rgba(85,153,255,0.1)',
                     }}
                   />
-                  <span className="text-sm tracking-widest">SIGN IN TO VIEW YOUR CARDS</span>
-                  <button onClick={() => setSection('profile')} className="text-xs text-cyan-400/70 hover:text-cyan-400 tracking-widest transition-colors">
+                  <span className="text-xl tracking-[0.3em] glow-yellow font-bold">SIGN IN TO VIEW YOUR CARDS</span>
+                  <button onClick={() => setSection('profile')} className={btnPrimary}>
                     GO TO PROFILE →
                   </button>
                 </div>
               ) : (
                 <>
                   <div className="flex items-center justify-between">
-                    <h2 className="text-sm uppercase tracking-[0.3em] text-cyan-300/60">Your Cards</h2>
-                    <span className="text-[10px] text-white/30 border border-cyan-500/20 px-2 py-1 rounded">{cards.length} / 10</span>
+                    <h2 className="text-3xl uppercase tracking-[0.3em] glow-yellow font-bold">Your Cards</h2>
+                    <span className="text-sm glow-white tracking-widest border border-blue-500/30 glow-border-blue px-3 py-2 rounded">{cards.length} / 10</span>
                   </div>
 
                   {/* Listing form */}
                   {listingCardId && (
-                    <div className="rounded-xl border border-cyan-400/20 bg-cyan-400/5 p-5 space-y-4 backdrop-blur-sm"
-                      style={{ boxShadow: '0 0 30px rgba(0, 200, 255, 0.05)' }}>
+                    <div className={`${panel} p-6 space-y-5 glow-border-yellow`}>
                       <div className="flex items-center justify-between">
-                        <h3 className="text-xs tracking-widest text-cyan-300/80 uppercase">List Card for Sale</h3>
-                        <button onClick={() => { setListingCardId(null); setListPrice(''); }} className="text-white/30 hover:text-white/60 text-xs">✕</button>
+                        <h3 className="text-lg tracking-[0.25em] glow-yellow uppercase font-bold">List Card for Sale</h3>
+                        <button onClick={() => { setListingCardId(null); setListPrice(''); }} className="glow-white text-xl hover:glow-yellow transition-all w-10 h-10">✕</button>
                       </div>
                       <div className="flex gap-4 items-end">
                         <div className="flex-1 space-y-2">
-                          <label className="text-[10px] text-white/30 uppercase tracking-widest">Price (USD)</label>
+                          <label className="text-xs glow-blue uppercase tracking-widest font-bold">Price (USD)</label>
                           <Input
                             type="number"
                             step="0.01"
@@ -435,32 +396,31 @@ const Marketplace = () => {
                             placeholder="0.00"
                             value={listPrice}
                             onChange={e => setListPrice(e.target.value)}
-                            className="bg-black/40 border-white/10 text-white placeholder:text-white/20 font-mono h-9"
+                            className="bg-black/50 border-blue-500/30 text-yellow-300 placeholder:text-white/30 font-mono h-12 text-lg glow-yellow glow-border-blue"
                           />
                         </div>
                         <button
                           onClick={handleList}
                           disabled={listingSubmitting || !listPrice || parseFloat(listPrice) <= 0}
-                          className="px-6 py-2 rounded-lg border border-cyan-400/40 bg-cyan-400/10 text-cyan-300 text-xs tracking-widest hover:bg-cyan-400/20 disabled:opacity-30 transition-all h-9"
-                          style={{ textShadow: '0 0 8px rgba(0, 200, 255, 0.3)' }}
+                          className={btnPrimary}
                         >
                           {listingSubmitting ? '...' : 'LIST'}
                         </button>
                       </div>
                       {/* Fee converter */}
                       {parseFloat(listPrice) > 0 && (
-                        <div className="text-[10px] text-white/40 space-y-1 border-t border-white/5 pt-3">
+                        <div className="text-sm space-y-2 border-t border-blue-500/20 pt-4">
                           <div className="flex justify-between">
-                            <span>Sale price</span>
-                            <span className="text-white/60">${(priceCents / 100).toFixed(2)}</span>
+                            <span className="glow-blue tracking-widest">Sale price</span>
+                            <span className="glow-white font-bold">${(priceCents / 100).toFixed(2)}</span>
                           </div>
                           <div className="flex justify-between">
-                            <span>Fee ({estimatedFee}%)</span>
-                            <span className="text-emerald-400">−${(feeAmount / 100).toFixed(2)}</span>
+                            <span className="glow-blue tracking-widest">Fee ({estimatedFee}%)</span>
+                            <span className="glow-white font-bold">−${(feeAmount / 100).toFixed(2)}</span>
                           </div>
-                          <div className="flex justify-between font-bold text-xs">
-                            <span className="text-white/60">You receive</span>
-                            <span className="text-cyan-300">${(sellerReceives / 100).toFixed(2)}</span>
+                          <div className="flex justify-between text-lg font-bold pt-2 border-t border-blue-500/20">
+                            <span className="glow-blue tracking-widest">You receive</span>
+                            <span className="glow-yellow">${(sellerReceives / 100).toFixed(2)}</span>
                           </div>
                         </div>
                       )}
@@ -468,19 +428,19 @@ const Marketplace = () => {
                   )}
 
                   {cards.length === 0 ? (
-                    <div className="flex flex-col items-center py-12 text-white/20 space-y-3">
+                    <div className={`${panel} flex flex-col items-center py-16 space-y-4`}>
                       <div
-                        className="w-14 h-14 rounded-full"
+                        className="w-16 h-16 rounded-full"
                         style={{
-                          background: 'radial-gradient(circle at 40% 40%, rgba(102, 255, 238, 0.25), transparent)',
-                          boxShadow: '0 0 25px rgba(102, 255, 238, 0.1)',
+                          background: 'radial-gradient(circle at 40% 40%, rgba(85,153,255,0.4), transparent)',
+                          boxShadow: '0 0 30px rgba(85,153,255,0.2)',
                         }}
                       />
-                      <span className="text-sm tracking-widest">NO CARDS YET</span>
-                      <span className="text-[10px] text-white/15">Purchase cards from the marketplace</span>
+                      <span className="text-xl tracking-[0.3em] glow-blue font-bold">NO CARDS YET</span>
+                      <span className="text-sm glow-white tracking-widest">Purchase cards from the marketplace</span>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                       {cards.map(card => {
                         const energy = cardEnergies[card.id];
                         const isActive = card.id === activeCardId;
@@ -488,51 +448,46 @@ const Marketplace = () => {
                         return (
                           <div
                             key={card.id}
-                            className={`rounded-xl border p-5 transition-all cursor-pointer group hover:scale-[1.01] ${
-                              isActive ? 'ring-1 ring-cyan-400/30' : ''
+                            className={`${panel} p-5 transition-all cursor-pointer group hover:scale-[1.02] ${
+                              isActive ? 'glow-border-yellow' : 'hover:glow-border-yellow'
                             }`}
-                            style={{
-                              borderColor: isActive ? 'rgba(0, 200, 255, 0.2)' : `${card.colorHex}20`,
-                              background: `linear-gradient(135deg, ${card.colorHex}08, transparent)`,
-                              boxShadow: isActive ? `0 0 25px ${card.colorHex}15, 0 0 50px rgba(0, 200, 255, 0.05)` : `0 0 15px ${card.colorHex}08`,
-                            }}
                             onClick={() => !isListed && handleSetActive(card.id)}
                           >
                             <div className="flex items-center gap-4">
                               <div
-                                className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold flex-shrink-0 transition-all ${
-                                  isActive ? 'animate-pulse' : 'group-hover:scale-105'
+                                className={`w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold flex-shrink-0 transition-all glow-white ${
+                                  isActive ? 'animate-pulse' : 'group-hover:scale-110'
                                 }`}
                                 style={{
-                                  background: `radial-gradient(circle at 35% 35%, ${card.colorHex}cc, ${card.colorHex}40)`,
+                                  background: `radial-gradient(circle at 35% 35%, ${card.colorHex}ee, ${card.colorHex}50)`,
                                   boxShadow: isActive
-                                    ? `0 0 25px ${card.colorHex}50, 0 0 50px ${card.colorHex}20`
-                                    : `0 0 12px ${card.colorHex}30`,
+                                    ? `0 0 30px ${card.colorHex}80, 0 0 60px ${card.colorHex}40`
+                                    : `0 0 18px ${card.colorHex}50`,
                                 }}
                               >
                                 {card.tokenId}
                               </div>
                               <div className="flex-1 min-w-0">
-                                <div className="text-sm font-bold truncate" style={{ color: card.colorHex }}>{card.name}</div>
-                                <div className="text-[10px] text-white/35 flex items-center gap-2">
-                                  <span style={{ color: DIVISION_COLORS[card.division] }}>{DIVISION_LABELS[card.division]}</span>
-                                  {isActive && <span className="text-cyan-300">• ACTIVE</span>}
-                                  {isListed && <span className="text-purple-400">• LISTED</span>}
+                                <div className="text-base font-bold truncate glow-blue">{card.name}</div>
+                                <div className="text-xs tracking-widest mt-1 flex items-center gap-2">
+                                  <span className="glow-white">{DIVISION_LABELS[card.division]}</span>
+                                  {isActive && <span className="glow-yellow">• ACTIVE</span>}
+                                  {isListed && <span className="glow-yellow">• LISTED</span>}
                                 </div>
                               </div>
                               {energy && (
                                 <div className="text-right flex-shrink-0">
-                                  <div className="text-xs font-bold" style={{ color: energy.energy > 0 ? '#66ffee' : '#ff4444' }}>
+                                  <div className={`text-base font-bold ${energy.energy > 0 ? 'glow-yellow' : 'glow-white'}`}>
                                     ⚡ {energy.energy}/{energy.maxEnergy}
                                   </div>
-                                  <div className="flex gap-1 mt-1 justify-end">
+                                  <div className="flex gap-1 mt-2 justify-end">
                                     {Array.from({ length: energy.maxEnergy }).map((_, i) => (
                                       <div
                                         key={i}
-                                        className="w-2 h-2 rounded-full"
+                                        className="w-2.5 h-2.5 rounded-full"
                                         style={{
-                                          background: i < energy.energy ? '#66ffee' : '#ffffff10',
-                                          boxShadow: i < energy.energy ? '0 0 4px #66ffee' : 'none',
+                                          background: i < energy.energy ? '#ffdd00' : '#ffffff15',
+                                          boxShadow: i < energy.energy ? '0 0 6px #ffdd00' : 'none',
                                         }}
                                       />
                                     ))}
@@ -541,10 +496,10 @@ const Marketplace = () => {
                               )}
                             </div>
                             {!isListed && (
-                              <div className="mt-3 pt-3 border-t border-white/5 flex justify-end">
+                              <div className="mt-4 pt-4 border-t border-blue-500/20 flex justify-end">
                                 <button
                                   onClick={(e) => { e.stopPropagation(); setListingCardId(card.id); setSection('my-cards'); }}
-                                  className="text-[10px] px-3 py-1 rounded border border-cyan-400/20 text-cyan-400/60 hover:text-cyan-300 hover:bg-cyan-400/5 tracking-widest transition-all"
+                                  className="min-h-[40px] px-4 py-2 rounded-lg border bg-black/40 glow-yellow glow-border-yellow text-xs tracking-[0.2em] font-bold hover:scale-105 hover:bg-yellow-400/10 transition-all"
                                 >
                                   LIST ON MARKETPLACE
                                 </button>
@@ -562,64 +517,59 @@ const Marketplace = () => {
 
           {/* ════════ PROFILE ════════ */}
           {section === 'profile' && (
-            <div className="max-w-md mx-auto space-y-6">
+            <div className="max-w-md mx-auto space-y-8 animate-fade-in">
               {!user ? (
                 <div className="space-y-6">
-                  <div className="text-center space-y-2">
-                    <h2
-                      className="text-lg font-bold tracking-[0.3em]"
-                      style={{
-                        background: 'linear-gradient(135deg, #66ffee, #a78bfa)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        filter: 'drop-shadow(0 0 15px rgba(102, 255, 238, 0.3))',
-                      }}
-                    >
+                  <div className="text-center space-y-3">
+                    <h2 className="text-3xl font-bold tracking-[0.3em] glow-yellow">
                       {isLogin ? 'SIGN IN' : 'CREATE ACCOUNT'}
                     </h2>
-                    <p className="text-[10px] text-white/30 tracking-widest">Access your cards, wallet, and marketplace</p>
+                    <p className="text-sm glow-white tracking-widest">Access cards, wallet, marketplace</p>
                   </div>
 
-                  <div className="rounded-xl border border-cyan-500/15 bg-black/50 p-6 backdrop-blur-sm"
-                    style={{ boxShadow: '0 0 40px rgba(0, 200, 255, 0.03)' }}>
+                  <div className={`${panel} p-7`}>
                     <form onSubmit={handleAuth} className="space-y-4">
                       {!isLogin && (
-                        <Input
-                          placeholder="Display Name"
-                          value={displayName}
-                          onChange={e => setDisplayName(e.target.value)}
-                          className="bg-black/40 border-white/10 text-white placeholder:text-white/20 font-mono h-10"
-                        />
+                        <div className="space-y-2">
+                          <label className="text-xs glow-blue uppercase tracking-widest font-bold">Display Name</label>
+                          <Input
+                            placeholder="Player name"
+                            value={displayName}
+                            onChange={e => setDisplayName(e.target.value)}
+                            className="bg-black/50 border-blue-500/30 text-yellow-300 placeholder:text-white/30 font-mono h-12 glow-yellow glow-border-blue"
+                          />
+                        </div>
                       )}
-                      <Input
-                        type="email"
-                        placeholder="Email"
-                        value={email}
-                        onChange={e => setEmail(e.target.value)}
-                        required
-                        className="bg-black/40 border-white/10 text-white placeholder:text-white/20 font-mono h-10"
-                      />
-                      <Input
-                        type="password"
-                        placeholder="Password"
-                        value={password}
-                        onChange={e => setPassword(e.target.value)}
-                        required
-                        minLength={6}
-                        className="bg-black/40 border-white/10 text-white placeholder:text-white/20 font-mono h-10"
-                      />
-                      <button
-                        type="submit"
-                        disabled={authSubmitting}
-                        className="w-full py-2.5 rounded-lg border border-cyan-400/40 bg-cyan-400/10 text-cyan-300 text-xs tracking-[0.2em] font-bold hover:bg-cyan-400/20 disabled:opacity-40 transition-all"
-                        style={{ textShadow: '0 0 8px rgba(0, 200, 255, 0.3)' }}
-                      >
+                      <div className="space-y-2">
+                        <label className="text-xs glow-blue uppercase tracking-widest font-bold">Email</label>
+                        <Input
+                          type="email"
+                          placeholder="you@nebula.cascade"
+                          value={email}
+                          onChange={e => setEmail(e.target.value)}
+                          required
+                          className="bg-black/50 border-blue-500/30 text-yellow-300 placeholder:text-white/30 font-mono h-12 glow-yellow glow-border-blue"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs glow-blue uppercase tracking-widest font-bold">Password</label>
+                        <Input
+                          type="password"
+                          placeholder="••••••"
+                          value={password}
+                          onChange={e => setPassword(e.target.value)}
+                          required
+                          minLength={6}
+                          className="bg-black/50 border-blue-500/30 text-yellow-300 placeholder:text-white/30 font-mono h-12 glow-yellow glow-border-blue"
+                        />
+                      </div>
+                      <button type="submit" disabled={authSubmitting} className={`w-full ${btnPrimary} mt-2`}>
                         {authSubmitting ? '...' : isLogin ? 'SIGN IN' : 'SIGN UP'}
                       </button>
                     </form>
                     <button
                       onClick={() => setIsLogin(!isLogin)}
-                      className="w-full mt-3 py-2 text-[10px] text-white/30 hover:text-white/60 tracking-widest transition-colors"
+                      className="w-full mt-4 py-3 text-xs glow-white tracking-widest hover:glow-yellow transition-all min-h-[44px]"
                     >
                       {isLogin ? 'CREATE NEW ACCOUNT' : 'ALREADY HAVE AN ACCOUNT'}
                     </button>
@@ -627,80 +577,60 @@ const Marketplace = () => {
                 </div>
               ) : (
                 <div className="space-y-6">
-                  <h2 className="text-sm uppercase tracking-[0.3em] text-cyan-300/60">Profile</h2>
+                  <h2 className="text-3xl uppercase tracking-[0.3em] glow-yellow font-bold">Profile</h2>
 
-                  <div className="rounded-xl border border-cyan-500/15 bg-black/50 p-6 backdrop-blur-sm space-y-5"
-                    style={{ boxShadow: '0 0 40px rgba(0, 200, 255, 0.03)' }}>
+                  <div className={`${panel} p-6 space-y-6`}>
                     <div className="flex items-center gap-4">
                       <div
-                        className="w-14 h-14 rounded-full flex items-center justify-center text-xl"
+                        className="w-16 h-16 rounded-full flex items-center justify-center text-2xl glow-white"
                         style={{
-                          background: 'radial-gradient(circle at 40% 40%, rgba(102, 255, 238, 0.2), rgba(167, 139, 250, 0.1), transparent)',
-                          border: '1px solid rgba(0, 200, 255, 0.2)',
-                          boxShadow: '0 0 20px rgba(0, 200, 255, 0.1)',
+                          background: 'radial-gradient(circle at 40% 40%, rgba(255,221,0,0.3), rgba(85,153,255,0.15), transparent)',
+                          border: '1px solid rgba(255,221,0,0.4)',
+                          boxShadow: '0 0 25px rgba(255,221,0,0.2), inset 0 0 12px rgba(85,153,255,0.1)',
                         }}
                       >
                         👤
                       </div>
                       <div>
-                        <div className="text-sm font-bold text-white/90">{playerData?.display_name ?? 'Player'}</div>
-                        <div className="text-[10px] text-white/30">{user.email}</div>
+                        <div className="text-lg font-bold glow-yellow">{playerData?.display_name ?? 'Player'}</div>
+                        <div className="text-xs glow-white tracking-widest mt-1">{user.email}</div>
                       </div>
                     </div>
 
                     {playerData && (
                       <div className="grid grid-cols-2 gap-4">
                         {[
-                          { label: 'Division', value: DIVISION_LABELS[playerData.division as Division], color: DIVISION_COLORS[playerData.division as Division] },
-                          { label: 'Matches', value: playerData.total_matches, color: '#ffffff80' },
-                          { label: 'Points', value: playerData.division_points, color: '#ffffff80' },
-                          { label: 'Cards', value: `${cards.length}/10`, color: '#ffffff80' },
+                          { label: 'Division', value: DIVISION_LABELS[playerData.division as Division] },
+                          { label: 'Matches', value: playerData.total_matches },
+                          { label: 'Points', value: playerData.division_points },
+                          { label: 'Cards', value: `${cards.length}/10` },
                         ].map(stat => (
-                          <div key={stat.label} className="rounded-lg bg-white/3 border border-cyan-500/10 p-3">
-                            <div className="text-[10px] text-white/25 uppercase tracking-widest mb-1">{stat.label}</div>
-                            <div className="text-sm font-bold" style={{ color: stat.color }}>{stat.value}</div>
+                          <div key={stat.label} className="rounded-lg border border-blue-500/30 bg-black/40 glow-border-blue p-4">
+                            <div className="text-xs glow-blue uppercase tracking-widest mb-2 font-bold">{stat.label}</div>
+                            <div className="text-xl font-bold glow-yellow">{stat.value}</div>
                           </div>
                         ))}
                       </div>
                     )}
 
-                    {playerData && nextThreshold && (
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-[10px] text-white/30 uppercase tracking-widest">
-                          <span>Division Progress</span>
-                          <span>{playerData.division_points} / {nextThreshold}</span>
-                        </div>
-                        <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
-                          <div
-                            className="h-full rounded-full transition-all"
-                            style={{
-                              width: `${Math.min(100, (playerData.division_points / nextThreshold) * 100)}%`,
-                              background: `linear-gradient(90deg, ${DIVISION_COLORS[playerData.division as Division]}, ${DIVISION_COLORS[playerData.division as Division]}80)`,
-                              boxShadow: `0 0 8px ${DIVISION_COLORS[playerData.division as Division]}40`,
-                            }}
-                          />
-                        </div>
-                      </div>
-                    )}
-
                     {activeCardId && (
-                      <div className="space-y-2">
-                        <div className="text-[10px] text-white/25 uppercase tracking-widest">Active Card</div>
+                      <div className="space-y-3">
+                        <div className="text-xs glow-blue uppercase tracking-widest font-bold">Active Card</div>
                         {(() => {
                           const card = cards.find(c => c.id === activeCardId);
                           if (!card) return null;
                           return (
-                            <div className="flex items-center gap-3 rounded-lg bg-white/3 border border-cyan-500/10 p-3">
+                            <div className="flex items-center gap-4 rounded-lg border border-yellow-400/30 bg-black/40 glow-border-yellow p-4">
                               <div
-                                className="w-8 h-8 rounded-full"
+                                className="w-10 h-10 rounded-full"
                                 style={{
-                                  background: `radial-gradient(circle at 35% 35%, ${card.colorHex}cc, ${card.colorHex}40)`,
-                                  boxShadow: `0 0 12px ${card.colorHex}40`,
+                                  background: `radial-gradient(circle at 35% 35%, ${card.colorHex}ee, ${card.colorHex}50)`,
+                                  boxShadow: `0 0 18px ${card.colorHex}60`,
                                 }}
                               />
                               <div>
-                                <div className="text-xs font-bold" style={{ color: card.colorHex }}>{card.name}</div>
-                                <div className="text-[10px] text-white/30">{DIVISION_LABELS[card.division]}</div>
+                                <div className="text-sm font-bold glow-blue">{card.name}</div>
+                                <div className="text-xs glow-white tracking-widest mt-1">{DIVISION_LABELS[card.division]}</div>
                               </div>
                             </div>
                           );
@@ -715,32 +645,22 @@ const Marketplace = () => {
 
           {/* ════════ WALLET ════════ */}
           {section === 'wallet' && (
-            <div className="max-w-md mx-auto space-y-6">
-              <h2 className="text-sm uppercase tracking-[0.3em] text-cyan-300/60">Wallet</h2>
+            <div className="max-w-md mx-auto space-y-8 animate-fade-in">
+              <h2 className="text-3xl uppercase tracking-[0.3em] glow-yellow font-bold">Wallet</h2>
 
               {/* Coming Soon — Base */}
-              <div
-                className="rounded-xl border border-cyan-500/20 bg-black/50 p-6 text-center space-y-3 backdrop-blur-sm"
-                style={{ boxShadow: '0 0 40px rgba(0, 200, 255, 0.05)' }}
-              >
+              <div className={`${panel} p-7 text-center space-y-4`}>
                 <div
-                  className="w-16 h-16 rounded-full mx-auto"
+                  className="w-20 h-20 rounded-full mx-auto"
                   style={{
-                    background: 'radial-gradient(circle at 40% 40%, rgba(102, 255, 238, 0.3), rgba(167, 139, 250, 0.15), transparent)',
-                    boxShadow: '0 0 30px rgba(102, 255, 238, 0.15), 0 0 60px rgba(167, 139, 250, 0.08)',
+                    background: 'radial-gradient(circle at 40% 40%, rgba(255,221,0,0.4), rgba(85,153,255,0.2), transparent)',
+                    boxShadow: '0 0 40px rgba(255,221,0,0.25), 0 0 80px rgba(85,153,255,0.15)',
                   }}
                 />
-                <h3
-                  className="text-sm font-bold tracking-widest"
-                  style={{
-                    background: 'linear-gradient(135deg, #66ffee, #a78bfa)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                  }}
-                >
+                <h3 className="text-xl font-bold tracking-[0.25em] glow-yellow">
                   BASE WALLET — COMING SOON
                 </h3>
-                <p className="text-[10px] text-white/30">
+                <p className="text-sm glow-white tracking-widest leading-relaxed">
                   Wallet connection via Thirdweb will be available when the Base integration launches.
                 </p>
               </div>
@@ -749,21 +669,20 @@ const Marketplace = () => {
               <WalletConnect currentAddress={walletAddress} />
 
               {/* Blockchain info */}
-              <div className="rounded-xl border border-cyan-500/15 bg-black/50 p-4 space-y-2 backdrop-blur-sm"
-                style={{ boxShadow: '0 0 30px rgba(0, 200, 255, 0.03)' }}>
-                <h3 className="text-xs font-bold text-cyan-300" style={{ textShadow: '0 0 8px rgba(0, 200, 255, 0.3)' }}>Blockchain Info</h3>
-                <div className="text-[10px] text-white/40 space-y-1">
+              <div className={`${panel} p-5 space-y-3`}>
+                <h3 className="text-lg font-bold glow-yellow tracking-widest">Blockchain Info</h3>
+                <div className="text-sm space-y-2">
                   <div className="flex justify-between">
-                    <span>Chain</span>
-                    <span className="text-cyan-300"><span className="text-cyan-300">Base (planned)</span></span>
+                    <span className="glow-blue tracking-widest">Chain</span>
+                    <span className="glow-white font-bold">Base (planned)</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Auth Provider</span>
-                    <span className="text-cyan-300">Thirdweb (planned)</span>
+                    <span className="glow-blue tracking-widest">Auth Provider</span>
+                    <span className="glow-white font-bold">Thirdweb (planned)</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Fee Model</span>
-                    <span className="text-emerald-400">Flat 3%</span>
+                    <span className="glow-blue tracking-widest">Fee Model</span>
+                    <span className="glow-yellow font-bold">Flat 3%</span>
                   </div>
                 </div>
               </div>
