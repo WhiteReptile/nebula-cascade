@@ -270,101 +270,148 @@ const Marketplace = () => {
         <main className="flex-1 p-8 overflow-y-auto">
           {/* ════════ MARKETPLACE ════════ */}
           {section === 'marketplace' && (
-            <div className="max-w-5xl mx-auto space-y-8 animate-fade-in">
-              <div className="flex items-center justify-between">
+            <div className="max-w-6xl mx-auto space-y-6 animate-fade-in">
+              <div className="flex items-center justify-between flex-wrap gap-3">
                 <h2 className="text-3xl uppercase tracking-[0.3em] menu-neon-title-red font-bold">Card Marketplace</h2>
-                <span className="text-sm glow-white tracking-widest">{filteredListings.length} LISTING{filteredListings.length !== 1 ? 'S' : ''}</span>
+                {marketTab === 'trade' && (
+                  <span className="text-sm glow-white tracking-widest">
+                    {filteredListings.length} LISTING{filteredListings.length !== 1 ? 'S' : ''}
+                  </span>
+                )}
               </div>
 
-              {/* Division filter */}
-              <div className="flex gap-3 flex-wrap">
-                {DIVISIONS.map(d => {
-                  const active = divFilter === d;
+              {/* Mint / Trade tab bar */}
+              <div
+                className="inline-flex rounded-lg border bg-black/55 p-1 backdrop-blur-md"
+                style={{
+                  borderColor: 'rgba(255, 51, 68, 0.3)',
+                  boxShadow: '0 0 20px rgba(255, 51, 68, 0.12)',
+                }}
+              >
+                {(['mint', 'trade'] as const).map(t => {
+                  const active = marketTab === t;
                   return (
                     <button
-                      key={d}
-                      onClick={() => setDivFilter(d)}
-                      className={`min-h-[44px] px-5 py-2 text-sm tracking-[0.2em] font-bold rounded-lg border bg-black/40 transition-all hover:scale-105 ${
-                        active ? 'glow-yellow glow-border-yellow' : 'glow-white glow-border-blue opacity-70 hover:opacity-100'
-                      }`}
+                      key={t}
+                      onClick={() => setMarketTab(t)}
+                      className="min-h-[44px] px-6 rounded-md text-sm tracking-[0.25em] font-mono font-bold uppercase transition-all"
+                      style={{
+                        background: active ? 'rgba(255, 51, 68, 0.12)' : 'transparent',
+                        color: active ? '#ff8899' : 'rgba(255,255,255,0.45)',
+                        textShadow: active ? '0 0 10px #ff3344' : 'none',
+                        boxShadow: active ? 'inset 0 0 12px rgba(255, 51, 68, 0.2)' : 'none',
+                      }}
                     >
-                      {DIV_FILTER_LABELS[d]}
+                      {t === 'mint' ? '◈ Mint' : '⇄ Trade'}
                     </button>
                   );
                 })}
               </div>
 
-              {loading ? (
-                <div className="text-center glow-blue text-lg tracking-widest py-20 animate-pulse">LOADING LISTINGS…</div>
-              ) : filteredListings.length === 0 ? (
-                <div className={`${panel} flex flex-col items-center py-20 space-y-4`}>
-                  <div
-                    className="w-20 h-20 rounded-full"
-                    style={{
-                      background: 'radial-gradient(circle at 40% 40%, rgba(85,153,255,0.5), rgba(255,221,0,0.2), transparent)',
-                      boxShadow: '0 0 40px rgba(85,153,255,0.3), 0 0 80px rgba(255,221,0,0.15)',
-                    }}
-                  />
-                  <span className="text-xl tracking-[0.3em] glow-blue font-bold">NO ACTIVE LISTINGS</span>
-                  <span className="text-sm glow-white tracking-widest">Cards listed for trade will appear here</span>
+              {/* MINT — live on-chain grid */}
+              {marketTab === 'mint' && (
+                <div className="space-y-5">
+                  <p className="text-xs text-white/40 font-mono tracking-widest uppercase">
+                    Primary mint · Direct from contract on Base · Chain 8453
+                  </p>
+                  <NFTGrid />
                 </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                  {filteredListings.map(listing => (
-                    <div
-                      key={listing.id}
-                      className={`${panel} p-5 transition-all group hover:scale-[1.03] hover:glow-border-yellow cursor-pointer`}
-                    >
-                      {/* Card orb */}
-                      <div className="flex items-center gap-4 mb-5">
-                        <div
-                          className="w-14 h-14 rounded-full flex-shrink-0 transition-transform group-hover:scale-110"
-                          style={{
-                            background: `radial-gradient(circle at 35% 35%, ${listing.cardColor}ee, ${listing.cardColor}50)`,
-                            boxShadow: `0 0 25px ${listing.cardColor}60, 0 0 50px ${listing.cardColor}30, inset 0 -2px 6px ${listing.cardColor}30`,
-                          }}
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="text-base font-bold truncate glow-blue">{listing.cardName}</div>
-                          <div className="text-xs glow-white tracking-widest mt-1">
-                            {DIVISION_LABELS[listing.cardDivision!]}
-                          </div>
-                        </div>
-                      </div>
+              )}
 
-                      {/* Price + fee */}
-                      <div className="flex items-end justify-between mb-5">
-                        <div>
-                          <div className="text-xs glow-white uppercase tracking-widest mb-1">Price</div>
-                          <div className="text-2xl font-bold glow-yellow">
-                            ${(listing.priceCents / 100).toFixed(2)}
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-xs glow-white tracking-widest">
-                            {listing.feePercent}% FEE
-                          </div>
-                        </div>
-                      </div>
+              {/* TRADE — existing peer-to-peer listings */}
+              {marketTab === 'trade' && (
+                <div className="space-y-5">
+                  {/* Division filter */}
+                  <div className="flex gap-3 flex-wrap">
+                    {DIVISIONS.map(d => {
+                      const active = divFilter === d;
+                      return (
+                        <button
+                          key={d}
+                          onClick={() => setDivFilter(d)}
+                          className={`min-h-[44px] px-5 py-2 text-sm tracking-[0.2em] font-bold rounded-lg border bg-black/40 transition-all hover:scale-105 ${
+                            active ? 'glow-yellow glow-border-yellow' : 'glow-white glow-border-blue opacity-70 hover:opacity-100'
+                          }`}
+                        >
+                          {DIV_FILTER_LABELS[d]}
+                        </button>
+                      );
+                    })}
+                  </div>
 
-                      {/* Actions */}
-                      {playerId && listing.sellerPlayerId !== playerId && (
-                        <button onClick={() => handleBuy(listing.id)} className={`w-full ${btnPrimary}`}>
-                          BUY
-                        </button>
-                      )}
-                      {playerId && listing.sellerPlayerId === playerId && (
-                        <button onClick={() => handleCancel(listing.id)} className={`w-full ${btnSecondary}`}>
-                          CANCEL LISTING
-                        </button>
-                      )}
-                      {!playerId && (
-                        <button onClick={() => setSection('profile')} className={`w-full ${btnSecondary}`}>
-                          SIGN IN TO BUY
-                        </button>
-                      )}
+                  {loading ? (
+                    <div className="text-center glow-blue text-lg tracking-widest py-20 animate-pulse">LOADING LISTINGS…</div>
+                  ) : filteredListings.length === 0 ? (
+                    <div className={`${panel} flex flex-col items-center py-20 space-y-4`}>
+                      <div
+                        className="w-20 h-20 rounded-full"
+                        style={{
+                          background: 'radial-gradient(circle at 40% 40%, rgba(85,153,255,0.5), rgba(255,221,0,0.2), transparent)',
+                          boxShadow: '0 0 40px rgba(85,153,255,0.3), 0 0 80px rgba(255,221,0,0.15)',
+                        }}
+                      />
+                      <span className="text-xl tracking-[0.3em] glow-blue font-bold">NO ACTIVE LISTINGS</span>
+                      <span className="text-sm glow-white tracking-widest">Cards listed for trade will appear here</span>
                     </div>
-                  ))}
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                      {filteredListings.map(listing => (
+                        <div
+                          key={listing.id}
+                          className={`${panel} p-5 transition-all group hover:scale-[1.03] hover:glow-border-yellow cursor-pointer`}
+                        >
+                          {/* Card orb */}
+                          <div className="flex items-center gap-4 mb-5">
+                            <div
+                              className="w-14 h-14 rounded-full flex-shrink-0 transition-transform group-hover:scale-110"
+                              style={{
+                                background: `radial-gradient(circle at 35% 35%, ${listing.cardColor}ee, ${listing.cardColor}50)`,
+                                boxShadow: `0 0 25px ${listing.cardColor}60, 0 0 50px ${listing.cardColor}30, inset 0 -2px 6px ${listing.cardColor}30`,
+                              }}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="text-base font-bold truncate glow-blue">{listing.cardName}</div>
+                              <div className="text-xs glow-white tracking-widest mt-1">
+                                {DIVISION_LABELS[listing.cardDivision!]}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Price + fee */}
+                          <div className="flex items-end justify-between mb-5">
+                            <div>
+                              <div className="text-xs glow-white uppercase tracking-widest mb-1">Price</div>
+                              <div className="text-2xl font-bold glow-yellow">
+                                ${(listing.priceCents / 100).toFixed(2)}
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-xs glow-white tracking-widest">
+                                {listing.feePercent}% FEE
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Actions */}
+                          {playerId && listing.sellerPlayerId !== playerId && (
+                            <button onClick={() => handleBuy(listing.id)} className={`w-full ${btnPrimary}`}>
+                              BUY
+                            </button>
+                          )}
+                          {playerId && listing.sellerPlayerId === playerId && (
+                            <button onClick={() => handleCancel(listing.id)} className={`w-full ${btnSecondary}`}>
+                              CANCEL LISTING
+                            </button>
+                          )}
+                          {!playerId && (
+                            <button onClick={() => setSection('profile')} className={`w-full ${btnSecondary}`}>
+                              SIGN IN TO BUY
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
