@@ -118,7 +118,11 @@ const NFTCard = ({ nft }: Props) => {
             src={imageSrc}
             alt={name}
             loading="lazy"
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+            decoding="async"
+            width={1024}
+            height={1024}
+            className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 ${isComingSoon ? 'opacity-80' : ''}`}
+            style={{ imageRendering: 'auto' }}
             onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
           />
         ) : (
