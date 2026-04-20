@@ -7,6 +7,8 @@ import { getCardEnergy, type CardEnergy } from '@/lib/energySystem';
 import { DIVISION_LABELS, type Division } from '@/lib/divisionSystem';
 import { Input } from '@/components/ui/input';
 import WalletConnect from '@/components/wallet/WalletConnect';
+import WalletMismatchModal from '@/components/wallet/WalletMismatchModal';
+import NFTGrid from '@/components/marketplace/NFTGrid';
 import { useToast } from '@/hooks/use-toast';
 import { useWalletSync } from '@/hooks/useWalletSync';
 
