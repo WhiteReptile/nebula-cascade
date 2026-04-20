@@ -257,7 +257,7 @@ const Marketplace = () => {
           {section === 'marketplace' && (
             <div className="max-w-5xl mx-auto space-y-8 animate-fade-in">
               <div className="flex items-center justify-between">
-                <h2 className="text-3xl uppercase tracking-[0.3em] glow-yellow font-bold">Card Marketplace</h2>
+                <h2 className="text-3xl uppercase tracking-[0.3em] menu-neon-title-red font-bold">Card Marketplace</h2>
                 <span className="text-sm glow-white tracking-widest">{filteredListings.length} LISTING{filteredListings.length !== 1 ? 'S' : ''}</span>
               </div>
 
