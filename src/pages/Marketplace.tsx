@@ -752,6 +752,13 @@ const Marketplace = () => {
           )}
         </main>
       </div>
+
+      {/* Wallet collision modal */}
+      <WalletMismatchModal
+        open={mismatchOpen}
+        onOpenChange={setMismatchOpen}
+        conflictingAddress={mismatchAddr}
+      />
     </div>
   );
 };
