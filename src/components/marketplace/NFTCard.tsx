@@ -74,7 +74,11 @@ const NFTCard = ({ nft }: Props) => {
   let statusLabel = '—';
   let statusColor = 'rgba(255,255,255,0.4)';
   let statusGlow = 'none';
-  if (condError) {
+  if (isComingSoon) {
+    statusLabel = 'COMING SOON';
+    statusColor = '#ffaa33';
+    statusGlow = '0 0 10px #ffaa33';
+  } else if (condError) {
     statusLabel = 'NO CLAIM';
     statusColor = 'rgba(255,255,255,0.3)';
   } else if (condLoading) {
