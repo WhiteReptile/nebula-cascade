@@ -18,6 +18,10 @@ const ZERO = 0n;
 const MAX_UINT256 = (1n << 256n) - 1n;
 const NATIVE_CURRENCY = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
 
+// Names (case-insensitive substring) that are not yet live — overrides on-chain claim state.
+// Remove an entry here to flip the card live without contract changes.
+const COMING_SOON_NAMES = ['monstrous', 'mortal escape'];
+
 function formatEth(wei: bigint): string {
   // ETH = wei / 1e18, render up to 6 decimals trimmed
   const divisor = 1_000_000_000_000_000_000n;
