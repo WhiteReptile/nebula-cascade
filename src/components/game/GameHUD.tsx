@@ -133,58 +133,60 @@ const GameHUD = () => {
       <div className="menu-scanlines fixed inset-0 pointer-events-none" style={{ zIndex: 1 }} />
       <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 1, background: 'radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.6) 100%)' }} />
       <HypeOverlay />
-      <GravityCompass />
 
       {/* Unified 3-column layout */}
       <div className="fixed inset-0 flex items-center justify-center" style={{ zIndex: 2 }}>
         <div className="flex items-stretch gap-4 md:gap-6 h-full max-h-[90vh] py-4">
 
           {/* LEFT PANEL */}
-          <div className="flex flex-col justify-between w-[160px] md:w-[200px] font-mono select-none shrink-0">
+          <div className="flex flex-col w-[200px] md:w-[230px] font-mono select-none shrink-0 overflow-y-auto pr-1">
             {/* Title */}
             <div className="text-center mb-3">
               <h1
                 className="text-lg md:text-xl font-black tracking-[0.3em] uppercase"
-                style={{ color: '#e0f8ff', textShadow: '0 0 8px rgba(102,255,238,0.9), 0 0 20px rgba(102,255,238,0.6)' }}
+                style={{ color: '#e0f8ff', textShadow: '0 0 10px #e0f8ff, 0 0 20px rgba(224,248,255,0.6)' }}
               >
                 NEBULA
               </h1>
               <div
-                className="text-[9px] md:text-[10px] uppercase tracking-[0.5em]"
-                style={{ color: '#88cccc', textShadow: '0 0 6px rgba(102,255,238,0.5)' }}
+                className="text-[10px] md:text-xs uppercase tracking-[0.5em]"
+                style={{ color: '#5599ff', textShadow: '0 0 8px #5599ff, 0 0 14px rgba(85,153,255,0.5)' }}
               >
                 CASCADE
               </div>
-              <div className="mx-auto mt-2 mb-3" style={{ width: 100, height: 1, background: 'linear-gradient(90deg, transparent, rgba(102,255,238,0.5), transparent)' }} />
+              <div className="mx-auto mt-2 mb-3" style={{ width: 100, height: 1, background: 'linear-gradient(90deg, transparent, rgba(255,221,0,0.5), transparent)' }} />
             </div>
 
             {/* Score */}
             <div className="rounded-lg border border-yellow-500/30 bg-black/50 px-4 py-3 backdrop-blur-sm mb-3">
-              <div className="text-xs uppercase tracking-[0.2em]" style={{ color: 'rgba(255,221,0,0.7)' }}>Score</div>
-              <div className="text-2xl md:text-3xl font-black" style={{ color: '#ffdd00', textShadow: '0 0 12px #ffdd00' }}>
+              <div className="text-xs uppercase tracking-[0.2em]" style={{ color: '#ffdd00', textShadow: '0 0 8px rgba(255,221,0,0.6)' }}>Score</div>
+              <div className="text-2xl md:text-3xl font-black" style={{ color: '#ffdd00', textShadow: '0 0 12px #ffdd00, 0 0 22px rgba(255,221,0,0.6)' }}>
                 {score.toLocaleString()}
               </div>
             </div>
 
             {/* Level */}
             <div className="rounded-lg border border-blue-500/30 bg-black/50 px-4 py-3 backdrop-blur-sm mb-3">
-              <div className="text-xs uppercase tracking-[0.2em]" style={{ color: 'rgba(80,160,255,0.7)' }}>Level</div>
-              <div className="text-xl md:text-2xl font-bold" style={{ color: '#5599ff', textShadow: '0 0 10px #3388ff' }}>
+              <div className="text-xs uppercase tracking-[0.2em]" style={{ color: '#5599ff', textShadow: '0 0 8px rgba(85,153,255,0.6)' }}>Level</div>
+              <div className="text-xl md:text-2xl font-bold" style={{ color: '#5599ff', textShadow: '0 0 12px #5599ff, 0 0 22px rgba(85,153,255,0.6)' }}>
                 {level}
               </div>
             </div>
 
+            {/* Gravity Compass — placed directly above Combo per spec */}
+            <GravityCompass />
+
             {/* Combo */}
             <div
               className={`rounded-lg border bg-black/50 px-4 py-3 backdrop-blur-sm mb-3 transition-all duration-300 ${
-                combo > 1 ? 'border-red-500/50' : 'border-white/10'
+                combo > 1 ? 'border-yellow-500/60' : 'border-white/15'
               }`}
-              style={combo > 1 ? { boxShadow: '0 0 15px rgba(255,50,50,0.2)' } : undefined}
+              style={combo > 1 ? { boxShadow: '0 0 15px rgba(255,221,0,0.25)' } : undefined}
             >
-              <div className="text-xs uppercase tracking-[0.2em]" style={{ color: combo > 1 ? 'rgba(255,80,80,0.8)' : 'rgba(255,255,255,0.3)' }}>Combo</div>
+              <div className="text-xs uppercase tracking-[0.2em]" style={{ color: '#ffdd00', textShadow: '0 0 8px rgba(255,221,0,0.6)' }}>Combo</div>
               <div
                 className={`text-xl md:text-2xl font-bold transition-all duration-300 ${combo > 1 ? 'animate-pulse' : ''}`}
-                style={{ color: combo > 1 ? '#ff4444' : 'rgba(255,255,255,0.2)', textShadow: combo > 1 ? '0 0 10px #ff3344' : 'none' }}
+                style={{ color: combo > 1 ? '#ffdd00' : '#e0f8ff', textShadow: combo > 1 ? '0 0 12px #ffdd00, 0 0 22px rgba(255,221,0,0.6)' : '0 0 8px rgba(224,248,255,0.5)' }}
               >
                 x{combo > 1 ? combo : 0}
               </div>
@@ -192,20 +194,20 @@ const GameHUD = () => {
 
             {/* Division */}
             {playerDivision && (
-              <div className="rounded-lg border border-white/10 bg-black/50 px-4 py-3 backdrop-blur-sm mb-3">
-                <div className="text-xs uppercase tracking-[0.2em] mb-1" style={{ color: 'rgba(255,255,255,0.4)' }}>Division</div>
+              <div className="rounded-lg border border-white/15 bg-black/50 px-4 py-3 backdrop-blur-sm mb-3">
+                <div className="text-xs uppercase tracking-[0.2em] mb-1" style={{ color: '#e0f8ff', textShadow: '0 0 8px rgba(224,248,255,0.5)' }}>Division</div>
                 <DivisionBadge division={playerDivision} size="md" />
               </div>
             )}
 
             {/* Spacer */}
-            <div className="flex-1" />
+            <div className="flex-1 min-h-[8px]" />
 
             {/* Back to menu */}
             <button
               onClick={() => navigate('/')}
-              className="text-xs uppercase tracking-[0.15em] py-2 rounded border border-white/10 bg-black/30 transition-colors hover:bg-white/5"
-              style={{ color: 'rgba(255,255,255,0.4)' }}
+              className="text-sm uppercase tracking-[0.15em] py-2 rounded border border-white/20 bg-black/30 transition-colors hover:bg-white/5"
+              style={{ color: '#e0f8ff', textShadow: '0 0 8px rgba(224,248,255,0.6)' }}
             >
               ← MENU
             </button>
@@ -224,10 +226,10 @@ const GameHUD = () => {
           </div>
 
           {/* RIGHT PANEL */}
-          <div className="flex flex-col justify-between w-[160px] md:w-[200px] font-mono select-none shrink-0">
+          <div className="flex flex-col justify-between w-[180px] md:w-[220px] font-mono select-none shrink-0">
             {/* Next Piece */}
-            <div className="rounded-lg border border-yellow-500/20 bg-black/50 px-4 py-3 backdrop-blur-sm mb-3">
-              <div className="text-xs uppercase tracking-[0.2em] mb-2" style={{ color: 'rgba(255,221,0,0.7)' }}>Next</div>
+            <div className="rounded-lg border border-yellow-500/30 bg-black/50 px-4 py-3 backdrop-blur-sm mb-3">
+              <div className="text-xs uppercase tracking-[0.2em] mb-2" style={{ color: '#ffdd00', textShadow: '0 0 8px rgba(255,221,0,0.6)' }}>Next</div>
               <div className="flex items-center justify-center" style={{ width: 90, height: 90, margin: '0 auto' }}>
                 {nextPiece && (
                   <svg width="90" height="90" viewBox="0 0 90 90">
@@ -255,14 +257,29 @@ const GameHUD = () => {
             </div>
 
             {/* Controls */}
-            <div className="rounded-lg border border-white/10 bg-black/50 px-4 py-3 backdrop-blur-sm mb-3">
-              <div className="text-xs uppercase tracking-[0.2em] mb-2" style={{ color: 'rgba(255,255,255,0.5)' }}>Controls</div>
-              <div className="text-sm space-y-1" style={{ color: 'rgba(255,255,255,0.6)' }}>
-                <div className="flex justify-between"><span style={{ color: 'rgba(102,255,238,0.7)' }}>← →</span><span>Move</span></div>
-                <div className="flex justify-between"><span style={{ color: 'rgba(102,255,238,0.7)' }}>↑</span><span>Rotate</span></div>
-                <div className="flex justify-between"><span style={{ color: 'rgba(102,255,238,0.7)' }}>↓</span><span>Soft drop</span></div>
-                <div className="flex justify-between"><span style={{ color: 'rgba(255,221,0,0.7)' }}>Z</span><span>Force drop</span></div>
-                <div className="flex justify-between"><span style={{ color: 'rgba(255,221,0,0.7)' }}>Space</span><span>Pause</span></div>
+            <div className="rounded-lg border border-blue-500/30 bg-black/50 px-4 py-3 backdrop-blur-sm mb-3">
+              <div className="text-sm uppercase tracking-[0.2em] mb-2" style={{ color: '#5599ff', textShadow: '0 0 8px rgba(85,153,255,0.6)' }}>Controls</div>
+              <div className="text-base space-y-1.5" style={{ color: '#e0f8ff', textShadow: '0 0 6px rgba(224,248,255,0.5)' }}>
+                <div className="flex justify-between">
+                  <span style={{ color: '#5599ff', textShadow: '0 0 8px rgba(85,153,255,0.7)' }}>← →</span>
+                  <span style={{ textShadow: '0 0 6px rgba(224,248,255,0.5)' }}>Move</span>
+                </div>
+                <div className="flex justify-between">
+                  <span style={{ color: '#5599ff', textShadow: '0 0 8px rgba(85,153,255,0.7)' }}>↑</span>
+                  <span style={{ textShadow: '0 0 6px rgba(224,248,255,0.5)' }}>Rotate</span>
+                </div>
+                <div className="flex justify-between">
+                  <span style={{ color: '#5599ff', textShadow: '0 0 8px rgba(85,153,255,0.7)' }}>↓</span>
+                  <span style={{ textShadow: '0 0 6px rgba(224,248,255,0.5)' }}>Soft drop</span>
+                </div>
+                <div className="flex justify-between">
+                  <span style={{ color: '#ffdd00', textShadow: '0 0 8px rgba(255,221,0,0.7)' }}>Z</span>
+                  <span style={{ textShadow: '0 0 6px rgba(224,248,255,0.5)' }}>Force drop</span>
+                </div>
+                <div className="flex justify-between">
+                  <span style={{ color: '#ffdd00', textShadow: '0 0 8px rgba(255,221,0,0.7)' }}>Space</span>
+                  <span style={{ textShadow: '0 0 6px rgba(224,248,255,0.5)' }}>Pause</span>
+                </div>
               </div>
             </div>
 
@@ -272,8 +289,8 @@ const GameHUD = () => {
             {/* Leaderboard shortcut */}
             <button
               onClick={() => navigate('/leaderboard')}
-              className="text-xs uppercase tracking-[0.15em] py-2 rounded border border-blue-500/20 bg-black/30 transition-colors hover:bg-blue-500/10"
-              style={{ color: 'rgba(80,160,255,0.6)' }}
+              className="text-sm uppercase tracking-[0.15em] py-2 rounded border border-blue-500/40 bg-black/30 transition-colors hover:bg-blue-500/10"
+              style={{ color: '#5599ff', textShadow: '0 0 10px rgba(85,153,255,0.7)' }}
             >
               🏆 LEADERBOARD
             </button>
