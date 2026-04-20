@@ -12,7 +12,7 @@ A cosmic-themed cascade puzzle game. Phaser 3 engine, React HUD, Supabase backen
 - **Routing**: react-router-dom v6
 - **State/data**: @tanstack/react-query
 - **Backend**: Supabase (Postgres + Auth + Edge Functions) — provisioned via Lovable Cloud
-- **Web3 (planned)**: Thirdweb SDK on Sui
+- **Web3 (planned)**: Thirdweb SDK on Base (ETH L2, chain 8453)
 
 ## Getting Started
 
