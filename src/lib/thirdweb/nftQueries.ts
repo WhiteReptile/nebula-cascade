@@ -21,10 +21,7 @@ export function useCollectionNFTs(page: number, pageSize: number = NFT_PAGE_SIZE
     contract: nebulaCollection,
     start,
     count: pageSize,
-    queryOptions: {
-      staleTime: 60_000, // 60s — metadata rarely changes
-      retry: 1,
-    },
+    queryOptions: { retry: 1 },
   });
 }
 
@@ -36,9 +33,6 @@ export function useTokenClaimCondition(tokenId: bigint) {
   return useReadContract(getActiveClaimCondition, {
     contract: nebulaCollection,
     tokenId,
-    queryOptions: {
-      staleTime: 30_000, // 30s — claim windows can change
-      retry: 1,
-    },
+    queryOptions: { retry: 1 },
   });
 }
