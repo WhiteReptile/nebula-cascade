@@ -159,7 +159,9 @@ const NFTCard = ({ nft }: Props) => {
       <div className="flex items-end justify-between border-t border-red-500/20 pt-3">
         <div>
           <div className="text-[10px] uppercase tracking-widest text-white/40 font-mono">Price</div>
-          {condLoading ? (
+          {isComingSoon ? (
+            <div className="text-lg font-mono font-bold text-white/40">—</div>
+          ) : condLoading ? (
             <div className="text-sm text-white/40 font-mono mt-1">…</div>
           ) : isFree ? (
             <div className="text-lg font-mono font-bold text-green-400" style={{ textShadow: '0 0 8px #22ff88' }}>
@@ -188,16 +190,16 @@ const NFTCard = ({ nft }: Props) => {
               disabled
               className="min-h-[40px] px-4 rounded-lg border text-xs tracking-[0.2em] font-mono font-bold uppercase opacity-40 cursor-not-allowed"
               style={{
-                borderColor: 'rgba(255, 51, 68, 0.5)',
-                color: '#ff8899',
+                borderColor: isComingSoon ? 'rgba(255, 170, 51, 0.5)' : 'rgba(255, 51, 68, 0.5)',
+                color: isComingSoon ? '#ffcc77' : '#ff8899',
                 background: 'rgba(0,0,0,0.4)',
               }}
             >
-              Claim
+              {isComingSoon ? 'Coming Soon' : 'Claim'}
             </button>
           </TooltipTrigger>
           <TooltipContent side="top">
-            <p className="font-mono text-xs">Live in Phase 4</p>
+            <p className="font-mono text-xs">{isComingSoon ? 'Drop date TBA' : 'Live in Phase 4'}</p>
           </TooltipContent>
         </Tooltip>
       </div>
