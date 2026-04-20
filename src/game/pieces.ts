@@ -1,12 +1,16 @@
 /**
  * pieces.ts — Piece definitions, colors, and spawn logic
  *
- * Defines the 4 elemental orb colors and 8 piece formations.
- * The `randomOrbPiece()` function handles spawn selection with:
- *   - No color-repeat bias (removed for difficulty)
- *   - Lucky piece: every 25 spawns, 30% chance to match board's dominant color
+ * NEBULA CASCADE — De-Tetris-ified board:
+ *   - Grid: 12 cols × 18 rows (NOT the classic Tetris 10×20)
+ *   - Zero tetromino-shaped formations (no O, I, L, T, S, Z, J equivalents)
+ *   - Signature 6-orb "Cosmic Spear" (one orb longer than a classic I-piece)
+ *   - All shapes are orb-cluster style: arcs, diamonds, sparks, pillars
  *
- * Grid constants: 10 columns × 20 rows × 30px cells
+ * Defines the 4 elemental orb colors and 10 unique piece formations.
+ * Lucky piece bias: every 40 spawns, 30% chance to match board's dominant color.
+ *
+ * Grid constants: 12 columns × 18 rows × 30px cells (board = 360×540)
  */
 export interface PieceDef {
   name: string;
@@ -23,7 +27,8 @@ export const COLORS = [
   { color: 0x888899, colorCSS: '#888899', element: 'shadow' },      // Grey — Shadow
 ];
 
-// All formations are fully connected (each orb adjacent to at least one other), minimum 3 orbs
+// All formations are orb-cluster style — NO classic tetromino shapes.
+// Mix of 3, 4, 5, and 6 orbs across organic / cosmic forms.
 const FORMATIONS: { name: string; shapes: [number, number][][] }[] = [
   {
     name: 'Triple Line',
@@ -53,33 +58,6 @@ const FORMATIONS: { name: string; shapes: [number, number][][] }[] = [
     ],
   },
   {
-    name: 'Flat Four',
-    shapes: [
-      [[0,0],[0,1],[0,2],[0,3]],
-      [[0,0],[1,0],[2,0],[3,0]],
-      [[0,0],[0,1],[0,2],[0,3]],
-      [[0,0],[1,0],[2,0],[3,0]],
-    ],
-  },
-  {
-    name: 'Soft L',
-    shapes: [
-      [[0,0],[1,0],[2,0],[2,1]],
-      [[0,0],[0,1],[0,2],[1,0]],
-      [[0,0],[0,1],[1,1],[2,1]],
-      [[0,0],[0,1],[0,2],[1,2]],
-    ],
-  },
-  {
-    name: 'Compact Cluster',
-    shapes: [
-      [[0,0],[0,1],[1,0],[1,1]],
-      [[0,0],[0,1],[1,0],[1,1]],
-      [[0,0],[0,1],[1,0],[1,1]],
-      [[0,0],[0,1],[1,0],[1,1]],
-    ],
-  },
-  {
     name: 'Wide Arc',
     shapes: [
       [[0,0],[0,1],[0,2],[1,2]],
@@ -97,22 +75,55 @@ const FORMATIONS: { name: string; shapes: [number, number][][] }[] = [
       [[0,0],[0,1],[1,0],[2,0],[3,0]],
     ],
   },
+  // ── New Nebula-original cluster shapes ──
   {
-    name: 'Solid Square',
+    // Cosmic Spear — signature 6-orb extra-long line, ONE longer than classic I-piece
+    name: 'Cosmic Spear',
     shapes: [
-      [[0,0],[0,1],[1,0],[1,1]],
-      [[0,0],[0,1],[1,0],[1,1]],
-      [[0,0],[0,1],[1,0],[1,1]],
-      [[0,0],[0,1],[1,0],[1,1]],
+      [[0,0],[0,1],[0,2],[0,3],[0,4],[0,5]],
+      [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0]],
+      [[0,0],[0,1],[0,2],[0,3],[0,4],[0,5]],
+      [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0]],
     ],
   },
   {
-    name: 'T-Spine',
+    // Crescent — 5-orb open arc
+    name: 'Crescent',
     shapes: [
-      [[0,0],[0,2],[1,1],[2,1]],
-      [[0,0],[0,2],[1,1],[2,1]],
-      [[0,0],[0,2],[1,1],[2,1]],
-      [[0,0],[0,2],[1,1],[2,1]],
+      [[0,1],[0,2],[1,0],[2,1],[2,2]],
+      [[0,0],[0,1],[1,2],[2,0],[2,1]],
+      [[0,0],[0,1],[1,2],[2,0],[2,1]],
+      [[0,1],[0,2],[1,0],[2,1],[2,2]],
+    ],
+  },
+  {
+    // Diamond — 4-orb rhombus, diagonal-only adjacency (gap-y center)
+    name: 'Diamond',
+    shapes: [
+      [[0,1],[1,0],[1,2],[2,1]],
+      [[0,1],[1,0],[1,2],[2,1]],
+      [[0,1],[1,0],[1,2],[2,1]],
+      [[0,1],[1,0],[1,2],[2,1]],
+    ],
+  },
+  {
+    // Twin Pillars — 4-orb gap shape (two vertical pairs with a column gap)
+    name: 'Twin Pillars',
+    shapes: [
+      [[0,0],[1,0],[0,2],[1,2]],
+      [[0,0],[0,1],[2,0],[2,1]],
+      [[0,0],[1,0],[0,2],[1,2]],
+      [[0,0],[0,1],[2,0],[2,1]],
+    ],
+  },
+  {
+    // Star Spark — 5-orb plus-sign (the "+" shape — distinct from any tetromino)
+    name: 'Star Spark',
+    shapes: [
+      [[0,1],[1,0],[1,1],[1,2],[2,1]],
+      [[0,1],[1,0],[1,1],[1,2],[2,1]],
+      [[0,1],[1,0],[1,1],[1,2],[2,1]],
+      [[0,1],[1,0],[1,1],[1,2],[2,1]],
     ],
   },
 ];
@@ -128,8 +139,6 @@ export const PIECES: PieceDef[] = FORMATIONS.map(f => ({
   shapes: f.shapes,
 }));
 
-// Color bias: 30% more likely to repeat recent color
-let lastColorIndex = -1;
 let spawnCounter = 0;
 
 export function randomOrbPiece(boardColorBias?: number | null): PieceDef {
@@ -137,14 +146,13 @@ export function randomOrbPiece(boardColorBias?: number | null): PieceDef {
   spawnCounter++;
 
   let colorIdx: number;
-  // Lucky piece: every ~15 spawns, bias toward the most common board color
+  // Lucky piece: every 40 spawns, 30% chance to match the dominant board color
   if (boardColorBias != null && spawnCounter % 40 === 0 && Math.random() < 0.3) {
     colorIdx = COLORS.findIndex(c => c.color === boardColorBias);
     if (colorIdx < 0) colorIdx = Math.floor(Math.random() * COLORS.length);
   } else {
     colorIdx = Math.floor(Math.random() * COLORS.length);
   }
-  lastColorIndex = colorIdx;
   const clr = COLORS[colorIdx];
 
   return {
@@ -156,6 +164,7 @@ export function randomOrbPiece(boardColorBias?: number | null): PieceDef {
   };
 }
 
-export const COLS = 10;
-export const ROWS = 20;
+// ── De-Tetris-ified grid: 12 cols × 18 rows (vs Tetris 10×20) ──
+export const COLS = 12;
+export const ROWS = 18;
 export const CELL = 30;

@@ -47,7 +47,8 @@ export function findProximityBurst(grid: (OrbState | null)[][]): { cells: [numbe
           }
         }
       }
-      if (cluster.length >= 10) {
+      // Lowered 10 → 8 to compensate for removal of line-clear path (de-Tetris-ification)
+      if (cluster.length >= 8) {
         return { cells: cluster, color };
       }
     }
@@ -208,6 +209,11 @@ export function findTriColorMatch(grid: (OrbState | null)[][]): { cells: [number
   return null;
 }
 
+/**
+ * @deprecated DE-TETRIS-IFIED: Full-row line clears were removed in the Nebula identity pass.
+ * This function is kept for safe rollback but is no longer called from GameScene.
+ * Cosmic Wipe is now triggered by a single Proximity Burst destroying 20+ orbs.
+ */
 export function findLineMatch(grid: (OrbState | null)[][], combo: number): { rows: number[]; cosmicWipe: boolean } | null {
   const fullRows: number[] = [];
   for (let r = 0; r < ROWS; r++) {

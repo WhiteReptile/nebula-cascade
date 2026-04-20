@@ -5,12 +5,14 @@ type GravityState = { dir: -1 | 0 | 1; strength: number };
 
 /**
  * GravityCompass — Cosmic-themed circular HUD compass that visualizes
- * the active piece's gravity bias. Listens to the 'gravity' event from
- * GameScene and animates needle rotation + state-driven glow.
+ * the active piece's gravity bias.
  *
- *   dir = -1 → needle points down-left  (135° from up)
+ * LAYOUT: Lives in its OWN dedicated bottom-left corner with margin guards
+ * so it never collides with the central game frame or right-side HUD panels.
+ *
+ *   dir = -1 → needle points down-left  (225° from up)
  *   dir =  0 → needle points straight down, pulses (down-bias = faster fall)
- *   dir = +1 → needle points down-right (-135° from up, i.e. 225°)
+ *   dir = +1 → needle points down-right (135° from up)
  */
 const GravityCompass = () => {
   const [grav, setGrav] = useState<GravityState>({ dir: 0, strength: 0 });
@@ -21,11 +23,8 @@ const GravityCompass = () => {
     return () => { gameEvents.off('gravity', onGravity); };
   }, []);
 
-  // Needle rotation (0deg = pointing up). Down = 180, DL = 225, DR = 135.
   const angle = grav.dir === -1 ? 225 : grav.dir === 1 ? 135 : 180;
-
   const isDown = grav.dir === 0;
-  // Color theme by direction
   const accent = isDown ? '#ffdd00' : grav.dir === -1 ? '#66ffee' : '#aa88ff';
   const label = isDown ? 'DOWN · FAST' : grav.dir === -1 ? 'LEFT DRIFT' : 'RIGHT DRIFT';
   const pct = Math.round(grav.strength * 100);
@@ -33,15 +32,15 @@ const GravityCompass = () => {
   return (
     <div
       className="fixed font-mono select-none pointer-events-none"
-      style={{ top: 16, right: 16, zIndex: 5 }}
+      style={{ bottom: 20, left: 20, zIndex: 5 }}
     >
       <div
         className="rounded-xl backdrop-blur-md flex flex-col items-center"
         style={{
-          padding: '10px 12px 8px',
-          background: 'rgba(5, 5, 16, 0.55)',
-          border: `1px solid ${accent}40`,
-          boxShadow: `0 0 14px ${accent}33, inset 0 0 10px ${accent}1a`,
+          padding: '12px 14px 10px',
+          background: 'rgba(5, 5, 16, 0.65)',
+          border: `1px solid ${accent}55`,
+          boxShadow: `0 0 18px ${accent}40, inset 0 0 12px ${accent}1f`,
           animation: isDown ? 'gravityPulse 1.1s ease-in-out infinite' : undefined,
         }}
       >
@@ -52,7 +51,7 @@ const GravityCompass = () => {
           Gravity
         </div>
 
-        <svg width="72" height="72" viewBox="-50 -50 100 100">
+        <svg width="80" height="80" viewBox="-50 -50 100 100">
           <defs>
             <radialGradient id="compassBg">
               <stop offset="0%" stopColor={accent} stopOpacity="0.18" />
@@ -66,25 +65,10 @@ const GravityCompass = () => {
             </linearGradient>
           </defs>
 
-          {/* Nebula glow disc */}
           <circle cx="0" cy="0" r="46" fill="url(#compassBg)" />
+          <circle cx="0" cy="0" r="40" fill="none" stroke={`${accent}55`} strokeWidth="0.8" />
+          <circle cx="0" cy="0" r="34" fill="none" stroke={`${accent}22`} strokeWidth="0.5" strokeDasharray="2 3" />
 
-          {/* Outer ring */}
-          <circle
-            cx="0" cy="0" r="40"
-            fill="none"
-            stroke={`${accent}55`}
-            strokeWidth="0.8"
-          />
-          <circle
-            cx="0" cy="0" r="34"
-            fill="none"
-            stroke={`${accent}22`}
-            strokeWidth="0.5"
-            strokeDasharray="2 3"
-          />
-
-          {/* Cardinal tick marks (N/E/S/W + diagonals) */}
           {[0, 45, 90, 135, 180, 225, 270, 315].map((deg) => {
             const rad = (deg * Math.PI) / 180;
             const isMain = deg % 90 === 0;
@@ -104,7 +88,6 @@ const GravityCompass = () => {
             );
           })}
 
-          {/* Needle */}
           <g
             style={{
               transform: `rotate(${angle}deg)`,
@@ -113,38 +96,24 @@ const GravityCompass = () => {
               filter: `drop-shadow(0 0 5px ${accent}) drop-shadow(0 0 10px ${accent}88)`,
             }}
           >
-            {/* Tail */}
-            <polygon
-              points="0,8 -3,0 3,0"
-              fill={`${accent}66`}
-            />
-            {/* Head */}
-            <polygon
-              points="0,-30 -4.5,2 4.5,2"
-              fill="url(#needleGrad)"
-            />
-            {/* Highlight stripe */}
-            <line
-              x1="0" y1="-28" x2="0" y2="0"
-              stroke="rgba(255,255,255,0.6)"
-              strokeWidth="0.6"
-            />
+            <polygon points="0,8 -3,0 3,0" fill={`${accent}66`} />
+            <polygon points="0,-30 -4.5,2 4.5,2" fill="url(#needleGrad)" />
+            <line x1="0" y1="-28" x2="0" y2="0" stroke="rgba(255,255,255,0.6)" strokeWidth="0.6" />
           </g>
 
-          {/* Hub */}
           <circle cx="0" cy="0" r="3.2" fill="#0a0a18" stroke={accent} strokeWidth="1" />
           <circle cx="0" cy="0" r="1.2" fill={accent} />
         </svg>
 
         <div
-          className="text-[9px] uppercase tracking-[0.2em] mt-1"
+          className="text-[10px] uppercase tracking-[0.2em] mt-1"
           style={{ color: `${accent}dd`, textShadow: `0 0 5px ${accent}99` }}
         >
           {label}
         </div>
         <div
-          className="text-[8px] tracking-[0.15em] mt-0.5"
-          style={{ color: 'rgba(255,255,255,0.4)' }}
+          className="text-[9px] tracking-[0.15em] mt-0.5"
+          style={{ color: 'rgba(255,255,255,0.5)' }}
         >
           PULL {pct}%
         </div>
