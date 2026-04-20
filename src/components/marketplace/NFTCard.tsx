@@ -44,10 +44,14 @@ const NFTCard = ({ nft }: Props) => {
   const image = nft.metadata?.image_url ?? nft.metadata?.image ?? '';
   const name = nft.metadata?.name ?? `Token #${tokenId.toString()}`;
 
-  // Resolve IPFS → gateway
+  // Resolve IPFS → Thirdweb CDN gateway (faster + better-sized than ipfs.io)
   const imageSrc = typeof image === 'string' && image.startsWith('ipfs://')
-    ? `https://ipfs.io/ipfs/${image.slice(7)}`
+    ? `https://ipfs.thirdwebcdn.com/ipfs/${image.slice(7)}`
     : (image as string);
+
+  // Coming-soon override (name-based, case-insensitive substring match)
+  const nameLower = (typeof name === 'string' ? name : '').toLowerCase();
+  const isComingSoon = COMING_SOON_NAMES.some((n) => nameLower.includes(n));
 
   // Claim window
   const now = Math.floor(Date.now() / 1000);
