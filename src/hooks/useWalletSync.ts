@@ -3,8 +3,8 @@
  *
  * Behavior:
  *  - On wallet connect: pre-checks wallet uniqueness across players. If the address
- *    is already linked to ANOTHER account, force-disconnects and shows a block toast.
- *    Otherwise persists the address to `players.wallet_address`.
+ *    is already linked to ANOTHER account, force-disconnects and fires `onMismatch`
+ *    so the page can show a modal. Otherwise persists the address to `players.wallet_address`.
  *  - On disconnect: session-only. The wallet stays linked in the DB so the user
  *    auto-reconnects next session. Use `unlinkWallet()` for explicit unbinding.
  *  - On wrong chain: auto-prompts a switch to Base (8453).
@@ -27,9 +27,11 @@ interface Options {
   userId: string | null;
   /** Optional: called after a successful link so the page can refresh state. */
   onLinked?: (address: string) => void;
+  /** Called when this wallet is already linked to a different account. */
+  onMismatch?: (address: string) => void;
 }
 
-export function useWalletSync({ userId, onLinked }: Options) {
+export function useWalletSync({ userId, onLinked, onMismatch }: Options) {
   const account = useActiveAccount();
   const wallet = useActiveWallet();
   const chain = useActiveWalletChain();
@@ -56,7 +58,6 @@ export function useWalletSync({ userId, onLinked }: Options) {
 
     let cancelled = false;
     (async () => {
-      // Uniqueness pre-check: is this wallet already on a different account?
       const { data: existing } = await supabase
         .from('players')
         .select('user_id')
@@ -66,10 +67,10 @@ export function useWalletSync({ userId, onLinked }: Options) {
       if (cancelled) return;
 
       if (existing && existing.user_id !== userId) {
-        toast.error('This wallet is already linked to another Nebula account.');
         if (wallet) {
           try { disconnect(wallet); } catch { /* ignore */ }
         }
+        onMismatch?.(address);
         return;
       }
 
@@ -85,7 +86,7 @@ export function useWalletSync({ userId, onLinked }: Options) {
     })();
 
     return () => { cancelled = true; };
-  }, [account, userId, wallet, disconnect, onLinked]);
+  }, [account, userId, wallet, disconnect, onLinked, onMismatch]);
 
   /* ── Reset link guard on disconnect (session-only; DB record stays) ── */
   useEffect(() => {
