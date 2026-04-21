@@ -20,7 +20,7 @@ const NATIVE_CURRENCY = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
 
 // Names (case-insensitive substring) that are not yet live — overrides on-chain claim state.
 // Remove an entry here to flip the card live without contract changes.
-const COMING_SOON_NAMES = ['monstrous', 'mortal escape'];
+const COMING_SOON_NAMES = ['monster', 'mortal escape'];
 
 function formatEth(wei: bigint): string {
   // ETH = wei / 1e18, render up to 6 decimals trimmed
