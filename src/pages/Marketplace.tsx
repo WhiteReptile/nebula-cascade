@@ -231,9 +231,9 @@ const Marketplace = () => {
         <div className="w-20" />
       </div>
 
-      <div className="relative z-10 flex min-h-[calc(100vh-73px)]">
+      <div className="relative z-10 flex">
         {/* ── Sidebar ── */}
-        <nav className="w-52 flex-shrink-0 border-r border-blue-500/20 bg-black/50 backdrop-blur-md flex flex-col">
+        <nav className="w-52 flex-shrink-0 border-r border-blue-500/20 bg-black/50 backdrop-blur-md flex flex-col sticky top-[73px] self-start h-[calc(100vh-73px)]">
           <div className="flex-1 py-6 space-y-2">
             {navItems.map(item => {
               const active = section === item.key;
