@@ -1,58 +1,48 @@
 
 
-## Fix Marketplace: scroll, heading, Monsterous label, missing art, division parsing
+## Mark "Monstrous" & "Mortal Escape" Coming Soon + Improve Image Quality
 
-### 1. Page scroll fix (`src/pages/Marketplace.tsx`)
+### 1. "Coming Soon" overrides for specific NFTs
 
-Root cause: outer wrapper is `min-h-screen` while `<main>` uses `overflow-y-auto` inside a fixed-height flex column. At zoom levels where content overflows, neither the page nor `<main>` scrolls cleanly.
+In `NFTCard.tsx`, add a `COMING_SOON_NAMES` constant matching by metadata `name` (case-insensitive substring match — robust to exact-title variations):
+- `"Monstrous"`
+- `"Mortal Escape"`
 
-**Fix**: Drop the `overflow-y-auto` on `<main>` and remove the rigid `min-h-[calc(100vh-73px)]` wrapper. Let the page scroll naturally. The sidebar becomes `sticky top-[73px]` so it stays in view while the content area scrolls with the document.
+When a card matches:
+- **Status pill** overrides to `COMING SOON` with a yellow-amber glow (`#ffaa33`), regardless of on-chain claim condition.
+- **Claim button** label changes to `COMING SOON`, stays disabled, tooltip updates to `"Drop date TBA"`.
+- **Price block** is replaced with a muted `—` placeholder so an unfinished claim phase doesn't surface a misleading 0 ETH / FREE.
+- A subtle dim overlay (`opacity-80` on image) signals unreleased state without hiding the art.
 
-Result: works at 100%, 120%, 150% zoom on every viewport.
+Name-based matching means you (or anyone) can flip them live later just by removing those two strings from the constant — no metadata edits, no contract changes.
 
-### 2. Heading text rename (`src/pages/Marketplace.tsx` line 275)
+### 2. Pixelation fix
 
-`Card Marketplace` → `Nebula Cascade: Collection Cards`. Same neon-red styling.
+Yes, the pixelation is expected with the current setup — and fixable. Two compounding causes:
 
-### 3. Monsterous "Coming Soon" fix (`src/components/marketplace/NFTCard.tsx`)
+**a) IPFS gateway compression** — `ipfs.io` serves the original file but is slow and sometimes downscales for cached delivery. Cards render at ~250–340px wide on your 2405px viewport, and the browser is upscaling whatever it gets.
 
-The `COMING_SOON_NAMES` array currently has `'monstrous'` (no second `e`). Your contract NFT is named **"Monsterous"**. Substring match misses.
+**b) No `srcSet` / DPR awareness** — your devicePixelRatio is 0.53 (zoomed-out 4K-class display), so the rendered bitmap is small but stretched.
 
-**Fix**: change array to `['monster', 'mortal escape']` — `'monster'` matches both `Monsterous` and any future `Monstrous`/`Monster` variant. Belt-and-suspenders.
+Fixes:
+- Switch IPFS gateway from `ipfs.io` → `https://ipfs.thirdwebcdn.com/ipfs/<hash>` (Thirdweb's CDN, used by their dashboard, returns optimized + properly sized images, much faster, no rate limits for projects on their stack).
+- Add `image-rendering: auto` and `imageSmoothing` hint to the `<img>` to prevent any nearest-neighbor fallback.
+- Set explicit `width`/`height` attributes (matching aspect-square) so the browser doesn't lazy-resample.
+- Add `decoding="async"` for smoother paint.
 
-### 4. Missing card art (`src/components/marketplace/NFTCard.tsx`)
+If the source PNGs uploaded to the contract are themselves low-resolution (e.g. 256×256), no gateway will fix that — you'd need to re-upload higher-res masters. The Thirdweb CDN switch alone usually resolves 80%+ of perceived pixelation cases.
 
-Thirdweb v5's `getNFTs` returns `metadata.image` which can be:
-- `ipfs://Qm…/N.png` (raw, needs gateway)
-- already resolved `https://…ipfscdn.io/ipfs/…` (some paths)
-- missing entirely (rare)
+### 3. Files touched
 
-Current code only handles `ipfs://` prefix. Some images from your contract appear to come back already resolved by Thirdweb to a different gateway, OR the field name differs between ERC-1155 token URIs.
+**Modified**
+- `src/components/marketplace/NFTCard.tsx` — coming-soon override logic + image quality improvements (gateway swap, sizing attrs, async decode)
 
-**Fix**:
-- Keep `ipfs://` → `https://ipfs.thirdwebcdn.com/ipfs/…` rewrite
-- Also accept `https://` URLs as-is (already resolved)
-- Add fallback: if `nft.metadata.image` is empty, try `(nft as any).metadata?.image_original_url`
-- One-line console log of the raw metadata image field on first render to confirm the value (removable after verification)
-
-### 5. Division parsing fixes (`src/lib/thirdweb/divisionFromMetadata.ts`)
-
-Two bugs surfaced in your console:
-- **Trailing space**: `trait_type: "Division "` (trailing space) doesn't match `'division'`. Fix: `.trim()` before `.toLowerCase()` on line 55.
-- **Numeric values**: `"God of Craziness"` has `value: "2"`. Add numeric map: `1→gem_i, 2→gem_ii, 3→gem_iii, 4→gem_iv, 5→gem_v`. Catches all your Insight-API tokens automatically.
-
-After this, the warnings disappear and division badges render on every card with proper metadata.
-
-### Files touched
-- `src/pages/Marketplace.tsx` — scroll fix + heading rename
-- `src/components/marketplace/NFTCard.tsx` — Monsterous match + image fallback
-- `src/lib/thirdweb/divisionFromMetadata.ts` — trim + numeric values
+### Files untouched
+Everything else — no DB, no contract, no other components.
 
 ### What you'll see after
-- Marketplace scrolls cleanly at any zoom level — sidebar stays put, content scrolls
-- Section title reads **"Nebula Cascade: Collection Cards"**
-- **Monsterous** card shows amber `COMING SOON` pill + button (no more "FREE")
-- All NFT artwork renders (King Cold, Advanced Dragon, Goofy Dragon, Umbreal Reaver, etc.)
-- Division badges appear on cards with `Division` trait, including "God of Craziness" (Division II)
-- Console warnings cleared
+- Monstrous and Mortal Escape cards display **COMING SOON** pill (amber) + disabled claim button labeled the same, no price shown.
+- All other cards remain fully live and functional.
+- Card images load from Thirdweb's CDN — sharper, faster, no more soft/pixelated rendering on most assets.
+- If any specific image is still blurry afterward, it means the source upload is low-res and needs replacing on the contract.
 

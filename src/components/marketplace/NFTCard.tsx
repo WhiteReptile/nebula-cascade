@@ -20,7 +20,7 @@ const NATIVE_CURRENCY = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
 
 // Names (case-insensitive substring) that are not yet live — overrides on-chain claim state.
 // Remove an entry here to flip the card live without contract changes.
-const COMING_SOON_NAMES = ['monster', 'mortal escape'];
+const COMING_SOON_NAMES = ['monstrous', 'mortal escape'];
 
 function formatEth(wei: bigint): string {
   // ETH = wei / 1e18, render up to 6 decimals trimmed
@@ -41,28 +41,13 @@ const NFTCard = ({ nft }: Props) => {
 
   const division = extractDivisionFromNFT(nft);
   const supply = nft.type === 'ERC1155' ? nft.supply : 0n;
-  const meta = nft.metadata as Record<string, unknown> | undefined;
-  const rawImage =
-    (meta?.image as string | undefined) ??
-    (meta?.image_url as string | undefined) ??
-    (meta?.image_original_url as string | undefined) ??
-    '';
-  const name = (meta?.name as string | undefined) ?? `Token #${tokenId.toString()}`;
+  const image = nft.metadata?.image_url ?? nft.metadata?.image ?? '';
+  const name = nft.metadata?.name ?? `Token #${tokenId.toString()}`;
 
-  // Resolve IPFS → Thirdweb CDN gateway; pass-through https://
-  let imageSrc = '';
-  if (typeof rawImage === 'string' && rawImage.length > 0) {
-    if (rawImage.startsWith('ipfs://')) {
-      imageSrc = `https://ipfs.thirdwebcdn.com/ipfs/${rawImage.slice(7)}`;
-    } else if (rawImage.startsWith('https://') || rawImage.startsWith('http://')) {
-      imageSrc = rawImage;
-    } else {
-      imageSrc = rawImage;
-    }
-  }
-  if (typeof window !== 'undefined' && !imageSrc) {
-    console.warn('[NFTCard] No image for', name, meta);
-  }
+  // Resolve IPFS → Thirdweb CDN gateway (faster + better-sized than ipfs.io)
+  const imageSrc = typeof image === 'string' && image.startsWith('ipfs://')
+    ? `https://ipfs.thirdwebcdn.com/ipfs/${image.slice(7)}`
+    : (image as string);
 
   // Coming-soon override (name-based, case-insensitive substring match)
   const nameLower = (typeof name === 'string' ? name : '').toLowerCase();
