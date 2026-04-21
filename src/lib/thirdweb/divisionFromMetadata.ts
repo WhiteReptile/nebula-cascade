@@ -20,20 +20,32 @@ const ROMAN_TO_DIVISION: Record<string, Division> = {
   V: 'gem_v',
 };
 
+const NUMERIC_TO_DIVISION: Record<string, Division> = {
+  '1': 'gem_i',
+  '2': 'gem_ii',
+  '3': 'gem_iii',
+  '4': 'gem_iv',
+  '5': 'gem_v',
+};
+
 const VALID: Division[] = ['gem_i', 'gem_ii', 'gem_iii', 'gem_iv', 'gem_v'];
 
 function normalize(raw: unknown): Division | null {
-  if (typeof raw !== 'string') return null;
-  const v = raw.trim().toLowerCase();
+  if (raw == null) return null;
+  const str = String(raw).trim();
+  if (!str) return null;
 
-  if ((VALID as string[]).includes(v)) return v as Division;
+  if (NUMERIC_TO_DIVISION[str]) return NUMERIC_TO_DIVISION[str];
 
-  // "division i" → "i"
-  const stripped = v.replace(/^division\s+/i, '').toUpperCase();
+  const lower = str.toLowerCase();
+  if ((VALID as string[]).includes(lower)) return lower as Division;
+
+  // "division i" → "I"
+  const stripped = lower.replace(/^division\s+/i, '').toUpperCase();
   if (ROMAN_TO_DIVISION[stripped]) return ROMAN_TO_DIVISION[stripped];
 
   // bare "I" / "II" etc.
-  const upper = raw.trim().toUpperCase();
+  const upper = str.toUpperCase();
   if (ROMAN_TO_DIVISION[upper]) return ROMAN_TO_DIVISION[upper];
 
   return null;
@@ -52,7 +64,7 @@ export function extractDivisionFromNFT(nft: NFT): Division | null {
   for (const entry of list) {
     if (!entry || typeof entry !== 'object') continue;
     const e = entry as Record<string, unknown>;
-    const traitType = String(e.trait_type ?? e.traitType ?? '').toLowerCase();
+    const traitType = String(e.trait_type ?? e.traitType ?? '').trim().toLowerCase();
     if (traitType === 'division') {
       const div = normalize(e.value);
       if (div) return div;

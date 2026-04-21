@@ -231,9 +231,9 @@ const Marketplace = () => {
         <div className="w-20" />
       </div>
 
-      <div className="relative z-10 flex min-h-[calc(100vh-73px)]">
+      <div className="relative z-10 flex">
         {/* ── Sidebar ── */}
-        <nav className="w-52 flex-shrink-0 border-r border-blue-500/20 bg-black/50 backdrop-blur-md flex flex-col">
+        <nav className="w-52 flex-shrink-0 border-r border-blue-500/20 bg-black/50 backdrop-blur-md flex flex-col sticky top-0 self-start max-h-screen">
           <div className="flex-1 py-6 space-y-2">
             {navItems.map(item => {
               const active = section === item.key;
@@ -267,12 +267,12 @@ const Marketplace = () => {
         </nav>
 
         {/* ── Content ── */}
-        <main className="flex-1 p-8 overflow-y-auto">
+        <main className="flex-1 p-8">
           {/* ════════ MARKETPLACE ════════ */}
           {section === 'marketplace' && (
             <div className="max-w-6xl mx-auto space-y-6 animate-fade-in">
               <div className="flex items-center justify-between flex-wrap gap-3">
-                <h2 className="text-3xl uppercase tracking-[0.3em] menu-neon-title-red font-bold">Card Marketplace</h2>
+                <h2 className="text-3xl uppercase tracking-[0.3em] menu-neon-title-red font-bold">Nebula Cascade: Collection Cards</h2>
                 {marketTab === 'trade' && (
                   <span className="text-sm glow-white tracking-widest">
                     {filteredListings.length} LISTING{filteredListings.length !== 1 ? 'S' : ''}
