@@ -41,13 +41,18 @@ const NFTCard = ({ nft }: Props) => {
 
   const division = extractDivisionFromNFT(nft);
   const supply = nft.type === 'ERC1155' ? nft.supply : 0n;
-  const image = nft.metadata?.image_url ?? nft.metadata?.image ?? '';
-  const name = nft.metadata?.name ?? `Token #${tokenId.toString()}`;
+  const meta = (nft.metadata ?? {}) as Record<string, unknown>;
+  const rawImage =
+    (typeof meta.image === 'string' && meta.image) ||
+    (typeof meta.image_url === 'string' && meta.image_url) ||
+    (typeof meta.image_original_url === 'string' && meta.image_original_url) ||
+    '';
+  const name = (typeof meta.name === 'string' && meta.name) || `Token #${tokenId.toString()}`;
 
-  // Resolve IPFS → Thirdweb CDN gateway (faster + better-sized than ipfs.io)
-  const imageSrc = typeof image === 'string' && image.startsWith('ipfs://')
-    ? `https://ipfs.thirdwebcdn.com/ipfs/${image.slice(7)}`
-    : (image as string);
+  // Resolve IPFS → Thirdweb CDN gateway; pass http(s) through as-is
+  const imageSrc = rawImage.startsWith('ipfs://')
+    ? `https://ipfs.thirdwebcdn.com/ipfs/${rawImage.slice(7)}`
+    : rawImage;
 
   // Coming-soon override (name-based, case-insensitive substring match)
   const nameLower = (typeof name === 'string' ? name : '').toLowerCase();
