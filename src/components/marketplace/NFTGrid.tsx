@@ -87,31 +87,43 @@ const NFTGrid = () => {
   }
 
   return (
-    <div className="space-y-5">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {nfts.map((nft) => (
-          <NFTCard key={nft.id.toString()} nft={nft} />
-        ))}
-      </div>
+    <div
+      className="rounded-xl border bg-black/40 backdrop-blur-md overflow-hidden"
+      style={{
+        borderColor: 'rgba(255, 51, 68, 0.35)',
+        boxShadow: '0 0 30px rgba(255, 51, 68, 0.12)',
+      }}
+    >
+      {/* Internal scroll viewport — guarantees mouse-wheel browsing inside the panel */}
+      <ScrollArea className="h-[60vh] min-h-[480px] w-full">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 p-4">
+          {nfts.map((nft) => (
+            <NFTCard key={nft.id.toString()} nft={nft} compact />
+          ))}
+        </div>
+      </ScrollArea>
 
-      {/* Arrow pager — always visible so users know how to browse */}
-      <div className="flex items-center justify-center gap-6 pt-2">
+      {/* Big arrow pager — always visible navigation */}
+      <div
+        className="flex items-center justify-center gap-8 py-4 border-t bg-black/50"
+        style={{ borderColor: 'rgba(255, 51, 68, 0.3)' }}
+      >
         <button
           onClick={() => page > 1 && setPage(p => p - 1)}
           disabled={page === 1}
           aria-label="Previous page"
-          className="min-h-[44px] min-w-[44px] px-4 rounded-lg border bg-black/40 font-mono font-bold text-xl transition-all hover:scale-110 disabled:opacity-20 disabled:pointer-events-none"
+          className="h-14 w-14 flex items-center justify-center rounded-xl border bg-black/40 transition-all hover:scale-110 active:scale-95 disabled:opacity-20 disabled:pointer-events-none"
           style={{
-            borderColor: 'rgba(255, 51, 68, 0.6)',
+            borderColor: 'rgba(255, 51, 68, 0.7)',
             color: '#ff8899',
-            boxShadow: '0 0 18px rgba(255, 51, 68, 0.25)',
+            boxShadow: '0 0 22px rgba(255, 51, 68, 0.35)',
           }}
         >
-          ←
+          <ChevronLeft className="h-8 w-8" strokeWidth={3} />
         </button>
         <span
-          className="text-sm font-mono tracking-[0.3em] uppercase font-bold min-w-[80px] text-center"
-          style={{ color: '#ff8899', textShadow: '0 0 8px rgba(255, 51, 68, 0.5)' }}
+          className="text-base font-mono tracking-[0.3em] uppercase font-bold min-w-[100px] text-center"
+          style={{ color: '#ff8899', textShadow: '0 0 10px rgba(255, 51, 68, 0.6)' }}
         >
           Page {page}
         </span>
@@ -119,14 +131,14 @@ const NFTGrid = () => {
           onClick={() => !isLastPage && setPage(p => p + 1)}
           disabled={isLastPage}
           aria-label="Next page"
-          className="min-h-[44px] min-w-[44px] px-4 rounded-lg border bg-black/40 font-mono font-bold text-xl transition-all hover:scale-110 disabled:opacity-20 disabled:pointer-events-none"
+          className="h-14 w-14 flex items-center justify-center rounded-xl border bg-black/40 transition-all hover:scale-110 active:scale-95 disabled:opacity-20 disabled:pointer-events-none"
           style={{
-            borderColor: 'rgba(255, 51, 68, 0.6)',
+            borderColor: 'rgba(255, 51, 68, 0.7)',
             color: '#ff8899',
-            boxShadow: '0 0 18px rgba(255, 51, 68, 0.25)',
+            boxShadow: '0 0 22px rgba(255, 51, 68, 0.35)',
           }}
         >
-          →
+          <ChevronRight className="h-8 w-8" strokeWidth={3} />
         </button>
       </div>
     </div>
