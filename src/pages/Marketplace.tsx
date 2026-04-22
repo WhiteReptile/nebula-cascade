@@ -183,85 +183,98 @@ const Marketplace = () => {
   const feeAmount = priceCents * estimatedFee / 100;
   const sellerReceives = priceCents - feeAmount;
 
-  const navItems: { key: Section; label: string; icon: string }[] = [
-    { key: 'marketplace', label: 'MARKET', icon: '🏪' },
-    { key: 'my-cards', label: 'MY CARDS', icon: '🃏' },
-    { key: 'profile', label: 'PROFILE', icon: '👤' },
-    { key: 'wallet', label: 'WALLET', icon: '💎' },
+  const navItems: { key: Section; label: string }[] = [
+    { key: 'marketplace', label: 'MARKET' },
+    { key: 'my-cards', label: 'MY CARDS' },
+    { key: 'profile', label: 'PROFILE' },
+    { key: 'wallet', label: 'WALLET' },
   ];
 
   /* ── Shared classes ── */
-  const panel = "rounded-xl border border-white/10 bg-black/55 backdrop-blur-md glow-border-blue";
+  const panel = "rounded-xl border border-white/10 bg-black/40 backdrop-blur-xl";
   const btnPrimary = "min-h-[44px] px-5 rounded-lg border bg-black/40 glow-yellow glow-border-yellow text-sm tracking-[0.2em] font-bold hover:bg-yellow-400/10 hover:scale-[1.03] transition-all disabled:opacity-40";
   const btnSecondary = "min-h-[44px] px-5 rounded-lg border bg-black/40 glow-blue glow-border-blue text-sm tracking-[0.2em] font-bold hover:bg-blue-400/10 hover:scale-[1.03] transition-all disabled:opacity-40";
 
-  return (
-    <div className="min-h-screen font-mono relative overflow-x-hidden" style={{ background: '#050510' }}>
-      {/* Cinematic galaxy background */}
-      <div className="market-galaxy" />
+  /* ── Unlock document scroll while marketplace is mounted ── */
+  /* Overrides global overflow:hidden from Index.tsx's fixed game shell. */
+  useEffect(() => {
+    const html = document.documentElement;
+    const body = document.body;
+    const prev = {
+      htmlOverflow: html.style.overflow,
+      bodyOverflow: body.style.overflow,
+      htmlHeight: html.style.height,
+      bodyHeight: body.style.height,
+    };
+    html.style.overflow = 'auto';
+    body.style.overflow = 'auto';
+    html.style.height = 'auto';
+    body.style.height = 'auto';
+    return () => {
+      html.style.overflow = prev.htmlOverflow;
+      body.style.overflow = prev.bodyOverflow;
+      html.style.height = prev.htmlHeight;
+      body.style.height = prev.bodyHeight;
+    };
+  }, []);
 
-      {/* Starfield dots */}
-      <div className="pointer-events-none fixed inset-0 overflow-hidden z-[1]">
-        {Array.from({ length: 80 }).map((_, i) => (
-          <div
-            key={i}
-            className="absolute rounded-full"
-            style={{
-              width: `${1 + Math.random() * 2}px`,
-              height: `${1 + Math.random() * 2}px`,
-              top: `${Math.random() * 100}%`,
-              left: `${Math.random() * 100}%`,
-              background: i % 5 === 0 ? '#ffdd00' : i % 3 === 0 ? '#5599ff' : '#e8f4ff',
-              opacity: 0.15 + Math.random() * 0.5,
-              boxShadow: '0 0 4px currentColor',
-              animation: `pulse ${2 + Math.random() * 5}s ease-in-out infinite`,
-              animationDelay: `${Math.random() * 4}s`,
-            }}
-          />
-        ))}
-      </div>
+  return (
+    <div className="min-h-screen font-mono relative" style={{ background: 'transparent' }}>
+      {/* Cosmic galaxy — same canvas as MainMenu for visual continuity */}
+      <GalaxyBackground zIndex={0} />
 
       {/* ── Header ── */}
-      <div className="relative z-10 flex items-center justify-between px-6 py-4 border-b border-blue-500/20 bg-black/40 backdrop-blur-md">
-        <button onClick={() => navigate('/')} className="glow-blue text-sm tracking-widest hover:scale-110 transition-transform min-h-[44px] px-3">
-          ← BACK
+      <header className="relative z-10 flex items-center justify-between px-6 py-5">
+        <button
+          onClick={() => navigate('/')}
+          className="font-mono uppercase tracking-[0.2em] text-xs px-4 py-2 rounded border border-cyan-500/40 bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 hover:border-cyan-400/60 transition-all min-h-[40px]"
+          style={{ textShadow: '0 0 8px rgba(0,200,255,0.4)' }}
+        >
+          ← Back
         </button>
-        <h1 className="text-3xl md:text-4xl font-bold tracking-[0.5em] glow-yellow">
-          NEBULA HUB
+        <h1 className="font-mono uppercase tracking-[0.5em] text-2xl md:text-4xl font-black whitespace-nowrap select-none">
+          <span className="menu-neon-title">NEBULA</span>{' '}
+          <span className="menu-neon-title-red">HUB</span>
         </h1>
         <div className="w-20" />
-      </div>
+      </header>
 
       <div className="relative z-10 flex">
-        {/* ── Sidebar ── */}
-        <nav className="w-52 flex-shrink-0 border-r border-blue-500/20 bg-black/50 backdrop-blur-md flex flex-col sticky top-0 self-start max-h-screen">
-          <div className="flex-1 py-6 space-y-2">
+        {/* ── Sidebar (sticky, scroll-along) ── */}
+        <nav
+          className="w-52 flex-shrink-0 flex flex-col sticky self-start"
+          style={{ top: '92px', height: 'calc(100vh - 92px)' }}
+        >
+          <div className="flex-1 py-6 space-y-1 px-2">
             {navItems.map(item => {
               const active = section === item.key;
               return (
                 <button
                   key={item.key}
                   onClick={() => setSection(item.key)}
-                  className={`relative w-full text-left px-5 py-4 text-base tracking-[0.25em] uppercase font-bold transition-all flex items-center gap-3 min-h-[52px] ${
-                    active ? 'glow-yellow bg-yellow-400/5' : 'glow-blue opacity-70 hover:opacity-100 hover:bg-blue-400/5'
+                  className={`relative w-full text-left pl-6 pr-4 py-3 text-sm tracking-[0.25em] uppercase font-bold transition-all min-h-[48px] font-mono ${
+                    active ? 'text-red-400 scale-[1.02]' : 'text-red-900/60 hover:text-red-400/80'
                   }`}
+                  style={active ? { textShadow: '0 0 10px rgba(255,50,50,0.6), 0 0 30px rgba(255,50,50,0.3)' } : undefined}
                 >
                   {active && (
                     <span
-                      className="absolute left-0 top-2 bottom-2 w-1 rounded-r"
-                      style={{ background: '#ffdd00', boxShadow: '0 0 12px #ffdd00, 0 0 24px #ffdd00' }}
+                      className="absolute left-0 top-2 bottom-2 w-[3px] rounded-r"
+                      style={{ background: '#ff3344', boxShadow: '0 0 12px #ff3344, 0 0 24px #ff3344' }}
                     />
                   )}
-                  <span className="text-xl">{item.icon}</span>
                   {item.label}
                 </button>
               );
             })}
           </div>
           {user && (
-            <div className="p-4 border-t border-blue-500/20">
-              <button onClick={handleLogout} className="w-full glow-white text-sm tracking-widest uppercase py-3 hover:glow-yellow transition-all min-h-[44px]">
-                LOG OUT
+            <div className="p-4">
+              <button
+                onClick={handleLogout}
+                className="w-full font-mono uppercase tracking-[0.2em] text-[11px] py-3 text-red-900/60 hover:text-red-400/80 transition-all min-h-[40px]"
+              >
+                Log Out
               </button>
             </div>
           )}
