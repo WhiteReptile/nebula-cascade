@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { playTick, playSelect } from '@/lib/sfx';
+import GalaxyBackground from '@/components/shared/GalaxyBackground';
 
 interface MainMenuProps {
   onStart: () => void;

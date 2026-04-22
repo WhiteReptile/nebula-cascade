@@ -49,9 +49,10 @@ const NFTCard = ({ nft }: Props) => {
     '';
   const name = (typeof meta.name === 'string' && meta.name) || `Token #${tokenId.toString()}`;
 
-  // Resolve IPFS → Thirdweb CDN gateway; pass http(s) through as-is
+  // Resolve IPFS → project-dedicated Thirdweb CDN (same domain serving the metadata).
+  // Generic ipfs.thirdwebcdn.com gateway rate-limits/rejects, so we use the client-scoped CDN.
   const imageSrc = rawImage.startsWith('ipfs://')
-    ? `https://ipfs.thirdwebcdn.com/ipfs/${rawImage.slice(7)}`
+    ? `https://0ee0974906e5b6b9d18c8f635d4a3df0.ipfscdn.io/ipfs/${rawImage.slice(7)}`
     : rawImage;
 
   // Coming-soon override (name-based, case-insensitive substring match)
