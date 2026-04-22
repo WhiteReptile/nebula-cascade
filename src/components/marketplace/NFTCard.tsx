@@ -163,7 +163,7 @@ const NFTCard = ({ nft, compact = false }: Props) => {
       </div>
 
       {/* Price */}
-      <div className="flex items-end justify-between border-t border-red-500/20 pt-3">
+      <div className={`flex items-end justify-between border-t border-red-500/20 ${compact ? 'pt-2' : 'pt-3'}`}>
         <div>
           <div className="text-[10px] uppercase tracking-widest text-white/40 font-mono">Price</div>
           {isComingSoon ? (
@@ -195,7 +195,7 @@ const NFTCard = ({ nft, compact = false }: Props) => {
           <TooltipTrigger asChild>
             <button
               disabled
-              className="min-h-[40px] px-4 rounded-lg border text-xs tracking-[0.2em] font-mono font-bold uppercase opacity-40 cursor-not-allowed"
+              className={`rounded-lg border tracking-[0.2em] font-mono font-bold uppercase opacity-40 cursor-not-allowed ${compact ? 'min-h-[32px] px-2.5 text-[10px]' : 'min-h-[40px] px-4 text-xs'}`}
               style={{
                 borderColor: isComingSoon ? 'rgba(255, 170, 51, 0.5)' : 'rgba(255, 51, 68, 0.5)',
                 color: isComingSoon ? '#ffcc77' : '#ff8899',
