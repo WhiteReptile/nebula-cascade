@@ -1,48 +1,59 @@
 
 
-## Mark "Monstrous" & "Mortal Escape" Coming Soon + Improve Image Quality
+## Marketplace overhaul: MainMenu-style galaxy + fix scroll + fix images
 
-### 1. "Coming Soon" overrides for specific NFTs
+Three problems, one cohesive fix. The marketplace will look and feel like a natural continuation of the start menu — same animated galaxy canvas, same neon-red typography, same minimalist vibe — while keeping all the NFT logic you've already built.
 
-In `NFTCard.tsx`, add a `COMING_SOON_NAMES` constant matching by metadata `name` (case-insensitive substring match — robust to exact-title variations):
-- `"Monstrous"`
-- `"Mortal Escape"`
+---
 
-When a card matches:
-- **Status pill** overrides to `COMING SOON` with a yellow-amber glow (`#ffaa33`), regardless of on-chain claim condition.
-- **Claim button** label changes to `COMING SOON`, stays disabled, tooltip updates to `"Drop date TBA"`.
-- **Price block** is replaced with a muted `—` placeholder so an unfinished claim phase doesn't surface a misleading 0 ETH / FREE.
-- A subtle dim overlay (`opacity-80` on image) signals unreleased state without hiding the art.
+### 1. Galaxy canvas background (continuity with MainMenu)
 
-Name-based matching means you (or anyone) can flip them live later just by removing those two strings from the constant — no metadata edits, no contract changes.
+Extract the MainMenu's animated canvas (200 stars + 3 drifting nebulas + radial vignette + scanlines) into a reusable component `<GalaxyBackground />` and mount it as a **fixed full-screen layer behind the marketplace**. Same colors, same drift speeds, same vignette mask. Replaces the current static `.market-galaxy` CSS gradient + 80 pulsing dots (which don't match the menu's quality).
 
-### 2. Pixelation fix
+The marketplace content sits on top in a transparent layer — no solid black panels, just glassmorphism (`bg-black/40 backdrop-blur-xl`) so the galaxy shows through everything. Same fade-in transition as the menu when arriving on the page.
 
-Yes, the pixelation is expected with the current setup — and fixable. Two compounding causes:
+### 2. Scroll fix (real root cause)
 
-**a) IPFS gateway compression** — `ipfs.io` serves the original file but is slow and sometimes downscales for cached delivery. Cards render at ~250–340px wide on your 2405px viewport, and the browser is upscaling whatever it gets.
+Two bugs compounding:
+- The sidebar is `sticky top-0 self-start max-h-screen` but the parent flex row has no `min-h-screen`, so on tall content the sidebar collapses and the page doesn't establish a scroll context properly at certain viewport ratios.
+- The outer wrapper uses `min-h-screen` + `overflow-x-hidden` but the body itself sometimes inherits `overflow: hidden` from the global game styles intended for the gameplay page.
 
-**b) No `srcSet` / DPR awareness** — your devicePixelRatio is 0.53 (zoomed-out 4K-class display), so the rendered bitmap is small but stretched.
+Fix:
+- Outer wrapper becomes a normal scrollable document: `min-h-screen` + no overflow lock.
+- Sidebar uses `sticky top-[73px]` (below header height) + `h-[calc(100vh-73px)]` so it stays fixed while content scrolls naturally.
+- Add a body-level guard `<style>` that explicitly sets `overflow-y: auto` on `html, body` while the marketplace is mounted, overriding any leftover `overflow: hidden` from `Index.tsx`'s fixed-screen game shell.
 
-Fixes:
-- Switch IPFS gateway from `ipfs.io` → `https://ipfs.thirdwebcdn.com/ipfs/<hash>` (Thirdweb's CDN, used by their dashboard, returns optimized + properly sized images, much faster, no rate limits for projects on their stack).
-- Add `image-rendering: auto` and `imageSmoothing` hint to the `<img>` to prevent any nearest-neighbor fallback.
-- Set explicit `width`/`height` attributes (matching aspect-square) so the browser doesn't lazy-resample.
-- Add `decoding="async"` for smoother paint.
+### 3. Card images — use the working gateway
 
-If the source PNGs uploaded to the contract are themselves low-resolution (e.g. 256×256), no gateway will fix that — you'd need to re-upload higher-res masters. The Thirdweb CDN switch alone usually resolves 80%+ of perceived pixelation cases.
+Network logs prove the metadata JSON loads fine from `https://0ee0974906e5b6b9d18c8f635d4a3df0.ipfscdn.io/ipfs/...` (your project's dedicated Thirdweb CDN). But `NFTCard.tsx` rewrites the image URL to `https://ipfs.thirdwebcdn.com/ipfs/...` (a different, generic gateway) — that's why images don't render: the generic gateway is either rate-limited, slow, or rejecting requests for your project.
 
-### 3. Files touched
+Fix: rewrite `ipfs://` URLs to your **project-specific Thirdweb CDN** using the client ID already in the SDK config:
+```
+https://0ee0974906e5b6b9d18c8f635d4a3df0.ipfscdn.io/ipfs/<hash>/<file>
+```
+Same domain that's already serving your metadata successfully. Zero new infra, zero rate limits.
 
-**Modified**
-- `src/components/marketplace/NFTCard.tsx` — coming-soon override logic + image quality improvements (gateway swap, sizing attrs, async decode)
+### 4. Visual polish to match the menu
 
-### Files untouched
-Everything else — no DB, no contract, no other components.
+- Header: drop the boxy bordered bar, use the same big neon title treatment as the menu (`menu-neon-title` / `menu-neon-title-red`). Title becomes **NEBULA HUB** in red neon, just like CASCADE on the menu.
+- Sidebar: minimalist text-only nav (no emoji icons), neon-red active state with a glowing left bar — visually identical to the menu's selected-item treatment.
+- Tab bar (Mint / Trade): same red neon underline style, no boxes.
+- Cards: thinner borders, more breathing room, the galaxy shows through the gaps.
+- "BACK" button → small ghost button top-left like Roadmap on menu.
+
+### Files touched
+
+- **New**: `src/components/shared/GalaxyBackground.tsx` — reusable canvas (extracted from MainMenu)
+- `src/components/menu/MainMenu.tsx` — refactor to use the new shared component (no visual change)
+- `src/pages/Marketplace.tsx` — galaxy mount, scroll fix, header/sidebar restyle
+- `src/components/marketplace/NFTCard.tsx` — IPFS gateway swap to project CDN
+- `src/index.css` — remove now-unused `.market-galaxy` rules; add scroll-unlock guard
 
 ### What you'll see after
-- Monstrous and Mortal Escape cards display **COMING SOON** pill (amber) + disabled claim button labeled the same, no price shown.
-- All other cards remain fully live and functional.
-- Card images load from Thirdweb's CDN — sharper, faster, no more soft/pixelated rendering on most assets.
-- If any specific image is still blurry afterward, it means the source upload is low-res and needs replacing on the contract.
+
+- Click MARKETPLACE on the menu → seamless transition into the same galaxy, just with NFT cards layered on top. No jarring change of aesthetic.
+- Page scrolls cleanly at any zoom level / viewport.
+- All card art renders sharply via your dedicated CDN — King Cold, Advanced Dragon, Goofy Dragon, Powermon, all of them.
+- Monsterous + Mortal Escape still show amber **COMING SOON** (no regression).
+- Sidebar feels like a natural extension of the menu, not a generic admin panel.
 
