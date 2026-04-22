@@ -195,31 +195,8 @@ const Marketplace = () => {
   const btnPrimary = "min-h-[44px] px-5 rounded-lg border bg-black/40 glow-yellow glow-border-yellow text-sm tracking-[0.2em] font-bold hover:bg-yellow-400/10 hover:scale-[1.03] transition-all disabled:opacity-40";
   const btnSecondary = "min-h-[44px] px-5 rounded-lg border bg-black/40 glow-blue glow-border-blue text-sm tracking-[0.2em] font-bold hover:bg-blue-400/10 hover:scale-[1.03] transition-all disabled:opacity-40";
 
-  /* ── Unlock document scroll while marketplace is mounted ── */
-  /* Overrides global overflow:hidden from Index.tsx's fixed game shell. */
-  useEffect(() => {
-    const html = document.documentElement;
-    const body = document.body;
-    const prev = {
-      htmlOverflow: html.style.overflow,
-      bodyOverflow: body.style.overflow,
-      htmlHeight: html.style.height,
-      bodyHeight: body.style.height,
-    };
-    html.style.overflow = 'auto';
-    body.style.overflow = 'auto';
-    html.style.height = 'auto';
-    body.style.height = 'auto';
-    return () => {
-      html.style.overflow = prev.htmlOverflow;
-      body.style.overflow = prev.bodyOverflow;
-      html.style.height = prev.htmlHeight;
-      body.style.height = prev.bodyHeight;
-    };
-  }, []);
-
   return (
-    <div className="min-h-screen font-mono relative" style={{ background: 'transparent' }}>
+    <div className="min-h-screen w-full font-mono relative overflow-visible" style={{ background: 'transparent' }}>
       {/* Cosmic galaxy — same canvas as MainMenu for visual continuity */}
       <GalaxyBackground zIndex={0} />
 
