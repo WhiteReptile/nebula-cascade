@@ -1,61 +1,98 @@
 
+## Replace Marketplace Mint with a self-contained card browser
 
-## Final scroll fix — targeted at the iframe preview
+The problem is no longer “page scroll.” For the Marketplace Mint tab, I’ll stop depending on the page itself and make the NFT area scrollable/browsable inside its own container.
 
-The reason scrolling has failed every previous attempt: the global CSS was fixed, but **inner containers still use `100vh` and flex layouts that prevent the page from ever growing taller than the iframe viewport.** With nothing taller than the viewport, the browser has nothing to scroll.
+### 1. Turn Mint into a contained viewport
+Use the existing `ScrollArea` component to wrap the Mint card region in a fixed-height panel.
 
-This pass fixes the actual blockers, in the embedded preview specifically.
+Files:
+- `src/pages/Marketplace.tsx`
+- `src/components/marketplace/NFTGrid.tsx`
 
-### 1. Marketplace — remove the viewport-locked sidebar
+Implementation:
+- Keep the Marketplace shell as-is.
+- Inside the Mint tab, place the card browser inside a bordered, neon-styled container.
+- Give that container a fixed viewport-friendly height so it always works inside the embedded preview.
+- The scrollbar will live inside that Mint box, not on the whole page.
 
-In `src/pages/Marketplace.tsx`:
+Result:
+- Even if the preview iframe behaves badly, the user can still wheel-scroll inside the Mint panel.
 
-- Remove `height: calc(100vh - 92px)` from the sidebar (line 223). That single rule caps the entire flex row at viewport height.
-- Keep the sidebar `sticky` with `top: 92px` and `self-start` so it stays in view while scrolling, but let its height be **content-driven**, not viewport-driven.
-- Confirm no parent uses `overflow-hidden` or fixed height. The chain `min-h-screen` → `flex` → `<main className="flex-1 p-8">` is correct once the sidebar height cap is gone.
-- Keep `GalaxyBackground` as the fixed background (z-0).
+### 2. Keep 6 cards per page, but make the 6-card block scroll inside the box
+Keep the current page-based fetch size of 6.
 
-### 2. Rewards — fix sticky stack so content under the fold is reachable
+Files:
+- `src/lib/thirdweb/nftQueries.ts`
+- `src/components/marketplace/NFTGrid.tsx`
 
-In `src/pages/Rewards.tsx`:
+Implementation:
+- Keep `NFT_PAGE_SIZE = 6`.
+- Render those 6 cards inside the internal scroll viewport.
+- Use a tighter layout so the card block feels more like a contained gallery than a long page.
 
-- Keep the page wrapper as `min-h-screen`.
-- Keep header sticky at `top-0`, but reduce its weight so the sticky tab bar at `top-[60px]` doesn't double-cover content.
-- Add bottom padding (`pb-24`) on the content section so the last tab content isn't flush against the iframe's bottom edge.
-- Verify no inner container sets a fixed height.
+### 3. Compact the Mint card layout so 6 cards fit better
+Right now each NFT card is too tall for the available preview height.
 
-### 3. Confirm `index.css` global rules are clean
+File:
+- `src/components/marketplace/NFTCard.tsx`
 
-`src/index.css` already has the right defaults (`min-height: 100vh`, `overflow-y: auto`, `.game-shell-active` opt-in lock). No change needed here unless audit reveals a leftover.
+Implementation:
+- Add a compact Marketplace variant for Mint cards:
+  - slightly smaller image area
+  - tighter padding
+  - tighter gaps
+  - reduce secondary text size/spacing
+  - keep name, token number, division badge, price, and status pill intact
+- Do not change the actual NFT logic, image sourcing, division logic, or claim-state logic.
 
-### 4. Confirm `Index.tsx` is the only fullscreen route
+Result:
+- The 6-card page becomes much easier to browse inside the contained box.
 
-Already correct — uses `.game-shell-active` toggling. Leave as-is.
+### 4. Upgrade the arrows so browsing is obvious
+Make the previous/next controls much more visible and treat them as the main navigation between 6-card sets.
 
-### 5. Quick audit of remaining routes
+File:
+- `src/components/marketplace/NFTGrid.tsx`
 
-Open and verify these don't have inner `100vh` / `h-screen` / `overflow-hidden` blockers:
-- `src/pages/Options.tsx`
-- `src/pages/Leaderboard.tsx`
-- `src/pages/Roadmap.tsx`
-- `src/pages/Auth.tsx`
-- `src/pages/AdminRewards.tsx`
+Implementation:
+- Keep page-based left/right navigation.
+- Enlarge the arrows visually and place them so they feel like a real card browser.
+- Keep the center page label.
+- Disable previous on page 1 and next on the last page as it works now.
 
-Fix any that do, using the same pattern: `min-h-screen` wrapper, no fixed-height inner containers, no `overflow-hidden` on wrappers.
+### 5. Add the fallback browsing mode only if needed
+If the contained 6-card browser still feels too cramped after the compact pass, switch the Mint grid to a 4-card horizontal carousel layout.
 
-### 6. Verify in the embedded preview
+Files:
+- `src/components/marketplace/NFTGrid.tsx`
+- optionally `src/components/marketplace/NFTCard.tsx`
 
-After changes, navigate the embedded preview to `/marketplace` and `/rewards`, scroll with the mouse wheel, and confirm:
-- Page extends past the viewport
-- Mouse wheel scrolls the document
-- Sticky header/sidebar stay visible while content scrolls underneath
-- Returning to `/` re-locks the game shell correctly
+Fallback structure:
+- desktop: 4 cards in one horizontal row
+- large left/right arrows
+- each click shows the next mixed set of cards
+- division filters remain separate and can still narrow results later
+
+This fallback will only be used if the contained 6-card scroll box still cannot feel clean in the preview.
+
+### 6. Scope the work only to Marketplace Mint
+Do not touch:
+- Rewards & Rules
+- game page
+- Trade marketplace behavior
+- wallet/auth logic
+
+Only the Mint browsing experience changes.
 
 ## Files to modify
-- `src/pages/Marketplace.tsx` — remove sidebar `height: calc(100vh - 92px)` cap
-- `src/pages/Rewards.tsx` — adjust sticky stack and add bottom padding
-- Any of the audit-list pages that still contain inner viewport locks
+- `src/pages/Marketplace.tsx`
+- `src/components/marketplace/NFTGrid.tsx`
+- `src/components/marketplace/NFTCard.tsx`
+- `src/lib/thirdweb/nftQueries.ts` (likely unchanged or only confirmed at 6)
 
-## Why this will actually work this time
-Previous fixes targeted the **document/root** level. The real blocker was **inside the page** — a `100vh`-locked sidebar inside a flex row, which flattened the entire content area to viewport height. Removing that single cap lets the page grow with its content, which is the only condition under which the iframe will scroll.
-
+## Expected result
+- The Mint area becomes a dedicated card browser panel
+- Mouse wheel works inside the Mint box even if page scrolling is unreliable
+- Users browse 6 cards at a time with clear arrows
+- If needed, the UI can be tightened further into a 4-card horizontal carousel without changing the data source
