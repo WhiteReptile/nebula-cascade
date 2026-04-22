@@ -258,10 +258,10 @@ const Marketplace = () => {
         </nav>
 
         {/* ── Content ── */}
-        <main className="flex-1 p-8">
+        <main className="flex-1 px-4 lg:px-6 py-6 min-w-0">
           {/* ════════ MARKETPLACE ════════ */}
           {section === 'marketplace' && (
-            <div className="max-w-6xl mx-auto space-y-6 animate-fade-in">
+            <div className={`${marketTab === 'mint' ? 'w-full' : 'max-w-6xl mx-auto'} space-y-6 animate-fade-in`}>
               <div className="flex items-center justify-between flex-wrap gap-3">
                 <h2 className="text-3xl uppercase tracking-[0.3em] menu-neon-title-red font-bold">Nebula Cascade: Collection Cards</h2>
                 {marketTab === 'trade' && (
