@@ -93,7 +93,7 @@ const NFTGrid = () => {
       prevDisabled={page === 1}
       nextDisabled={isLastPage}
     >
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 w-full">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 w-full">
         {nfts.map((nft) => (
           <NFTCard key={nft.id.toString()} nft={nft} />
         ))}
