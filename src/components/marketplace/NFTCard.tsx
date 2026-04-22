@@ -157,8 +157,8 @@ const NFTCard = ({ nft, compact: _compact = false }: Props) => {
       {/* Name + Division */}
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <h3 className="font-bold font-mono truncate text-white/95 text-lg leading-tight">{name}</h3>
-          <div className="uppercase tracking-widest text-white/50 font-mono text-[11px] mt-1">
+          <h3 className="font-bold font-mono text-white/95 text-base lg:text-lg leading-tight break-words" title={name}>{name}</h3>
+          <div className="uppercase tracking-wider text-white/50 font-mono text-[10px] mt-1">
             #{tokenId.toString()} · {supply.toString()} minted
           </div>
         </div>
@@ -166,30 +166,30 @@ const NFTCard = ({ nft, compact: _compact = false }: Props) => {
       </div>
 
       {/* Price */}
-      <div className="flex items-end justify-between border-t border-red-500/20 pt-2.5">
-        <div>
-          <div className="text-[11px] uppercase tracking-widest text-white/50 font-mono">Price</div>
+      <div className="flex items-end justify-between border-t border-red-500/20 pt-2 gap-2">
+        <div className="min-w-0">
+          <div className="text-[10px] uppercase tracking-widest text-white/50 font-mono">Price</div>
           {isComingSoon ? (
-            <div className="text-xl font-mono font-bold text-white/40">—</div>
+            <div className="text-lg font-mono font-bold text-white/40">—</div>
           ) : condLoading ? (
             <div className="text-sm text-white/40 font-mono mt-1">…</div>
           ) : isFree ? (
-            <div className="text-xl font-mono font-bold text-green-400" style={{ textShadow: '0 0 8px #22ff88' }}>
+            <div className="text-lg font-mono font-bold text-green-400" style={{ textShadow: '0 0 8px #22ff88' }}>
               FREE
             </div>
           ) : isNative ? (
             <>
-              <div className="text-xl font-mono font-bold text-white/95 leading-tight">
-                {formatEth(priceWei)} <span className="text-sm text-white/55">ETH</span>
+              <div className="text-base lg:text-lg font-mono font-bold text-white/95 leading-tight whitespace-nowrap">
+                {formatEth(priceWei)} <span className="text-xs text-white/55">ETH</span>
               </div>
               {usdValue !== null && (
-                <div className="text-[12px] text-white/50 font-mono mt-0.5">
+                <div className="text-[11px] text-white/50 font-mono mt-0.5">
                   ≈ ${usdValue.toFixed(2)}
                 </div>
               )}
             </>
           ) : (
-            <div className="text-sm font-mono text-white/60">Custom currency</div>
+            <div className="text-sm font-mono text-white/60">Custom</div>
           )}
         </div>
 
@@ -198,14 +198,14 @@ const NFTCard = ({ nft, compact: _compact = false }: Props) => {
           <TooltipTrigger asChild>
             <button
               disabled
-              className="rounded-lg border tracking-[0.2em] font-mono font-bold uppercase opacity-50 cursor-not-allowed min-h-[40px] px-4 text-xs"
+              className="rounded-lg border tracking-[0.15em] font-mono font-bold uppercase opacity-50 cursor-not-allowed min-h-[36px] px-3 text-[11px] shrink-0"
               style={{
                 borderColor: isComingSoon ? 'rgba(255, 170, 51, 0.5)' : 'rgba(255, 51, 68, 0.5)',
                 color: isComingSoon ? '#ffcc77' : '#ff8899',
                 background: 'rgba(0,0,0,0.4)',
               }}
             >
-              {isComingSoon ? 'Coming Soon' : 'Claim'}
+              {isComingSoon ? 'Soon' : 'Claim'}
             </button>
           </TooltipTrigger>
           <TooltipContent side="top">
