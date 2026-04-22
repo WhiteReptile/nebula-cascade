@@ -15,6 +15,8 @@ interface Props {
   compact?: boolean;
 }
 
+// Note: `compact` retained for API compatibility but Mint carousel now always renders full-size.
+
 const ZERO = 0n;
 const MAX_UINT256 = (1n << 256n) - 1n;
 const NATIVE_CURRENCY = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
@@ -34,7 +36,8 @@ function formatEth(wei: bigint): string {
   return fracStr ? `${whole}.${fracStr}` : whole.toString();
 }
 
-const NFTCard = ({ nft, compact = false }: Props) => {
+const NFTCard = ({ nft, compact: _compact = false }: Props) => {
+  const compact = false; // Mint carousel always uses full-size cards now
   const tokenId = nft.id;
   const { data: cond, isLoading: condLoading, error: condError } =
     useTokenClaimCondition(tokenId);
