@@ -1,91 +1,120 @@
 
-## Replace scroll dependency with a fixed 6-card pager in Marketplace
+Implement a route-safe scrolling fix that makes every non-game page scroll normally with the mouse, while keeping the game/menu experience locked to the viewport.
 
-The Marketplace mint view will stop relying on vertical scrolling. Instead, it will always show **6 cards at a time** and let the user move through the collection with **left/right arrows**.
+## What to change
 
-### 1. Change Mint pagination from 12 to 6
-Update the Mint grid so each page fetches and renders **exactly 6 NFTs** instead of 12.
+### 1. Remove the global scroll lock from the app root
+The main blocker is the global CSS in `src/index.css`:
 
-Files:
-- `src/components/marketplace/NFTGrid.tsx`
-- `src/lib/thirdweb/nftQueries.ts`
+```css
+html, body, #root {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+```
 
-Implementation:
-- Change the page size used by `useCollectionNFTs(...)` from `12` to `6`.
-- Keep the current page-based contract reads, just with a smaller batch size.
-- Keep the “last page” heuristic the same: if fewer than 6 NFTs return, disable the next arrow.
+This forces the entire app into a fixed viewport and prevents normal document scrolling on pages like Marketplace and Rewards.
 
-### 2. Redesign the Mint grid to fit in-view without scrolling
-Make the card layout a **two-row max** desktop grid so the user can browse by paging, not scrolling.
+Update it so the app defaults to normal page flow:
+- `html, body` should allow vertical scrolling
+- `#root` should not be hard-locked to `100vh`
+- keep `overflow-x: hidden`, but do not globally hide `overflow-y`
 
-File:
-- `src/components/marketplace/NFTGrid.tsx`
+Target behavior:
+```text
+Default app = scrollable document
+Game/menu route only = fixed fullscreen shell
+```
 
-Implementation:
-- Use a layout that shows:
-  - mobile: 1 column
-  - tablet: 2 columns
-  - desktop: 3 columns
-- With 6 cards/page, desktop becomes **3 × 2**, which avoids the current long page.
-- Reduce vertical gap slightly so the full mint block feels tighter and more menu-like.
+### 2. Keep the game route isolated in its own fullscreen shell
+`src/pages/Index.tsx` should remain the only place that uses:
+- `fixed inset-0`
+- `overflow-hidden`
+- `width: 100vw`
+- `height: 100vh`
 
-### 3. Turn the pager into a clear “6 more cards” control
-Keep only the arrow-based navigation pattern the user asked for.
+That preserves:
+- the main menu
+- the game canvas
+- the HUD
+- the non-scroll gameplay experience
 
-File:
-- `src/components/marketplace/NFTGrid.tsx`
+No other route should depend on the root document being locked.
 
-Implementation:
-- Keep previous/next controls at the bottom, but restyle them as clear arrow navigation.
-- Show a small center label like:
-  - `PAGE 1`
-  - or `1 / N` if total-page estimation becomes available later
-- Disable previous on page 1.
-- Disable next when the fetched result count is under 6.
+### 3. Refactor Marketplace to be a real scrolling page
+`src/pages/Marketplace.tsx` currently tries to fight the global lock with a `useEffect` that manually sets `html.style.overflow = 'auto'`. That is a patch, not a reliable fix.
 
-### 4. Remove Mint’s dependence on page scroll
-The Mint section should behave like a contained browsing surface, not a long document.
+Change Marketplace so it works as a normal document page:
+- remove the overflow-forcing `useEffect`
+- keep `min-h-screen`
+- allow content to extend naturally below the fold
+- keep the galaxy background fixed behind the page
+- keep the header sticky if desired
+- keep sidebar sticky only if it does not block content flow
 
-Files:
+Also simplify layout so the main content establishes page height naturally:
+- header at top
+- content wrapper below
+- marketplace sections stack in document flow
+- no hidden overflow on parent containers
+
+### 4. Ensure Rewards & Rules scrolls with the mouse
+`src/pages/Rewards.tsx` is structurally close, but it is still affected by the global root lock.
+
+After the global fix:
+- keep page wrapper as `min-h-screen`
+- keep sticky header and sticky tab bar
+- preserve bottom padding so the last content block is reachable
+- make no parent container fixed-height or overflow-hidden
+
+This page should scroll naturally without any per-page overflow hacks.
+
+### 5. Align other non-game routes with the same rule
+Audit and normalize these pages so they do not use fullscreen fixed wrappers unless absolutely necessary:
+- `src/pages/Options.tsx`
+- `src/pages/Auth.tsx`
+- `src/pages/Leaderboard.tsx`
+- `src/pages/Roadmap.tsx`
+- `src/pages/AdminRewards.tsx`
+
+Specific changes:
+- `Options.tsx`: replace `fixed inset-0` with `min-h-screen`
+- keep centered layout, but let the page exist in normal document flow
+- other pages can stay mostly as-is if they already use `min-h-screen`
+
+### 6. Add one consistent scrolling rule for all non-game pages
+Create a simple pattern used everywhere outside gameplay:
+
+```text
+Page wrapper:
+min-h-screen
+w-full
+relative
+overflow-visible
+
+Document:
+html/body scroll normally
+```
+
+This avoids one-off fixes per page and prevents the same bug from returning.
+
+## Files to modify
+- `src/index.css`
+- `src/pages/Index.tsx`
 - `src/pages/Marketplace.tsx`
-- `src/components/marketplace/NFTGrid.tsx`
+- `src/pages/Rewards.tsx`
+- `src/pages/Options.tsx`
+- optionally verify/adjust:
+  - `src/pages/Leaderboard.tsx`
+  - `src/pages/Roadmap.tsx`
+  - `src/pages/Auth.tsx`
+  - `src/pages/AdminRewards.tsx`
 
-Implementation:
-- Keep the existing Marketplace shell, galaxy background, and sidebar.
-- Ensure the Mint tab content is visually complete with:
-  - section title
-  - short subtitle
-  - 6-card grid
-  - bottom arrows
-- No additional content should require scrolling just to continue browsing the collection.
-
-### 5. Do not touch the existing NFT card logic beyond layout compatibility
-Keep the current NFT build intact while changing only the browsing model.
-
-Files left functionally intact:
-- `src/components/marketplace/NFTCard.tsx`
-
-This means:
-- claim-condition logic stays as-is
-- “Coming Soon” overrides stay as-is
-- division badges stay as-is
-- image logic stays as-is for this pass
-
-### Technical notes
-- Current code already has page-based fetching, so this is a focused refactor, not a rebuild.
-- The main change is:
-  - `NFT_PAGE_SIZE: 12 -> 6`
-  - grid layout adjusted to match
-  - pager restyled to emphasize arrow navigation
-- No database, wallet, contract, or marketplace-trade logic changes are needed.
-
-### Files to modify
-- `src/lib/thirdweb/nftQueries.ts`
-- `src/components/marketplace/NFTGrid.tsx`
-- `src/pages/Marketplace.tsx`
-
-### Result after implementation
-- The Mint view shows **6 cards max per screen**
-- Users move through the collection with **arrows**, not page scrolling
-- The experience stays cleaner and closer to the minimal menu style
-- Existing NFT data + card behavior remain intact
+## Expected result
+After implementation:
+- Marketplace scrolls down with the mouse normally
+- Rewards & Rules scrolls down with the mouse normally
+- All non-game pages can extend past the viewport and remain reachable
+- The game and menu stay fullscreen and non-scrollable
+- No more needing to zoom out just to see full content
