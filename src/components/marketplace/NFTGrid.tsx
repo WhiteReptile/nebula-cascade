@@ -115,7 +115,7 @@ interface FrameProps {
 }
 
 const NAV_BTN = `
-  group relative h-12 w-12 shrink-0 flex items-center justify-center rounded-full
+  group relative h-10 w-10 shrink-0 flex items-center justify-center rounded-full
   border transition-all duration-300 hover:scale-110 active:scale-95
   disabled:opacity-15 disabled:pointer-events-none disabled:scale-100
 `;
