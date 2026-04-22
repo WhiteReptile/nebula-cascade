@@ -6,13 +6,8 @@ import { useState } from 'react';
 import { useCollectionNFTs, NFT_PAGE_SIZE } from '@/lib/thirdweb/nftQueries';
 import NFTCard from './NFTCard';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationNext,
-  PaginationPrevious,
-} from '@/components/ui/pagination';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 const NFTGrid = () => {
   const [page, setPage] = useState(1);
