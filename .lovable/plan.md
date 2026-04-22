@@ -1,59 +1,91 @@
 
+## Replace scroll dependency with a fixed 6-card pager in Marketplace
 
-## Marketplace overhaul: MainMenu-style galaxy + fix scroll + fix images
+The Marketplace mint view will stop relying on vertical scrolling. Instead, it will always show **6 cards at a time** and let the user move through the collection with **left/right arrows**.
 
-Three problems, one cohesive fix. The marketplace will look and feel like a natural continuation of the start menu — same animated galaxy canvas, same neon-red typography, same minimalist vibe — while keeping all the NFT logic you've already built.
+### 1. Change Mint pagination from 12 to 6
+Update the Mint grid so each page fetches and renders **exactly 6 NFTs** instead of 12.
 
----
+Files:
+- `src/components/marketplace/NFTGrid.tsx`
+- `src/lib/thirdweb/nftQueries.ts`
 
-### 1. Galaxy canvas background (continuity with MainMenu)
+Implementation:
+- Change the page size used by `useCollectionNFTs(...)` from `12` to `6`.
+- Keep the current page-based contract reads, just with a smaller batch size.
+- Keep the “last page” heuristic the same: if fewer than 6 NFTs return, disable the next arrow.
 
-Extract the MainMenu's animated canvas (200 stars + 3 drifting nebulas + radial vignette + scanlines) into a reusable component `<GalaxyBackground />` and mount it as a **fixed full-screen layer behind the marketplace**. Same colors, same drift speeds, same vignette mask. Replaces the current static `.market-galaxy` CSS gradient + 80 pulsing dots (which don't match the menu's quality).
+### 2. Redesign the Mint grid to fit in-view without scrolling
+Make the card layout a **two-row max** desktop grid so the user can browse by paging, not scrolling.
 
-The marketplace content sits on top in a transparent layer — no solid black panels, just glassmorphism (`bg-black/40 backdrop-blur-xl`) so the galaxy shows through everything. Same fade-in transition as the menu when arriving on the page.
+File:
+- `src/components/marketplace/NFTGrid.tsx`
 
-### 2. Scroll fix (real root cause)
+Implementation:
+- Use a layout that shows:
+  - mobile: 1 column
+  - tablet: 2 columns
+  - desktop: 3 columns
+- With 6 cards/page, desktop becomes **3 × 2**, which avoids the current long page.
+- Reduce vertical gap slightly so the full mint block feels tighter and more menu-like.
 
-Two bugs compounding:
-- The sidebar is `sticky top-0 self-start max-h-screen` but the parent flex row has no `min-h-screen`, so on tall content the sidebar collapses and the page doesn't establish a scroll context properly at certain viewport ratios.
-- The outer wrapper uses `min-h-screen` + `overflow-x-hidden` but the body itself sometimes inherits `overflow: hidden` from the global game styles intended for the gameplay page.
+### 3. Turn the pager into a clear “6 more cards” control
+Keep only the arrow-based navigation pattern the user asked for.
 
-Fix:
-- Outer wrapper becomes a normal scrollable document: `min-h-screen` + no overflow lock.
-- Sidebar uses `sticky top-[73px]` (below header height) + `h-[calc(100vh-73px)]` so it stays fixed while content scrolls naturally.
-- Add a body-level guard `<style>` that explicitly sets `overflow-y: auto` on `html, body` while the marketplace is mounted, overriding any leftover `overflow: hidden` from `Index.tsx`'s fixed-screen game shell.
+File:
+- `src/components/marketplace/NFTGrid.tsx`
 
-### 3. Card images — use the working gateway
+Implementation:
+- Keep previous/next controls at the bottom, but restyle them as clear arrow navigation.
+- Show a small center label like:
+  - `PAGE 1`
+  - or `1 / N` if total-page estimation becomes available later
+- Disable previous on page 1.
+- Disable next when the fetched result count is under 6.
 
-Network logs prove the metadata JSON loads fine from `https://0ee0974906e5b6b9d18c8f635d4a3df0.ipfscdn.io/ipfs/...` (your project's dedicated Thirdweb CDN). But `NFTCard.tsx` rewrites the image URL to `https://ipfs.thirdwebcdn.com/ipfs/...` (a different, generic gateway) — that's why images don't render: the generic gateway is either rate-limited, slow, or rejecting requests for your project.
+### 4. Remove Mint’s dependence on page scroll
+The Mint section should behave like a contained browsing surface, not a long document.
 
-Fix: rewrite `ipfs://` URLs to your **project-specific Thirdweb CDN** using the client ID already in the SDK config:
-```
-https://0ee0974906e5b6b9d18c8f635d4a3df0.ipfscdn.io/ipfs/<hash>/<file>
-```
-Same domain that's already serving your metadata successfully. Zero new infra, zero rate limits.
+Files:
+- `src/pages/Marketplace.tsx`
+- `src/components/marketplace/NFTGrid.tsx`
 
-### 4. Visual polish to match the menu
+Implementation:
+- Keep the existing Marketplace shell, galaxy background, and sidebar.
+- Ensure the Mint tab content is visually complete with:
+  - section title
+  - short subtitle
+  - 6-card grid
+  - bottom arrows
+- No additional content should require scrolling just to continue browsing the collection.
 
-- Header: drop the boxy bordered bar, use the same big neon title treatment as the menu (`menu-neon-title` / `menu-neon-title-red`). Title becomes **NEBULA HUB** in red neon, just like CASCADE on the menu.
-- Sidebar: minimalist text-only nav (no emoji icons), neon-red active state with a glowing left bar — visually identical to the menu's selected-item treatment.
-- Tab bar (Mint / Trade): same red neon underline style, no boxes.
-- Cards: thinner borders, more breathing room, the galaxy shows through the gaps.
-- "BACK" button → small ghost button top-left like Roadmap on menu.
+### 5. Do not touch the existing NFT card logic beyond layout compatibility
+Keep the current NFT build intact while changing only the browsing model.
 
-### Files touched
+Files left functionally intact:
+- `src/components/marketplace/NFTCard.tsx`
 
-- **New**: `src/components/shared/GalaxyBackground.tsx` — reusable canvas (extracted from MainMenu)
-- `src/components/menu/MainMenu.tsx` — refactor to use the new shared component (no visual change)
-- `src/pages/Marketplace.tsx` — galaxy mount, scroll fix, header/sidebar restyle
-- `src/components/marketplace/NFTCard.tsx` — IPFS gateway swap to project CDN
-- `src/index.css` — remove now-unused `.market-galaxy` rules; add scroll-unlock guard
+This means:
+- claim-condition logic stays as-is
+- “Coming Soon” overrides stay as-is
+- division badges stay as-is
+- image logic stays as-is for this pass
 
-### What you'll see after
+### Technical notes
+- Current code already has page-based fetching, so this is a focused refactor, not a rebuild.
+- The main change is:
+  - `NFT_PAGE_SIZE: 12 -> 6`
+  - grid layout adjusted to match
+  - pager restyled to emphasize arrow navigation
+- No database, wallet, contract, or marketplace-trade logic changes are needed.
 
-- Click MARKETPLACE on the menu → seamless transition into the same galaxy, just with NFT cards layered on top. No jarring change of aesthetic.
-- Page scrolls cleanly at any zoom level / viewport.
-- All card art renders sharply via your dedicated CDN — King Cold, Advanced Dragon, Goofy Dragon, Powermon, all of them.
-- Monsterous + Mortal Escape still show amber **COMING SOON** (no regression).
-- Sidebar feels like a natural extension of the menu, not a generic admin panel.
+### Files to modify
+- `src/lib/thirdweb/nftQueries.ts`
+- `src/components/marketplace/NFTGrid.tsx`
+- `src/pages/Marketplace.tsx`
 
+### Result after implementation
+- The Mint view shows **6 cards max per screen**
+- Users move through the collection with **arrows**, not page scrolling
+- The experience stays cleaner and closer to the minimal menu style
+- Existing NFT data + card behavior remain intact
