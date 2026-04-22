@@ -12,6 +12,7 @@ import type { NFT } from 'thirdweb';
 
 interface Props {
   nft: NFT;
+  compact?: boolean;
 }
 
 const ZERO = 0n;
