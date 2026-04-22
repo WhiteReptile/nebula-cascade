@@ -139,7 +139,7 @@ const CarouselFrame = ({ page, onPrev, onNext, prevDisabled, nextDisabled, child
     />
 
     {/* Carousel body — arrows flank the cards */}
-    <div className="relative flex items-stretch gap-4 lg:gap-6 p-5 lg:p-7">
+    <div className="relative flex items-stretch gap-3 lg:gap-4 p-3 lg:p-4">
       <div className="flex items-center">
         <button
           onClick={onPrev}
@@ -150,10 +150,10 @@ const CarouselFrame = ({ page, onPrev, onNext, prevDisabled, nextDisabled, child
             borderColor: 'rgba(255, 51, 68, 0.7)',
             color: '#ffaabb',
             background: 'radial-gradient(circle at 30% 30%, rgba(255, 51, 68, 0.25), rgba(0,0,0,0.6) 70%)',
-            boxShadow: '0 0 28px rgba(255, 51, 68, 0.45), inset 0 0 18px rgba(255, 51, 68, 0.2)',
+            boxShadow: '0 0 18px rgba(255, 51, 68, 0.4), inset 0 0 12px rgba(255, 51, 68, 0.18)',
           }}
         >
-          <ChevronLeft className="h-10 w-10 drop-shadow-[0_0_8px_rgba(255,80,110,0.9)]" strokeWidth={2.5} />
+          <ChevronLeft className="h-6 w-6 drop-shadow-[0_0_6px_rgba(255,80,110,0.9)]" strokeWidth={2.5} />
         </button>
       </div>
 
@@ -169,27 +169,27 @@ const CarouselFrame = ({ page, onPrev, onNext, prevDisabled, nextDisabled, child
             borderColor: 'rgba(255, 51, 68, 0.7)',
             color: '#ffaabb',
             background: 'radial-gradient(circle at 70% 30%, rgba(255, 51, 68, 0.25), rgba(0,0,0,0.6) 70%)',
-            boxShadow: '0 0 28px rgba(255, 51, 68, 0.45), inset 0 0 18px rgba(255, 51, 68, 0.2)',
+            boxShadow: '0 0 18px rgba(255, 51, 68, 0.4), inset 0 0 12px rgba(255, 51, 68, 0.18)',
           }}
         >
-          <ChevronRight className="h-10 w-10 drop-shadow-[0_0_8px_rgba(255,80,110,0.9)]" strokeWidth={2.5} />
+          <ChevronRight className="h-6 w-6 drop-shadow-[0_0_6px_rgba(255,80,110,0.9)]" strokeWidth={2.5} />
         </button>
       </div>
     </div>
 
     {/* Footer page indicator */}
     <div
-      className="relative flex items-center justify-center gap-3 py-3 border-t bg-black/55"
+      className="relative flex items-center justify-center gap-2 py-1.5 border-t bg-black/55"
       style={{ borderColor: 'rgba(255, 51, 68, 0.3)' }}
     >
-      <span className="h-1.5 w-1.5 rounded-full" style={{ background: '#ff5566', boxShadow: '0 0 8px #ff3344' }} />
+      <span className="h-1 w-1 rounded-full" style={{ background: '#ff5566', boxShadow: '0 0 6px #ff3344' }} />
       <span
-        className="text-sm font-mono tracking-[0.4em] uppercase font-bold"
-        style={{ color: '#ffaabb', textShadow: '0 0 12px rgba(255, 51, 68, 0.7)' }}
+        className="text-[11px] font-mono tracking-[0.35em] uppercase font-bold"
+        style={{ color: '#ffaabb', textShadow: '0 0 10px rgba(255, 51, 68, 0.7)' }}
       >
         Sector {String(page).padStart(2, '0')}
       </span>
-      <span className="h-1.5 w-1.5 rounded-full" style={{ background: '#ff5566', boxShadow: '0 0 8px #ff3344' }} />
+      <span className="h-1 w-1 rounded-full" style={{ background: '#ff5566', boxShadow: '0 0 6px #ff3344' }} />
     </div>
   </div>
 );
