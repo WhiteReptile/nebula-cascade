@@ -34,7 +34,7 @@ function formatEth(wei: bigint): string {
   return fracStr ? `${whole}.${fracStr}` : whole.toString();
 }
 
-const NFTCard = ({ nft }: Props) => {
+const NFTCard = ({ nft, compact = false }: Props) => {
   const tokenId = nft.id;
   const { data: cond, isLoading: condLoading, error: condError } =
     useTokenClaimCondition(tokenId);
