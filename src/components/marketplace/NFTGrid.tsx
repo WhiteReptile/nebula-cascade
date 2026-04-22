@@ -172,7 +172,7 @@ const CarouselFrame = ({ page, onPrev, onNext, prevDisabled, nextDisabled, child
             boxShadow: '0 0 18px rgba(255, 51, 68, 0.4), inset 0 0 12px rgba(255, 51, 68, 0.18)',
           }}
         >
-          <ChevronRight className="h-6 w-6 drop-shadow-[0_0_6px_rgba(255,80,110,0.9)]" strokeWidth={2.5} />
+          <ChevronRight className="h-5 w-5 drop-shadow-[0_0_6px_rgba(255,80,110,0.9)]" strokeWidth={2.5} />
         </button>
       </div>
     </div>
