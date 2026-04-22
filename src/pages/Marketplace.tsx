@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import WalletConnect from '@/components/wallet/WalletConnect';
 import WalletMismatchModal from '@/components/wallet/WalletMismatchModal';
 import NFTGrid from '@/components/marketplace/NFTGrid';
+import GalaxyBackground from '@/components/shared/GalaxyBackground';
 import { useToast } from '@/hooks/use-toast';
 import { useWalletSync } from '@/hooks/useWalletSync';
 
