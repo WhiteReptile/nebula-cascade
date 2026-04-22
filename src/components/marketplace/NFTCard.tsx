@@ -109,13 +109,13 @@ const NFTCard = ({ nft, compact: _compact = false }: Props) => {
 
   return (
     <div
-      className={`group rounded-xl border bg-black/55 backdrop-blur-md flex flex-col transition-all hover:scale-[1.03] ${compact ? 'p-2.5 gap-2' : 'p-4 gap-3'}`}
+      className="group rounded-xl border bg-black/55 backdrop-blur-md flex flex-col transition-all hover:scale-[1.03] p-3 gap-2.5"
       style={{
         borderColor: 'rgba(255, 51, 68, 0.3)',
         boxShadow: '0 0 18px rgba(255, 51, 68, 0.15)',
       }}
     >
-      {/* Image */}
+      {/* Image — primary focus, large square */}
       <div
         className="relative aspect-square rounded-lg overflow-hidden border bg-black/40 transition-all group-hover:scale-[1.01]"
         style={{
@@ -141,9 +141,9 @@ const NFTCard = ({ nft, compact: _compact = false }: Props) => {
           </div>
         )}
 
-        {/* Status pill (top-right) */}
+        {/* Status pill (top-right) — bigger & easier to read */}
         <div
-          className={`absolute top-2 right-2 rounded-full font-mono font-bold tracking-widest border bg-black/70 backdrop-blur-sm ${compact ? 'px-1.5 py-0.5 text-[9px]' : 'px-2 py-1 text-[10px]'}`}
+          className="absolute top-2 right-2 rounded-full font-mono font-bold tracking-widest border bg-black/75 backdrop-blur-sm px-2.5 py-1 text-[11px]"
           style={{
             color: statusColor,
             borderColor: statusColor,
@@ -157,8 +157,8 @@ const NFTCard = ({ nft, compact: _compact = false }: Props) => {
       {/* Name + Division */}
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <h3 className={`font-bold font-mono truncate text-white/90 ${compact ? 'text-sm' : 'text-base'}`}>{name}</h3>
-          <div className={`uppercase tracking-widest text-white/40 font-mono ${compact ? 'text-[9px] mt-0' : 'text-[10px] mt-0.5'}`}>
+          <h3 className="font-bold font-mono truncate text-white/95 text-lg leading-tight">{name}</h3>
+          <div className="uppercase tracking-widest text-white/50 font-mono text-[11px] mt-1">
             #{tokenId.toString()} · {supply.toString()} minted
           </div>
         </div>
@@ -166,24 +166,24 @@ const NFTCard = ({ nft, compact: _compact = false }: Props) => {
       </div>
 
       {/* Price */}
-      <div className={`flex items-end justify-between border-t border-red-500/20 ${compact ? 'pt-2' : 'pt-3'}`}>
+      <div className="flex items-end justify-between border-t border-red-500/20 pt-2.5">
         <div>
-          <div className="text-[10px] uppercase tracking-widest text-white/40 font-mono">Price</div>
+          <div className="text-[11px] uppercase tracking-widest text-white/50 font-mono">Price</div>
           {isComingSoon ? (
-            <div className="text-lg font-mono font-bold text-white/40">—</div>
+            <div className="text-xl font-mono font-bold text-white/40">—</div>
           ) : condLoading ? (
             <div className="text-sm text-white/40 font-mono mt-1">…</div>
           ) : isFree ? (
-            <div className="text-lg font-mono font-bold text-green-400" style={{ textShadow: '0 0 8px #22ff88' }}>
+            <div className="text-xl font-mono font-bold text-green-400" style={{ textShadow: '0 0 8px #22ff88' }}>
               FREE
             </div>
           ) : isNative ? (
             <>
-              <div className="text-lg font-mono font-bold text-white/90">
-                {formatEth(priceWei)} <span className="text-xs text-white/50">ETH</span>
+              <div className="text-xl font-mono font-bold text-white/95 leading-tight">
+                {formatEth(priceWei)} <span className="text-sm text-white/55">ETH</span>
               </div>
               {usdValue !== null && (
-                <div className="text-[11px] text-white/40 font-mono">
+                <div className="text-[12px] text-white/50 font-mono mt-0.5">
                   ≈ ${usdValue.toFixed(2)}
                 </div>
               )}
@@ -198,7 +198,7 @@ const NFTCard = ({ nft, compact: _compact = false }: Props) => {
           <TooltipTrigger asChild>
             <button
               disabled
-              className={`rounded-lg border tracking-[0.2em] font-mono font-bold uppercase opacity-40 cursor-not-allowed ${compact ? 'min-h-[32px] px-2.5 text-[10px]' : 'min-h-[40px] px-4 text-xs'}`}
+              className="rounded-lg border tracking-[0.2em] font-mono font-bold uppercase opacity-50 cursor-not-allowed min-h-[40px] px-4 text-xs"
               style={{
                 borderColor: isComingSoon ? 'rgba(255, 170, 51, 0.5)' : 'rgba(255, 51, 68, 0.5)',
                 color: isComingSoon ? '#ffcc77' : '#ff8899',
