@@ -9,7 +9,7 @@ import { getNFTs } from 'thirdweb/extensions/erc1155';
 import { getActiveClaimCondition } from 'thirdweb/extensions/erc1155';
 import { nebulaCollection } from './contracts';
 
-export const NFT_PAGE_SIZE = 12;
+export const NFT_PAGE_SIZE = 6;
 
 /**
  * Fetch a page of NFTs from the collection.

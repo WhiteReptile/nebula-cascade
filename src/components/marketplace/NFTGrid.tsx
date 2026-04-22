@@ -92,39 +92,48 @@ const NFTGrid = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+    <div className="space-y-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {nfts.map((nft) => (
           <NFTCard key={nft.id.toString()} nft={nft} />
         ))}
       </div>
 
-      {/* Pagination — only show if multi-page */}
-      {(page > 1 || !isLastPage) && (
-        <Pagination>
-          <PaginationContent>
-            <PaginationItem>
-              <PaginationPrevious
-                onClick={(e) => { e.preventDefault(); if (page > 1) setPage(p => p - 1); }}
-                className={`cursor-pointer font-mono ${page === 1 ? 'opacity-30 pointer-events-none' : ''}`}
-                style={{ color: '#ff8899' }}
-              />
-            </PaginationItem>
-            <PaginationItem>
-              <span className="px-4 text-sm font-mono tracking-widest text-white/70">
-                Page {page}
-              </span>
-            </PaginationItem>
-            <PaginationItem>
-              <PaginationNext
-                onClick={(e) => { e.preventDefault(); if (!isLastPage) setPage(p => p + 1); }}
-                className={`cursor-pointer font-mono ${isLastPage ? 'opacity-30 pointer-events-none' : ''}`}
-                style={{ color: '#ff8899' }}
-              />
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
-      )}
+      {/* Arrow pager — always visible so users know how to browse */}
+      <div className="flex items-center justify-center gap-6 pt-2">
+        <button
+          onClick={() => page > 1 && setPage(p => p - 1)}
+          disabled={page === 1}
+          aria-label="Previous page"
+          className="min-h-[44px] min-w-[44px] px-4 rounded-lg border bg-black/40 font-mono font-bold text-xl transition-all hover:scale-110 disabled:opacity-20 disabled:pointer-events-none"
+          style={{
+            borderColor: 'rgba(255, 51, 68, 0.6)',
+            color: '#ff8899',
+            boxShadow: '0 0 18px rgba(255, 51, 68, 0.25)',
+          }}
+        >
+          ←
+        </button>
+        <span
+          className="text-sm font-mono tracking-[0.3em] uppercase font-bold min-w-[80px] text-center"
+          style={{ color: '#ff8899', textShadow: '0 0 8px rgba(255, 51, 68, 0.5)' }}
+        >
+          Page {page}
+        </span>
+        <button
+          onClick={() => !isLastPage && setPage(p => p + 1)}
+          disabled={isLastPage}
+          aria-label="Next page"
+          className="min-h-[44px] min-w-[44px] px-4 rounded-lg border bg-black/40 font-mono font-bold text-xl transition-all hover:scale-110 disabled:opacity-20 disabled:pointer-events-none"
+          style={{
+            borderColor: 'rgba(255, 51, 68, 0.6)',
+            color: '#ff8899',
+            boxShadow: '0 0 18px rgba(255, 51, 68, 0.25)',
+          }}
+        >
+          →
+        </button>
+      </div>
     </div>
   );
 };
