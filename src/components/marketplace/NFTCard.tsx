@@ -36,7 +36,8 @@ function formatEth(wei: bigint): string {
   return fracStr ? `${whole}.${fracStr}` : whole.toString();
 }
 
-const NFTCard = ({ nft, compact = false }: Props) => {
+const NFTCard = ({ nft, compact: _compact = false }: Props) => {
+  const compact = false; // Mint carousel always uses full-size cards now
   const tokenId = nft.id;
   const { data: cond, isLoading: condLoading, error: condError } =
     useTokenClaimCondition(tokenId);
