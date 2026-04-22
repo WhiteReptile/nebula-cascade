@@ -15,6 +15,8 @@ interface Props {
   compact?: boolean;
 }
 
+// Note: `compact` retained for API compatibility but Mint carousel now always renders full-size.
+
 const ZERO = 0n;
 const MAX_UINT256 = (1n << 256n) - 1n;
 const NATIVE_CURRENCY = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
