@@ -220,7 +220,7 @@ const Marketplace = () => {
         {/* ── Sidebar (sticky, scroll-along) ── */}
         <nav
           className="w-52 flex-shrink-0 flex flex-col sticky self-start"
-          style={{ top: '92px', height: 'calc(100vh - 92px)' }}
+          style={{ top: '92px', maxHeight: 'calc(100vh - 92px)' }}
         >
           <div className="flex-1 py-6 space-y-1 px-2">
             {navItems.map(item => {
