@@ -115,7 +115,7 @@ interface FrameProps {
 }
 
 const NAV_BTN = `
-  group relative h-12 w-12 shrink-0 flex items-center justify-center rounded-full
+  group relative h-10 w-10 shrink-0 flex items-center justify-center rounded-full
   border transition-all duration-300 hover:scale-110 active:scale-95
   disabled:opacity-15 disabled:pointer-events-none disabled:scale-100
 `;
@@ -139,7 +139,7 @@ const CarouselFrame = ({ page, onPrev, onNext, prevDisabled, nextDisabled, child
     />
 
     {/* Carousel body — arrows flank the cards */}
-    <div className="relative flex items-stretch gap-3 lg:gap-4 p-3 lg:p-4">
+    <div className="relative flex items-stretch gap-2 lg:gap-3 p-2 lg:p-3">
       <div className="flex items-center">
         <button
           onClick={onPrev}
@@ -153,7 +153,7 @@ const CarouselFrame = ({ page, onPrev, onNext, prevDisabled, nextDisabled, child
             boxShadow: '0 0 18px rgba(255, 51, 68, 0.4), inset 0 0 12px rgba(255, 51, 68, 0.18)',
           }}
         >
-          <ChevronLeft className="h-6 w-6 drop-shadow-[0_0_6px_rgba(255,80,110,0.9)]" strokeWidth={2.5} />
+          <ChevronLeft className="h-5 w-5 drop-shadow-[0_0_6px_rgba(255,80,110,0.9)]" strokeWidth={2.5} />
         </button>
       </div>
 
@@ -172,7 +172,7 @@ const CarouselFrame = ({ page, onPrev, onNext, prevDisabled, nextDisabled, child
             boxShadow: '0 0 18px rgba(255, 51, 68, 0.4), inset 0 0 12px rgba(255, 51, 68, 0.18)',
           }}
         >
-          <ChevronRight className="h-6 w-6 drop-shadow-[0_0_6px_rgba(255,80,110,0.9)]" strokeWidth={2.5} />
+          <ChevronRight className="h-5 w-5 drop-shadow-[0_0_6px_rgba(255,80,110,0.9)]" strokeWidth={2.5} />
         </button>
       </div>
     </div>

@@ -154,16 +154,22 @@ const NFTCard = ({ nft, compact: _compact = false }: Props) => {
         </div>
       </div>
 
-      {/* Name + Division */}
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0 flex-1">
-          <h3 className="font-bold font-mono text-white/95 text-base lg:text-lg leading-tight break-words" title={name}>{name}</h3>
-          <div className="uppercase tracking-wider text-white/50 font-mono text-[10px] mt-1">
-            #{tokenId.toString()} · {supply.toString()} minted
-          </div>
-        </div>
+      {/* Division + token meta */}
+      <div className="flex items-center justify-between gap-2">
         {division && <DivisionBadge division={division} size="sm" />}
+        <div className="uppercase tracking-wider text-white/45 font-mono text-[10px] whitespace-nowrap">
+          #{tokenId.toString()} · {supply.toString()} mint
+        </div>
       </div>
+
+      {/* Name */}
+      <h3
+        className="font-bold font-mono text-white/95 text-[15px] lg:text-base leading-tight"
+        title={name}
+        style={{ wordBreak: 'normal', overflowWrap: 'normal', hyphens: 'none' }}
+      >
+        {name}
+      </h3>
 
       {/* Price */}
       <div className="flex items-end justify-between border-t border-red-500/20 pt-2 gap-2">
