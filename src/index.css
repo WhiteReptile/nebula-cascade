@@ -100,13 +100,27 @@ All colors MUST be HSL.
     box-sizing: border-box;
   }
 
-  html, body, #root {
+  html, body {
     margin: 0;
     padding: 0;
-    width: 100vw;
-    height: 100vh;
-    overflow: hidden;
+    width: 100%;
+    min-height: 100vh;
+    overflow-x: hidden;
+    overflow-y: auto;
     background-color: #050510;
+  }
+  #root {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    min-height: 100vh;
+    background-color: #050510;
+  }
+  /* Game route locks the viewport via .game-shell on the wrapper */
+  body.game-shell-active,
+  html.game-shell-active {
+    overflow: hidden;
+    height: 100vh;
   }
 
   body {

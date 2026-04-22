@@ -5,7 +5,7 @@ const Options = () => {
 
   return (
     <div
-      className="fixed inset-0 flex flex-col items-center justify-center font-mono"
+      className="min-h-screen w-full flex flex-col items-center justify-center font-mono overflow-visible"
       style={{ backgroundColor: '#050510' }}
     >
       <h1
