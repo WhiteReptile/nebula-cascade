@@ -15,8 +15,10 @@
  */
 import { supabase } from '@/integrations/supabase/client';
 import { initCardEnergy } from './energySystem';
+import { MARKETPLACE } from '@/config';
 
-export const MARKETPLACE_FEE_PERCENT = 3;
+// Re-exported from central config. Edit in `src/config/economyConfig.ts`.
+export const MARKETPLACE_FEE_PERCENT = MARKETPLACE.SECONDARY_FEE_PERCENT;
 
 export interface MarketplaceListing {
   id: string;

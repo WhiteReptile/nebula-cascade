@@ -84,3 +84,24 @@ npm run test:watch
 npm run lint
 npm run build          # smoke-test production build
 ```
+
+## Pending Config Migration
+
+These constants are intentionally **not** yet wired to `src/config/`
+because they have wide reach or non-obvious semantics. Migrate one at a
+time, with a build + visual smoke-test after each:
+
+- `src/game/pieces.ts` → `COLS`, `ROWS`, `CELL` — duplicated as
+  `BOARD.COLS/ROWS/CELL` in config but Phaser scenes import directly from
+  `pieces.ts`. Risky to touch without auditing every Phaser-side import.
+- `src/components/marketplace/NFTGrid.tsx` → page-size literal — move to
+  `MARKETPLACE.PAGE_SIZE` after confirming no off-by-one in pagination UI.
+- `src/pages/Rewards.tsx` & `src/pages/Roadmap.tsx` → marketing copy
+  contains hardcoded "3%" and "40-day" strings. These are *display copy*,
+  not logic — leaving as-is to keep editorial control over the wording.
+- `src/game/GameScene.ts` → spawn timing, level-up cadence, and scoring
+  multipliers are inlined in the scene. Lift to `gameConfig.ts → SCORING`
+  / `PACING` once the gameplay is locked in.
+- `src/lib/energySystem.ts` → daily reset uses `YYYY-MM-DD` comparison
+  (not the rolling 24h window described in the economy spec). This is a
+  **behavior** discrepancy, not just a constant — fix in a dedicated PR.
