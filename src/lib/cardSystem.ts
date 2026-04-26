@@ -17,9 +17,12 @@
  */
 import { supabase } from '@/integrations/supabase/client';
 import type { Division } from './divisionSystem';
+import { CARDS, ENERGY } from '@/config';
 
-export const ENERGY_PER_CARD = 2;
-export const MAX_CARDS_PER_PLAYER = 10;
+// Re-export from central config so existing imports keep working.
+// Edit values in `src/config/economyConfig.ts`, NOT here.
+export const ENERGY_PER_CARD = ENERGY.PER_CARD;
+export const MAX_CARDS_PER_PLAYER = CARDS.MAX_PER_PLAYER;
 
 // Division priority: gem_i (highest) → gem_v (lowest)
 const DIVISION_PRIORITY: Record<Division, number> = {
