@@ -1,104 +1,48 @@
-## Leaderboard v2 — Logic + Visual Overhaul
+## Goal
+Add "Continue with Google" to every auth touchpoint in the app, wired to Lovable Cloud's managed Google OAuth (no client ID/secret needed from you). Treat Lovable as the single source of truth — Replit's separate Supabase project is abandoned and will not be migrated.
 
-### 1. Tab structure (top nav)
+## Why Google was missing
+`src/pages/Auth.tsx` only implements `signInWithPassword`. No OAuth call, no Google button, no provider enabled on the Lovable Cloud backend. The Replit Supabase project (`pbklgtguxftmckwhwgtb…`) is a completely separate backend from Lovable Cloud (`aoodmexjovwvytzjdyhk…`), so any Google config you added there has no effect here.
 
-Replace today's `FREE / NFT / ALL` with:
+## Scope of changes
 
-```text
-[ NO NFT ]  [ NFT ]  [ GUESTS ]  [ ALL ]
-```
+### 1. Enable Google provider on Lovable Cloud
+- Turn on managed Google OAuth for this backend (uses Lovable's shared credentials — zero config from you).
+- Email/password stays enabled. No auto-confirm. No HIBP toggle change.
 
-- **NO NFT** — logged-in players (email or wallet) who don't own a card. Single global ranking, no divisions. Eligible for future rewards (rewards launch in ~2 months — UI shows a "Rewards: Coming Soon" chip, no payout logic yet).
-- **NFT** — card owners. Keeps the 5 divisions (Gem I–V) exactly as today. Defaults to the player's own active division when they land.
-- **GUESTS** — anonymous nickname players. **No divisions.** Only entries with score ≥ 2,000 are shown. **Every row auto-deletes 24 h after it was set.** No persistence, no rewards, ever.
-- **ALL** — display-only mix of NO NFT + NFT (guests excluded, since they vanish in 24h and would pollute history). No rewards.
+### 2. `/auth` page (`src/pages/Auth.tsx`)
+- Add a "Continue with Google" button above the email/password form, styled to match the existing yellow neon Auth theme (`#ffdd00` glow, mono font, black/40 surface).
+- A subtle "— or —" divider between Google and the email form.
+- On click: redirect-style OAuth, returns to current origin after Google consent. Errors surfaced via the existing `useToast`.
 
-The word "FREE" is removed everywhere — replaced by the segment name.
+### 3. Main menu (`src/components/menu/MainMenu.tsx`)
+- The existing top-right **Login / Sign Up** button stays and still routes to `/auth` (full form lives there).
+- Add a small secondary **"Continue with Google"** chip directly below the Login / Sign Up button, same cyan border style, so logged-out players get a one-click path without leaving the menu.
+- Hidden once the user is logged in (uses `usePlayerProfile().isLoggedIn`).
 
-### 2. Guest flow (new)
+### 4. Guest nickname modal (`src/components/menu/GuestNicknameModal.tsx`)
+- Add a "Sign in with Google instead" link at the bottom of the modal, so guests have a clear upgrade path before committing to anonymous play.
+- Triggers the same OAuth call; on success the guest flow is cancelled and the game starts as the authenticated player.
 
-When a visitor with no account clicks **Play** on the main menu:
+### 5. Profile auto-creation
+- The existing `handle_new_user()` trigger already inserts a row into `public.players` on signup using `display_name` from `raw_user_meta_data`. Google sign-ups will land there with `display_name` falling back to `'Player'`. We'll patch the trigger to prefer `full_name` / `name` from Google's identity metadata when present, so new Google users get a real name automatically. No schema changes, just a function update.
 
-1. Modal: "Enter a nickname to play" (3–16 chars, no profanity, uniqueness not enforced — device-bound).
-2. Nickname + a device fingerprint (`localStorage` UUID) are stored locally.
-3. Session runs as a Supabase **anonymous** identity OR via a new edge function `submit-guest-score` that takes `{nickname, device_id, score, session_proof}` and writes to a new `guest_scores` table.
-4. At game over, if score ≥ 2,000 → row inserted into `guest_scores` with `expires_at = now() + 24h`.
-5. A pg_cron job (every 15 min) deletes rows where `expires_at < now()`.
-6. Same device + same nickname overwrites the previous entry only if the new score is higher (prevents spam from one device).
+## Technical notes
+- Uses Lovable Cloud's managed Google OAuth — no client ID, secret, or Google Cloud Console setup required from you.
+- Single OAuth helper added at `src/lib/auth.ts` so the same `signInWithGoogle()` call powers all three entry points.
+- Redirect target: `window.location.origin`. Works in both preview and published environments.
+- Email/password flow, guest flow, and all existing UI remain unchanged.
 
-NFT and NO-NFT player scores are **never** purged by this job — only `guest_scores`.
+## Out of scope
+- Migrating any data from the Replit Supabase project.
+- Apple sign-in or other providers.
+- Marketplace V3 (next thread).
+- Restyling the existing Auth page beyond inserting the Google button + divider.
 
-### 3. Visual direction — "Dense Data Terminal"
-
-Compact, monospace, sortable. Inspired by Bloomberg / arcade hi-score screens.
-
-```text
-┌─ LEADERBOARD ─────────────────── PERIOD 2026-05 ──────────┐
-│  NO NFT │ NFT │ GUESTS* │ ALL                              │
-├──────────────────────────────────────────────────────────────┤
-│ DIVISION: ▸ GEM I  GEM II  GEM III  GEM IV  GEM V          │  ← only on NFT tab
-├──────────────────────────────────────────────────────────────┤
-│ #   PLAYER              AVG3       BEST      MATCHES  TREND │
-│ 01  ▲ SOLAR_FOX  [GI]   142,300    198,440   47       ▁▃▅█  │
-│ 02  ─ NIGHTSHADE [GI]   139,210    187,002   52       ▂▄▅▆  │
-│ 03  ▼ KAI42      [GI]   136,889    190,114   61       ▆▅▃▁  │
-│ ...                                                          │
-│ 07  ★ YOU        [GI]    98,400    132,500   23       ▂▃▄▅  │
-└──────────────────────────────────────────────────────────────┘
-*GUESTS auto-clear every 24h. Top entry only stored if ≥ 2,000 pts.
-```
-
-Key visual elements:
-- JetBrains Mono everywhere; tighter line-height; uppercase column heads.
-- Each row 28px tall, alternating subtle row tint, neon division dot on the left.
-- Sparkline column = last 7 matches (avg score trend) — sourced from `match_logs`.
-- Rank delta arrows (▲/▼/─) vs last refresh.
-- "★ YOU" row is sticky-pinned to bottom if player is outside top 50.
-- Sortable column headers (Avg3 default, click to toggle Best / Matches).
-- Header switches accent colour per tab: NO NFT = cyan, NFT = gold, GUESTS = magenta, ALL = white.
-
-### 4. Logic fixes
-- **Division filter only renders on the NFT tab.** NO NFT, GUESTS, ALL show one flat ranking (this fixes the bug where clicking FREE still showed divisions).
-- NO NFT tab queries `leaderboard` joined with `players` where `has_ever_owned_card = false`, ignoring `division`.
-- NFT tab keeps current behaviour but auto-selects `players.division` for the signed-in player.
-- ALL tab unions NO NFT + NFT rows, no division filter, capped at top 100.
-- Segment chip in the header reflects the **viewer's** segment (NO NFT / NFT / GUEST), independent of which tab is active.
-
-### 5. Technical changes (collapsible — for the dev)
-
-```text
-DB migration:
-  - CREATE TABLE guest_scores (
-      id uuid pk,
-      nickname text,
-      device_id text,
-      score bigint,
-      level_reached int,
-      survival_seconds int,
-      created_at timestamptz default now(),
-      expires_at timestamptz default now() + interval '24 hours'
-    )
-  - UNIQUE (device_id, nickname)
-  - RLS: SELECT public; INSERT via edge function only.
-  - CHECK trigger: score >= 2000.
-  - pg_cron job 'purge-guest-scores' every 15 min.
-
-Edge function:
-  - submit-guest-score (verify session_proof, upsert if new score > old).
-
-Frontend:
-  - src/pages/Leaderboard.tsx  → full rewrite with new tab logic.
-  - src/components/leaderboard/  (new dir)
-      LeaderboardTable.tsx, Sparkline.tsx, RankDelta.tsx, GuestNicknameModal.tsx, TabBar.tsx.
-  - src/lib/playerSegmentation.ts → add 'guest' segment.
-  - src/lib/guestSession.ts (new) → nickname + device_id helpers.
-  - Index.tsx Play button → if no auth, opens GuestNicknameModal.
-
-Out of scope (this pass):
-  - Actual reward payout logic for NO NFT (placeholder UI only).
-  - Marketplace V3 integration (parked).
-  - Anti-cheat hardening for guest scores beyond existing session_proof.
-```
-
-### 6. Open question I'll default unless told otherwise
-Sparkline source = last 7 `match_logs` rows for that player. If you want it shorter (last 3) or hidden on the GUESTS tab, say so before approval; otherwise I'll ship the 7-match version.
+## Files touched
+- `supabase/migrations/<new>.sql` — patched `handle_new_user()` to read Google name metadata.
+- `src/lib/auth.ts` *(new)* — `signInWithGoogle()` helper.
+- `src/pages/Auth.tsx` — Google button + divider.
+- `src/components/menu/MainMenu.tsx` — Google chip under Login/Sign Up, hidden when logged in.
+- `src/components/menu/GuestNicknameModal.tsx` — "Sign in with Google instead" link.
+- Lovable Cloud auth config — Google provider enabled via `configure_social_auth`.
