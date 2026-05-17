@@ -1,98 +1,96 @@
+# Autonomous Safe-Fix Pass
 
-## Replace Marketplace Mint with a self-contained card browser
+Goal: fix everything I can without touching marketplace V3 or Google sign-in. No UI redesigns. No folder restructuring. Behavior preserved except for the one bug fix you approved (energy reset).
 
-The problem is no longer “page scroll.” For the Marketplace Mint tab, I’ll stop depending on the page itself and make the NFT area scrollable/browsable inside its own container.
+---
 
-### 1. Turn Mint into a contained viewport
-Use the existing `ScrollArea` component to wrap the Mint card region in a fixed-height panel.
+## 1. Energy: true rolling 24h reset (behavior fix)
 
-Files:
-- `src/pages/Marketplace.tsx`
-- `src/components/marketplace/NFTGrid.tsx`
+**Schema migration** on `card_energy`:
+- Backfill `next_reset_at` where null: `now() + interval '24 hours'`.
+- Keep `last_reset_at` for backwards compat but stop relying on it for the gate.
 
-Implementation:
-- Keep the Marketplace shell as-is.
-- Inside the Mint tab, place the card browser inside a bordered, neon-styled container.
-- Give that container a fixed viewport-friendly height so it always works inside the embedded preview.
-- The scrollbar will live inside that Mint box, not on the whole page.
+**Code (`src/lib/energySystem.ts`)**:
+- `getCardEnergy()` → if `now() >= next_reset_at`, refill to `max_energy` and set `next_reset_at = now() + 24h`.
+- `consumeCardEnergy()` → on first consume after a full refill, ensure `next_reset_at` is set (covers legacy rows).
+- `initCardEnergy()` → set `next_reset_at = now() + 24h` on insert.
+- Add comment block explaining the rolling-window economy rule.
 
-Result:
-- Even if the preview iframe behaves badly, the user can still wheel-scroll inside the Mint panel.
+Same `ENERGY_PER_CARD` (2) and 40% double-consume roll are untouched.
 
-### 2. Keep 6 cards per page, but make the 6-card block scroll inside the box
-Keep the current page-based fetch size of 6.
+## 2. GameScene constants → `src/config/gameConfig.ts`
 
-Files:
-- `src/lib/thirdweb/nftQueries.ts`
-- `src/components/marketplace/NFTGrid.tsx`
+Lift these inlined values from `src/game/GameScene.ts` into `gameConfig.ts → PACING` / `SCORING` (values identical, zero behavior change):
+- `BASE_GRAVITY` (0.005), `MAX_FALL_SPEED` (0.09)
+- Level boost step (`score / 2000`, `+4.5%/level`)
+- Urgency threshold (40s) + per-second ramp (5%)
+- Match cooldown (60s) referenced in edge fn
 
-Implementation:
-- Keep `NFT_PAGE_SIZE = 6`.
-- Render those 6 cards inside the internal scroll viewport.
-- Use a tighter layout so the card block feels more like a contained gallery than a long page.
+Import sites updated; no UI change.
 
-### 3. Compact the Mint card layout so 6 cards fit better
-Right now each NFT card is too tall for the available preview height.
+## 3. Edge function hardening
 
-File:
-- `src/components/marketplace/NFTCard.tsx`
+Both `generate-session` and `submit-score`:
+- Add Zod-style input validation (manual, no new deps) → 400 on bad payload.
+- Ensure `corsHeaders` is included on every error response (audit pass).
+- No logic changes to anti-cheat or cooldown.
 
-Implementation:
-- Add a compact Marketplace variant for Mint cards:
-  - slightly smaller image area
-  - tighter padding
-  - tighter gaps
-  - reduce secondary text size/spacing
-  - keep name, token number, division badge, price, and status pill intact
-- Do not change the actual NFT logic, image sourcing, division logic, or claim-state logic.
+Deploy after edit; smoke-test via `curl_edge_functions` as the preview user.
 
-Result:
-- The 6-card page becomes much easier to browse inside the contained box.
+## 4. Pending Config Migration cleanup
 
-### 4. Upgrade the arrows so browsing is obvious
-Make the previous/next controls much more visible and treat them as the main navigation between 6-card sets.
+From `docs/DEVELOPER_HANDOFF.md`:
+- ✅ `energySystem.ts` rolling-24h — fixed in step 1.
+- ✅ `GameScene.ts` PACING/SCORING — fixed in step 2.
+- ⏭ `pieces.ts COLS/ROWS/CELL` — leave (touches every Phaser scene; risky).
+- ⏭ `NFTGrid.tsx` page-size — leave (marketplace, you own it).
+- ⏭ Marketing copy "3%"/"40-day" — leave (editorial).
 
-File:
-- `src/components/marketplace/NFTGrid.tsx`
+Handoff doc updated to reflect what shipped.
 
-Implementation:
-- Keep page-based left/right navigation.
-- Enlarge the arrows visually and place them so they feel like a real card browser.
-- Keep the center page label.
-- Disable previous on page 1 and next on the last page as it works now.
+## 5. Light polish (safe)
 
-### 5. Add the fallback browsing mode only if needed
-If the contained 6-card browser still feels too cramped after the compact pass, switch the Mint grid to a 4-card horizontal carousel layout.
+- Add `ErrorBoundary` around the Phaser canvas mount so a scene crash doesn't blank the whole app.
+- Remove stray `console.log` debug noise (≤8 occurrences) — keep `console.warn/error`.
+- Add `<title>` + meta description on `index.html` if missing (SEO).
+- Add `lang="en"` check.
 
-Files:
-- `src/components/marketplace/NFTGrid.tsx`
-- optionally `src/components/marketplace/NFTCard.tsx`
+## 6. Tests
 
-Fallback structure:
-- desktop: 4 cards in one horizontal row
-- large left/right arrows
-- each click shows the next mixed set of cards
-- division filters remain separate and can still narrow results later
+Add unit tests for pure economy math (no DB):
+- `cardSystem` reward split (main 100% / secondary 20%).
+- `marketplaceSystem` fee math (3%).
+- `divisionSystem` tier boundaries.
 
-This fallback will only be used if the contained 6-card scroll box still cannot feel clean in the preview.
+Run `vitest` + build.
 
-### 6. Scope the work only to Marketplace Mint
-Do not touch:
-- Rewards & Rules
-- game page
-- Trade marketplace behavior
-- wallet/auth logic
+## 7. Verification
 
-Only the Mint browsing experience changes.
+- `bun run build` (typecheck).
+- Vitest pass.
+- Curl both edge functions, verify 200 happy + 400 invalid.
+- Manual: load `/`, start a game, end a game, confirm energy column updates correctly.
 
-## Files to modify
-- `src/pages/Marketplace.tsx`
-- `src/components/marketplace/NFTGrid.tsx`
-- `src/components/marketplace/NFTCard.tsx`
-- `src/lib/thirdweb/nftQueries.ts` (likely unchanged or only confirmed at 6)
+## Out of scope (explicitly not touching)
 
-## Expected result
-- The Mint area becomes a dedicated card browser panel
-- Mouse wheel works inside the Mint box even if page scrolling is unreliable
-- Users browse 6 cards at a time with clear arrows
-- If needed, the UI can be tightened further into a 4-card horizontal carousel without changing the data source
+- Marketplace V3 / Thirdweb on-chain listings — yours.
+- Google OAuth wiring — yours.
+- Any visual redesign, layout, color, or HUD changes.
+- `src/integrations/supabase/*` (auto-generated).
+- `pieces.ts` board constants.
+
+## Files I expect to change
+
+- `supabase/migrations/<new>.sql` (energy)
+- `src/lib/energySystem.ts`
+- `src/game/GameScene.ts`
+- `src/config/gameConfig.ts`
+- `supabase/functions/generate-session/index.ts`
+- `supabase/functions/submit-score/index.ts`
+- `src/components/ErrorBoundary.tsx` (new, if not present)
+- `src/pages/Index.tsx` or wherever the canvas mounts (wrap)
+- `index.html` (meta only, if needed)
+- `docs/DEVELOPER_HANDOFF.md`
+- `src/test/*.test.ts` (new pure-math tests)
+
+No other files touched. No questions for you — approve and I'll execute.
