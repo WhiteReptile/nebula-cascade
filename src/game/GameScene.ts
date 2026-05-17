@@ -413,7 +413,7 @@ export class GameScene extends Phaser.Scene {
     this.chainResolving = false;
     if (this.chainStep === 0) this.combo = 0;
     this.lastChainElement = null;
-    this.level = Math.floor(this.score / 2000) + 1;
+    this.level = Math.floor(this.score / PACING.POINTS_PER_LEVEL) + 1;
 
     // Near-miss helper: highlight almost-matching orbs
     this.nearMissCells = findNearMissOrbs(this.grid);
