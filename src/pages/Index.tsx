@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import CosmicGame from '@/components/game/CosmicGame';
 import GameHUD from '@/components/game/GameHUD';
 import MainMenu from '@/components/menu/MainMenu';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 const Index = () => {
   const [showMenu, setShowMenu] = useState(true);
