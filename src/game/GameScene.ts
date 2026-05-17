@@ -44,6 +44,7 @@ import {
 } from './logic/chainResolver';
 import { reorganizeOrbs, gravityCollapse } from './logic/orbReorganizer';
 import { updateFallingOrbPhysics } from './logic/fallingPhysics';
+import { PACING } from '@/config/gameConfig';
 
 export { gameEvents };
 
@@ -52,11 +53,11 @@ export class GameScene extends Phaser.Scene {
   private activePiece: ActivePiece | null = null;
   private nextPieceDef = randomOrbPiece();
 
-  // Moon gravity
+  // Moon gravity — tunables sourced from PACING (src/config/gameConfig.ts)
   private fallSpeed = 0;
   private fallAccum = 0;
-  private readonly BASE_GRAVITY = 0.005;
-  private readonly MAX_FALL_SPEED = 0.09;
+  private readonly BASE_GRAVITY = PACING.BASE_GRAVITY;
+  private readonly MAX_FALL_SPEED = PACING.MAX_FALL_SPEED;
   private fallAge = 0;
 
   // Directional gravity (per piece) — -1 left, +1 right, 0 down
@@ -83,7 +84,7 @@ export class GameScene extends Phaser.Scene {
 
   // Time tracking for speed ramp + urgency
   private gameElapsed = 0; // seconds since game start
-  private readonly URGENCY_START = 40; // 0:40
+  private readonly URGENCY_START = PACING.URGENCY_START_SEC; // seconds before urgency kicks in
   private speedBonus = 0; // additional gravity multiplier from time
 
   // Near-miss highlight timer
@@ -412,7 +413,7 @@ export class GameScene extends Phaser.Scene {
     this.chainResolving = false;
     if (this.chainStep === 0) this.combo = 0;
     this.lastChainElement = null;
-    this.level = Math.floor(this.score / 2000) + 1;
+    this.level = Math.floor(this.score / PACING.POINTS_PER_LEVEL) + 1;
 
     // Near-miss helper: highlight almost-matching orbs
     this.nearMissCells = findNearMissOrbs(this.grid);
@@ -487,15 +488,15 @@ export class GameScene extends Phaser.Scene {
 
   private getUrgencyIntensity(): number {
     if (this.gameElapsed < this.URGENCY_START) return 0;
-    // Ramps from 0 to 1 over ~60 seconds after urgency starts
-    return Math.min((this.gameElapsed - this.URGENCY_START) / 60, 1);
+    // Ramps from 0 to 1 over URGENCY_FADE_IN_SEC after urgency starts
+    return Math.min((this.gameElapsed - this.URGENCY_START) / PACING.URGENCY_FADE_IN_SEC, 1);
   }
 
   private getGravityMultiplier(): number {
     if (this.gameElapsed < this.URGENCY_START) return 1;
     const elapsed = this.gameElapsed - this.URGENCY_START;
-    // +5% per second, stacking — ramps hard
-    return 1 + elapsed * 0.05;
+    // Stacking per-second ramp — this is the "panic accelerator"
+    return 1 + elapsed * PACING.URGENCY_RAMP_PER_SEC;
   }
 
   update(_time: number, delta: number) {
@@ -538,7 +539,7 @@ export class GameScene extends Phaser.Scene {
     // Moon gravity — delta-time based velocity + acceleration with time-based speed ramp
     if (this.activePiece && !this.chainResolving) {
       const dtSec = dt * 0.001;
-      const levelBoost = 1 + (this.level - 1) * 0.045;
+      const levelBoost = 1 + (this.level - 1) * PACING.LEVEL_BOOST_PER_LEVEL;
       const timeBoost = this.getGravityMultiplier();
       // Down-bias falls 20% faster
       const dirBoost = this.gravityDir === 0 ? 1.2 : 1.0;
