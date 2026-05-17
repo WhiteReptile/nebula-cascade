@@ -488,15 +488,15 @@ export class GameScene extends Phaser.Scene {
 
   private getUrgencyIntensity(): number {
     if (this.gameElapsed < this.URGENCY_START) return 0;
-    // Ramps from 0 to 1 over ~60 seconds after urgency starts
-    return Math.min((this.gameElapsed - this.URGENCY_START) / 60, 1);
+    // Ramps from 0 to 1 over URGENCY_FADE_IN_SEC after urgency starts
+    return Math.min((this.gameElapsed - this.URGENCY_START) / PACING.URGENCY_FADE_IN_SEC, 1);
   }
 
   private getGravityMultiplier(): number {
     if (this.gameElapsed < this.URGENCY_START) return 1;
     const elapsed = this.gameElapsed - this.URGENCY_START;
-    // +5% per second, stacking — ramps hard
-    return 1 + elapsed * 0.05;
+    // Stacking per-second ramp — this is the "panic accelerator"
+    return 1 + elapsed * PACING.URGENCY_RAMP_PER_SEC;
   }
 
   update(_time: number, delta: number) {
