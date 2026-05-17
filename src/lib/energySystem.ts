@@ -78,22 +78,21 @@ export async function getCardEnergy(cardId: string): Promise<CardEnergy | null> 
 }
 
 export async function consumeCardEnergy(cardId: string): Promise<boolean> {
+  // Guests have no auth session and no card_energy rows under RLS.
+  // Skip entirely so guest matches never block on energy.
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return true;
+
   const current = await getCardEnergy(cardId);
   if (!current || current.energy < 1) return false;
 
-  const newEnergy = current.energy - 1;
-
-  // When the card drains to zero, lock in the next rolling window.
-  // For partial consumes we preserve the existing schedule so two consumes
-  // inside one window cannot extend the player's effective playtime.
-  const patch: { energy: number; next_reset_at?: string } = { energy: newEnergy };
-  if (newEnergy === 0 || !current.nextResetAt) {
-    patch.next_reset_at = nextResetIso();
-  }
-
+  // Rolling 24h per action: every consume restamps the window.
   const { error } = await supabase
     .from('card_energy')
-    .update(patch)
+    .update({
+      energy: current.energy - 1,
+      next_reset_at: nextResetIso(),
+    })
     .eq('card_id', cardId);
 
   return !error;
