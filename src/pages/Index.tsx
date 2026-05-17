@@ -24,7 +24,9 @@ const Index = () => {
       ) : (
         <>
           <GameHUD />
-          <CosmicGame />
+          <ErrorBoundary>
+            <CosmicGame />
+          </ErrorBoundary>
         </>
       )}
     </div>
