@@ -86,7 +86,7 @@ export async function consumeCardEnergy(cardId: string): Promise<boolean> {
   // When the card drains to zero, lock in the next rolling window.
   // For partial consumes we preserve the existing schedule so two consumes
   // inside one window cannot extend the player's effective playtime.
-  const patch: Record<string, unknown> = { energy: newEnergy };
+  const patch: { energy: number; next_reset_at?: string } = { energy: newEnergy };
   if (newEnergy === 0 || !current.nextResetAt) {
     patch.next_reset_at = nextResetIso();
   }
