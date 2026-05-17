@@ -44,6 +44,7 @@ import {
 } from './logic/chainResolver';
 import { reorganizeOrbs, gravityCollapse } from './logic/orbReorganizer';
 import { updateFallingOrbPhysics } from './logic/fallingPhysics';
+import { PACING } from '@/config/gameConfig';
 
 export { gameEvents };
 
