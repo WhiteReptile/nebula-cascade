@@ -159,6 +159,39 @@ export type Database = {
           },
         ]
       }
+      guest_scores: {
+        Row: {
+          created_at: string
+          device_id: string
+          expires_at: string
+          id: string
+          level_reached: number
+          nickname: string
+          score: number
+          survival_seconds: number
+        }
+        Insert: {
+          created_at?: string
+          device_id: string
+          expires_at?: string
+          id?: string
+          level_reached?: number
+          nickname: string
+          score: number
+          survival_seconds?: number
+        }
+        Update: {
+          created_at?: string
+          device_id?: string
+          expires_at?: string
+          id?: string
+          level_reached?: number
+          nickname?: string
+          score?: number
+          survival_seconds?: number
+        }
+        Relationships: []
+      }
       leaderboard: {
         Row: {
           avg_top3_score: number
@@ -374,6 +407,7 @@ export type Database = {
           display_name: string
           division: Database["public"]["Enums"]["gem_division"]
           division_points: number
+          has_ever_owned_card: boolean
           id: string
           is_banned: boolean
           main_card_id: string | null
@@ -388,6 +422,7 @@ export type Database = {
           display_name?: string
           division?: Database["public"]["Enums"]["gem_division"]
           division_points?: number
+          has_ever_owned_card?: boolean
           id?: string
           is_banned?: boolean
           main_card_id?: string | null
@@ -402,6 +437,7 @@ export type Database = {
           display_name?: string
           division?: Database["public"]["Enums"]["gem_division"]
           division_points?: number
+          has_ever_owned_card?: boolean
           id?: string
           is_banned?: boolean
           main_card_id?: string | null
@@ -532,6 +568,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      purge_expired_guest_scores: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
