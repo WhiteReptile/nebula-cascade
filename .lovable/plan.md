@@ -1,48 +1,88 @@
-## Goal
-Add "Continue with Google" to every auth touchpoint in the app, wired to Lovable Cloud's managed Google OAuth (no client ID/secret needed from you). Treat Lovable as the single source of truth — Replit's separate Supabase project is abandoned and will not be migrated.
+# Backend Cleanup + Rewards/NFT Edge Functions
 
-## Why Google was missing
-`src/pages/Auth.tsx` only implements `signInWithPassword`. No OAuth call, no Google button, no provider enabled on the Lovable Cloud backend. The Replit Supabase project (`pbklgtguxftmckwhwgtb…`) is a completely separate backend from Lovable Cloud (`aoodmexjovwvytzjdyhk…`), so any Google config you added there has no effect here.
+Ten requested items, grouped by area. A few have important caveats up front — please read those first.
 
-## Scope of changes
+---
 
-### 1. Enable Google provider on Lovable Cloud
-- Turn on managed Google OAuth for this backend (uses Lovable's shared credentials — zero config from you).
-- Email/password stays enabled. No auto-confirm. No HIBP toggle change.
+## ⚠️ Items that don't apply as written
 
-### 2. `/auth` page (`src/pages/Auth.tsx`)
-- Add a "Continue with Google" button above the email/password form, styled to match the existing yellow neon Auth theme (`#ffdd00` glow, mono font, black/40 surface).
-- A subtle "— or —" divider between Google and the email form.
-- On click: redirect-style OAuth, returns to current origin after Google consent. Errors surfaced via the existing `useToast`.
+1. **"Configure Site URL / redirect URLs on the live Supabase project"** — not needed. This project uses **Lovable Cloud's managed Google OAuth broker** (`src/integrations/lovable/index.ts` → `lovable.auth.signInWithOAuth`). The redirect goes through `oauth.lovable.app` and lands back at `window.location.origin`. There is no manual Site URL / redirect URL list to maintain, and no localhost bounce possible from the managed flow. ✅ Nothing to do.
 
-### 3. Main menu (`src/components/menu/MainMenu.tsx`)
-- The existing top-right **Login / Sign Up** button stays and still routes to `/auth` (full form lives there).
-- Add a small secondary **"Continue with Google"** chip directly below the Login / Sign Up button, same cyan border style, so logged-out players get a one-click path without leaving the menu.
-- Hidden once the user is logged in (uses `usePlayerProfile().isLoggedIn`).
+2. **"Add Lovable Cloud redirect URI to Google Cloud Console"** — also not needed for the same reason. The managed broker uses Lovable's own Google OAuth client. You only do Google Cloud Console work if you switch to BYO Google credentials (which I do **not** recommend right now). ✅ Nothing to do.
 
-### 4. Guest nickname modal (`src/components/menu/GuestNicknameModal.tsx`)
-- Add a "Sign in with Google instead" link at the bottom of the modal, so guests have a clear upgrade path before committing to anonymous play.
-- Triggers the same OAuth call; on success the guest flow is cancelled and the game starts as the authenticated player.
+3. **"Register GitHub / Twitter / Spotify OAuth apps"** — Lovable Cloud only supports **Google + Apple** natively. Per your answer: I'll **remove all GitHub/Twitter/Spotify code paths** and add a HANDOFF.md note that adding those providers requires migrating to a self-hosted Supabase project.
 
-### 5. Profile auto-creation
-- The existing `handle_new_user()` trigger already inserts a row into `public.players` on signup using `display_name` from `raw_user_meta_data`. Google sign-ups will land there with `display_name` falling back to `'Player'`. We'll patch the trigger to prefer `full_name` / `name` from Google's identity metadata when present, so new Google users get a real name automatically. No schema changes, just a function update.
+---
 
-## Technical notes
-- Uses Lovable Cloud's managed Google OAuth — no client ID, secret, or Google Cloud Console setup required from you.
-- Single OAuth helper added at `src/lib/auth.ts` so the same `signInWithGoogle()` call powers all three entry points.
-- Redirect target: `window.location.origin`. Works in both preview and published environments.
-- Email/password flow, guest flow, and all existing UI remain unchanged.
+## What I'll actually build
 
-## Out of scope
-- Migrating any data from the Replit Supabase project.
-- Apple sign-in or other providers.
-- Marketplace V3 (next thread).
-- Restyling the existing Auth page beyond inserting the Google button + divider.
+### 1. Energy system — true rolling 24h per action, auth-only
+**File:** `src/lib/energySystem.ts`
 
-## Files touched
-- `supabase/migrations/<new>.sql` — patched `handle_new_user()` to read Google name metadata.
-- `src/lib/auth.ts` *(new)* — `signInWithGoogle()` helper.
-- `src/pages/Auth.tsx` — Google button + divider.
-- `src/components/menu/MainMenu.tsx` — Google chip under Login/Sign Up, hidden when logged in.
-- `src/components/menu/GuestNicknameModal.tsx` — "Sign in with Google instead" link.
-- Lovable Cloud auth config — Google provider enabled via `configure_social_auth`.
+Current bug: `next_reset_at` is only stamped when energy hits 0, so two consumes in one window share a single reset clock. Spec says "rolling 24h per action."
+
+Fix: every `consumeCardEnergy()` call stamps `next_reset_at = now + 24h` regardless of remaining energy. The lazy refill in `getCardEnergy()` already works correctly — keep it.
+
+Guests: energy is gated behind RLS that requires `auth.uid()` → guests can't hit these tables. I'll add an explicit `isLoggedIn` guard in the call sites (`GameScene` / pre-match flow) so guest matches **skip the energy check entirely**, never calling `getCardEnergy`/`consumeCardEnergy`. No DB change needed.
+
+### 2. Missing DB triggers (verified absent — `<db-triggers>` is empty)
+
+Migration will:
+- **Attach** the existing `enforce_max_cards_per_player()` function as a `BEFORE INSERT OR UPDATE` trigger on `cards` (function exists, trigger doesn't — that's the gap).
+- **Create** `enforce_sale_lock()` trigger function on `cards`: when `owner_player_id` or `owner_wallet` changes (transfer/sale), or when a `marketplace_listings` row is inserted referencing the card, set `cards.sale_lock_until = now() + 24h`. Reject transfers while `sale_lock_until > now()`.
+
+### 3. Four new Edge Functions (off-chain, full DB logic)
+
+All deployed with in-code JWT validation via `getClaims()`; admin-only ones check `has_role(uid, 'admin')`.
+
+- **`claim-reward`** (user) — validates the caller owns a `reward_payouts` row with `status='pending'`, marks it `status='claimed'`, stamps `claimed_at`. Returns amount + division. No on-chain TX.
+- **`finalize-season`** (admin) — closes the current `reward_periods` row (`status='finalized'`, `finalized_at=now()`), snapshots final leaderboard per division, inserts `reward_payouts` rows for top-N per division using the `MAIN_CARD_SHARE_PERCENT` / `SECONDARY_CARD_SHARE_PERCENT` split from `economyConfig.ts`, opens next period.
+- **`set-payout-amount`** (admin) — sets/updates `reward_amount_cents` on a given `reward_payouts` row before claim. Rejects if `status != 'pending'`.
+- **`verify-nft-ownership`** (user) — input: `{ division }`. Returns `{ owns: boolean, cardIds: [] }` by querying `cards` where `owner_player_id = caller's player.id` and `division = $1`. Pure DB check — division gating doesn't need on-chain reads since `cards` table is the source of truth in the off-chain model.
+
+### 4. Resend SMTP for auth emails
+
+- Connect Resend via `standard_connectors--connect`.
+- Set up a sender domain through Lovable's email infra (`email_domain--check_email_domain_status` → setup dialog if missing).
+- Scaffold auth email templates branded to Nebula Cascade (`scaffold_auth_email_templates`), deploy `auth-email-hook`.
+
+Note: if you want emails to literally route through your Resend account rather than Lovable's managed mailer, that requires switching off Lovable Emails — I'll do whichever you confirm. **Default plan: use Lovable Emails infra** (built on the same deliverability rails) since you have it for free here. Tell me if you'd rather we route through Resend directly.
+
+### 5. Remove unused OAuth providers
+Grep + remove GitHub/Twitter/Spotify references from `src/pages/Auth.tsx`, `src/lib/auth.ts`, any menu components. Append a section to `HANDOFF.md` explaining the Lovable Cloud limitation and the migration path.
+
+### 6. One-time orphan cleanup
+Query `auth.users` for rows where `email_confirmed_at IS NULL AND created_at < now() - interval '7 days'`. Show you the list first, then delete via admin RPC. No recurring cron.
+
+---
+
+## Technical details (for reference)
+
+```text
+Edge function tree after this change:
+supabase/functions/
+├── generate-session/      (existing)
+├── submit-score/          (existing)
+├── submit-guest-score/    (existing)
+├── auth-email-hook/       (NEW — scaffolded)
+├── claim-reward/          (NEW)
+├── finalize-season/       (NEW)
+├── set-payout-amount/     (NEW)
+└── verify-nft-ownership/  (NEW)
+```
+
+Migration order:
+1. Attach `enforce_max_cards_per_player` trigger
+2. Add `sale_lock_until` enforcement trigger
+3. (no schema changes needed for the edge functions — tables already exist)
+
+Files touched:
+- `src/lib/energySystem.ts` — stamp `next_reset_at` on every consume
+- `src/game/GameScene.ts` (or pre-match hook) — skip energy for guests
+- `src/pages/Auth.tsx`, `src/lib/auth.ts` — strip GitHub/Twitter/Spotify
+- `HANDOFF.md` — note on social provider limitation
+- 5 new `supabase/functions/<name>/index.ts`
+
+---
+
+**One thing to confirm before I start:** for Resend — do you want emails routed through **your Resend account** (requires disabling Lovable Emails, you bring API key), or just use **Lovable Emails infra** (works out of the box, same deliverability)? I'll default to Lovable Emails unless you say otherwise.
