@@ -87,21 +87,35 @@ npm run build          # smoke-test production build
 
 ## Pending Config Migration
 
-These constants are intentionally **not** yet wired to `src/config/`
-because they have wide reach or non-obvious semantics. Migrate one at a
-time, with a build + visual smoke-test after each:
+### ✅ Resolved
+- `src/lib/energySystem.ts` — now uses a true **rolling 24h window** via
+  `next_reset_at`. Lazy refill on read; new window stamped when energy
+  drains to 0. Backed by a migration that backfilled `next_reset_at`
+  for legacy rows.
+- `src/game/GameScene.ts` — moon-gravity tunables (`BASE_GRAVITY`,
+  `MAX_FALL_SPEED`, level boost step, urgency start/ramp, points-per-level)
+  now sourced from `PACING` in `src/config/gameConfig.ts`. Values
+  unchanged — behavior preserved.
 
+### ⏭ Deferred (intentionally not touched)
 - `src/game/pieces.ts` → `COLS`, `ROWS`, `CELL` — duplicated as
   `BOARD.COLS/ROWS/CELL` in config but Phaser scenes import directly from
   `pieces.ts`. Risky to touch without auditing every Phaser-side import.
-- `src/components/marketplace/NFTGrid.tsx` → page-size literal — move to
-  `MARKETPLACE.PAGE_SIZE` after confirming no off-by-one in pagination UI.
+- `src/components/marketplace/NFTGrid.tsx` → page-size literal — owned
+  by the marketplace V3 work; defer to that PR.
 - `src/pages/Rewards.tsx` & `src/pages/Roadmap.tsx` → marketing copy
   contains hardcoded "3%" and "40-day" strings. These are *display copy*,
   not logic — leaving as-is to keep editorial control over the wording.
-- `src/game/GameScene.ts` → spawn timing, level-up cadence, and scoring
-  multipliers are inlined in the scene. Lift to `gameConfig.ts → SCORING`
-  / `PACING` once the gameplay is locked in.
-- `src/lib/energySystem.ts` → daily reset uses `YYYY-MM-DD` comparison
-  (not the rolling 24h window described in the economy spec). This is a
-  **behavior** discrepancy, not just a constant — fix in a dedicated PR.
+- Edge functions (`submit-score`) — 60s cooldown is hardcoded because
+  edge functions cannot import from `src/`. Mirrored as
+  `PACING.MATCH_COOLDOWN_SEC`; keep both in sync manually.
+
+## Hardening Notes
+
+- `submit-score` edge function now validates all numeric inputs
+  (rejects NaN, negatives, absurd ceilings) before touching the DB.
+- `<ErrorBoundary>` wraps the Phaser canvas in `src/pages/Index.tsx` —
+  a scene crash no longer blanks the whole app.
+- Pure-math invariants for economy + pacing live in
+  `src/test/economy.test.ts` and `src/test/pacing.test.ts`.
+
