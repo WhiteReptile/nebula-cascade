@@ -1,96 +1,104 @@
-# Autonomous Safe-Fix Pass
+## Leaderboard v2 — Logic + Visual Overhaul
 
-Goal: fix everything I can without touching marketplace V3 or Google sign-in. No UI redesigns. No folder restructuring. Behavior preserved except for the one bug fix you approved (energy reset).
+### 1. Tab structure (top nav)
 
----
+Replace today's `FREE / NFT / ALL` with:
 
-## 1. Energy: true rolling 24h reset (behavior fix)
+```text
+[ NO NFT ]  [ NFT ]  [ GUESTS ]  [ ALL ]
+```
 
-**Schema migration** on `card_energy`:
-- Backfill `next_reset_at` where null: `now() + interval '24 hours'`.
-- Keep `last_reset_at` for backwards compat but stop relying on it for the gate.
+- **NO NFT** — logged-in players (email or wallet) who don't own a card. Single global ranking, no divisions. Eligible for future rewards (rewards launch in ~2 months — UI shows a "Rewards: Coming Soon" chip, no payout logic yet).
+- **NFT** — card owners. Keeps the 5 divisions (Gem I–V) exactly as today. Defaults to the player's own active division when they land.
+- **GUESTS** — anonymous nickname players. **No divisions.** Only entries with score ≥ 2,000 are shown. **Every row auto-deletes 24 h after it was set.** No persistence, no rewards, ever.
+- **ALL** — display-only mix of NO NFT + NFT (guests excluded, since they vanish in 24h and would pollute history). No rewards.
 
-**Code (`src/lib/energySystem.ts`)**:
-- `getCardEnergy()` → if `now() >= next_reset_at`, refill to `max_energy` and set `next_reset_at = now() + 24h`.
-- `consumeCardEnergy()` → on first consume after a full refill, ensure `next_reset_at` is set (covers legacy rows).
-- `initCardEnergy()` → set `next_reset_at = now() + 24h` on insert.
-- Add comment block explaining the rolling-window economy rule.
+The word "FREE" is removed everywhere — replaced by the segment name.
 
-Same `ENERGY_PER_CARD` (2) and 40% double-consume roll are untouched.
+### 2. Guest flow (new)
 
-## 2. GameScene constants → `src/config/gameConfig.ts`
+When a visitor with no account clicks **Play** on the main menu:
 
-Lift these inlined values from `src/game/GameScene.ts` into `gameConfig.ts → PACING` / `SCORING` (values identical, zero behavior change):
-- `BASE_GRAVITY` (0.005), `MAX_FALL_SPEED` (0.09)
-- Level boost step (`score / 2000`, `+4.5%/level`)
-- Urgency threshold (40s) + per-second ramp (5%)
-- Match cooldown (60s) referenced in edge fn
+1. Modal: "Enter a nickname to play" (3–16 chars, no profanity, uniqueness not enforced — device-bound).
+2. Nickname + a device fingerprint (`localStorage` UUID) are stored locally.
+3. Session runs as a Supabase **anonymous** identity OR via a new edge function `submit-guest-score` that takes `{nickname, device_id, score, session_proof}` and writes to a new `guest_scores` table.
+4. At game over, if score ≥ 2,000 → row inserted into `guest_scores` with `expires_at = now() + 24h`.
+5. A pg_cron job (every 15 min) deletes rows where `expires_at < now()`.
+6. Same device + same nickname overwrites the previous entry only if the new score is higher (prevents spam from one device).
 
-Import sites updated; no UI change.
+NFT and NO-NFT player scores are **never** purged by this job — only `guest_scores`.
 
-## 3. Edge function hardening
+### 3. Visual direction — "Dense Data Terminal"
 
-Both `generate-session` and `submit-score`:
-- Add Zod-style input validation (manual, no new deps) → 400 on bad payload.
-- Ensure `corsHeaders` is included on every error response (audit pass).
-- No logic changes to anti-cheat or cooldown.
+Compact, monospace, sortable. Inspired by Bloomberg / arcade hi-score screens.
 
-Deploy after edit; smoke-test via `curl_edge_functions` as the preview user.
+```text
+┌─ LEADERBOARD ─────────────────── PERIOD 2026-05 ──────────┐
+│  NO NFT │ NFT │ GUESTS* │ ALL                              │
+├──────────────────────────────────────────────────────────────┤
+│ DIVISION: ▸ GEM I  GEM II  GEM III  GEM IV  GEM V          │  ← only on NFT tab
+├──────────────────────────────────────────────────────────────┤
+│ #   PLAYER              AVG3       BEST      MATCHES  TREND │
+│ 01  ▲ SOLAR_FOX  [GI]   142,300    198,440   47       ▁▃▅█  │
+│ 02  ─ NIGHTSHADE [GI]   139,210    187,002   52       ▂▄▅▆  │
+│ 03  ▼ KAI42      [GI]   136,889    190,114   61       ▆▅▃▁  │
+│ ...                                                          │
+│ 07  ★ YOU        [GI]    98,400    132,500   23       ▂▃▄▅  │
+└──────────────────────────────────────────────────────────────┘
+*GUESTS auto-clear every 24h. Top entry only stored if ≥ 2,000 pts.
+```
 
-## 4. Pending Config Migration cleanup
+Key visual elements:
+- JetBrains Mono everywhere; tighter line-height; uppercase column heads.
+- Each row 28px tall, alternating subtle row tint, neon division dot on the left.
+- Sparkline column = last 7 matches (avg score trend) — sourced from `match_logs`.
+- Rank delta arrows (▲/▼/─) vs last refresh.
+- "★ YOU" row is sticky-pinned to bottom if player is outside top 50.
+- Sortable column headers (Avg3 default, click to toggle Best / Matches).
+- Header switches accent colour per tab: NO NFT = cyan, NFT = gold, GUESTS = magenta, ALL = white.
 
-From `docs/DEVELOPER_HANDOFF.md`:
-- ✅ `energySystem.ts` rolling-24h — fixed in step 1.
-- ✅ `GameScene.ts` PACING/SCORING — fixed in step 2.
-- ⏭ `pieces.ts COLS/ROWS/CELL` — leave (touches every Phaser scene; risky).
-- ⏭ `NFTGrid.tsx` page-size — leave (marketplace, you own it).
-- ⏭ Marketing copy "3%"/"40-day" — leave (editorial).
+### 4. Logic fixes
+- **Division filter only renders on the NFT tab.** NO NFT, GUESTS, ALL show one flat ranking (this fixes the bug where clicking FREE still showed divisions).
+- NO NFT tab queries `leaderboard` joined with `players` where `has_ever_owned_card = false`, ignoring `division`.
+- NFT tab keeps current behaviour but auto-selects `players.division` for the signed-in player.
+- ALL tab unions NO NFT + NFT rows, no division filter, capped at top 100.
+- Segment chip in the header reflects the **viewer's** segment (NO NFT / NFT / GUEST), independent of which tab is active.
 
-Handoff doc updated to reflect what shipped.
+### 5. Technical changes (collapsible — for the dev)
 
-## 5. Light polish (safe)
+```text
+DB migration:
+  - CREATE TABLE guest_scores (
+      id uuid pk,
+      nickname text,
+      device_id text,
+      score bigint,
+      level_reached int,
+      survival_seconds int,
+      created_at timestamptz default now(),
+      expires_at timestamptz default now() + interval '24 hours'
+    )
+  - UNIQUE (device_id, nickname)
+  - RLS: SELECT public; INSERT via edge function only.
+  - CHECK trigger: score >= 2000.
+  - pg_cron job 'purge-guest-scores' every 15 min.
 
-- Add `ErrorBoundary` around the Phaser canvas mount so a scene crash doesn't blank the whole app.
-- Remove stray `console.log` debug noise (≤8 occurrences) — keep `console.warn/error`.
-- Add `<title>` + meta description on `index.html` if missing (SEO).
-- Add `lang="en"` check.
+Edge function:
+  - submit-guest-score (verify session_proof, upsert if new score > old).
 
-## 6. Tests
+Frontend:
+  - src/pages/Leaderboard.tsx  → full rewrite with new tab logic.
+  - src/components/leaderboard/  (new dir)
+      LeaderboardTable.tsx, Sparkline.tsx, RankDelta.tsx, GuestNicknameModal.tsx, TabBar.tsx.
+  - src/lib/playerSegmentation.ts → add 'guest' segment.
+  - src/lib/guestSession.ts (new) → nickname + device_id helpers.
+  - Index.tsx Play button → if no auth, opens GuestNicknameModal.
 
-Add unit tests for pure economy math (no DB):
-- `cardSystem` reward split (main 100% / secondary 20%).
-- `marketplaceSystem` fee math (3%).
-- `divisionSystem` tier boundaries.
+Out of scope (this pass):
+  - Actual reward payout logic for NO NFT (placeholder UI only).
+  - Marketplace V3 integration (parked).
+  - Anti-cheat hardening for guest scores beyond existing session_proof.
+```
 
-Run `vitest` + build.
-
-## 7. Verification
-
-- `bun run build` (typecheck).
-- Vitest pass.
-- Curl both edge functions, verify 200 happy + 400 invalid.
-- Manual: load `/`, start a game, end a game, confirm energy column updates correctly.
-
-## Out of scope (explicitly not touching)
-
-- Marketplace V3 / Thirdweb on-chain listings — yours.
-- Google OAuth wiring — yours.
-- Any visual redesign, layout, color, or HUD changes.
-- `src/integrations/supabase/*` (auto-generated).
-- `pieces.ts` board constants.
-
-## Files I expect to change
-
-- `supabase/migrations/<new>.sql` (energy)
-- `src/lib/energySystem.ts`
-- `src/game/GameScene.ts`
-- `src/config/gameConfig.ts`
-- `supabase/functions/generate-session/index.ts`
-- `supabase/functions/submit-score/index.ts`
-- `src/components/ErrorBoundary.tsx` (new, if not present)
-- `src/pages/Index.tsx` or wherever the canvas mounts (wrap)
-- `index.html` (meta only, if needed)
-- `docs/DEVELOPER_HANDOFF.md`
-- `src/test/*.test.ts` (new pure-math tests)
-
-No other files touched. No questions for you — approve and I'll execute.
+### 6. Open question I'll default unless told otherwise
+Sparkline source = last 7 `match_logs` rows for that player. If you want it shorter (last 3) or hidden on the GUESTS tab, say so before approval; otherwise I'll ship the 7-match version.
