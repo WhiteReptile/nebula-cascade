@@ -84,7 +84,7 @@ export class GameScene extends Phaser.Scene {
 
   // Time tracking for speed ramp + urgency
   private gameElapsed = 0; // seconds since game start
-  private readonly URGENCY_START = 40; // 0:40
+  private readonly URGENCY_START = PACING.URGENCY_START_SEC; // seconds before urgency kicks in
   private speedBonus = 0; // additional gravity multiplier from time
 
   // Near-miss highlight timer
