@@ -92,7 +92,22 @@ const GameHUD = () => {
       setChainCombo(step); setChainVisible(true); setTriColorActive(false);
     };
     const onTriColor = () => setTriColorActive(true);
-    const onMatchEnd = (data: any) => { logMatch(data).catch(console.error); };
+    const onMatchEnd = (data: any) => {
+      // Guest path: if no nickname this no-ops. Logged-in path: matchLogger early-returns when no user.
+      import('@/lib/guestSession').then(({ getGuestNickname, submitGuestScore }) => {
+        if (getGuestNickname()) {
+          const survival = data.startedAt
+            ? Math.floor((Date.now() - new Date(data.startedAt).getTime()) / 1000)
+            : 0;
+          submitGuestScore({
+            score: data.score,
+            level_reached: data.level,
+            survival_seconds: survival,
+          }).catch(console.error);
+        }
+      });
+      logMatch(data).catch(console.error);
+    };
 
     gameEvents.on('hud', onHUD);
     gameEvents.on('nextPiece', onNext);
