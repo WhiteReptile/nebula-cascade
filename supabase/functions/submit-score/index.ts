@@ -46,11 +46,29 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const body = await req.json();
-    const { sessionId, score, level, maxCombo, comboPoints, omniColorCount, linesCleared, startedAt } = body;
+    const body = await req.json().catch(() => null);
+    if (!body || typeof body !== "object") {
+      return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-    if (!sessionId || score === undefined) {
-      return new Response(JSON.stringify({ error: "Missing required fields" }), {
+    // Input validation — guard every numeric field; reject negatives + NaN.
+    const num = (v: unknown, max = 1e9) =>
+      typeof v === "number" && Number.isFinite(v) && v >= 0 && v <= max ? v : null;
+
+    const sessionId = typeof body.sessionId === "string" ? body.sessionId : null;
+    const score = num(body.score);
+    const level = num(body.level, 1000) ?? 1;
+    const maxCombo = num(body.maxCombo, 1e6) ?? 0;
+    const comboPoints = num(body.comboPoints) ?? 0;
+    const omniColorCount = num(body.omniColorCount, 1e6) ?? 0;
+    const linesCleared = num(body.linesCleared, 1e6) ?? 0;
+    const startedAt = typeof body.startedAt === "string" ? body.startedAt : undefined;
+
+    if (!sessionId || score === null) {
+      return new Response(JSON.stringify({ error: "Missing or invalid required fields: sessionId, score" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
