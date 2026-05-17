@@ -1,8 +1,34 @@
 # Nebula Cascade — Handoff Document
 
 **Last updated:** May 2026  
-**Supabase project:** `pbklgtguxftmckwhwgtb`  
-**Chain:** Base mainnet (8453)
+**Backend:** Lovable Cloud (managed Supabase: `aoodmexjovwvytzjdyhk`)  
+**Chain:** Base mainnet (8453) — NFT collection reference only; rewards are fully off-chain
+
+> ⚠️ The old Replit Supabase project (`pbklgtguxftmckwhwgtb`) is **abandoned**.
+> All backend now lives in Lovable Cloud.
+
+---
+
+## Social auth providers — IMPORTANT
+
+Lovable Cloud's managed OAuth supports **Google + Apple only**. The app currently
+ships **Google + email/password + wallet** sign-in.
+
+Adding **GitHub, Twitter (X), Spotify, Discord**, or any other provider requires
+**migrating off Lovable Cloud to a self-managed Supabase project**, where those
+providers can be enabled in the Supabase dashboard. There is no shortcut.
+
+Google OAuth uses Lovable's managed broker — **no Site URL / redirect URL config
+or Google Cloud Console work is required**.
+
+---
+
+## Email / SMTP
+
+- **Resend** is connected as a transactional email provider (secret `RESEND_API_KEY` available in edge functions).
+- For **auth OTP / verification emails specifically**, configure custom SMTP in
+  Lovable Cloud → Auth Settings (use Resend SMTP creds). The default Cloud mailer
+  is rate-limited and lands in spam.
 
 ---
 
@@ -11,26 +37,27 @@
 ```
 Browser (React + Vite + Phaser 3)
   │
-  ├── Supabase (PostgreSQL + Auth + Edge Functions)
-  │     ├── Auth: email/password, Google OAuth, GitHub, Twitter, Spotify
-  │     ├── DB: players, cards, leaderboard, reward_payouts, marketplace_listings
-  │     └── Edge Functions: generate-session, submit-score, claim-reward,
-  │                         finalize-season, set-payout-amount, verify-nft-ownership,
-  │                         settle-listing
+  ├── Lovable Cloud (Supabase: Postgres + Auth + Edge Functions)
+  │     ├── Auth: email/password + Google OAuth (managed broker)
+  │     ├── DB: players, cards, leaderboard, reward_payouts,
+  │     │       marketplace_listings, card_energy, guest_scores, ...
+  │     └── Edge Functions:
+  │           generate-session, submit-score, submit-guest-score,
+  │           claim-reward, finalize-season, set-payout-amount,
+  │           verify-nft-ownership
   │
-  └── Thirdweb (Base L2)
-        ├── ERC-1155 NFT Collection (card minting)
-        └── MarketplaceV3 (NOT YET DEPLOYED — see Known Issues)
+  └── Thirdweb (Base L2) — NFT collection 0xa89C…aa07e (display only)
 ```
 
 **Data flow for a ranked game:**
-1. Player visits `/` → `useGameSession` calls `generate-session` edge function → returns `{ sessionId, seed }`
-2. Phaser game runs, emits `matchEnd` event with score/level/combo stats
-3. `useMatchEvents` calls `submit-score` edge function with `sessionId` + match stats
-4. Edge function validates session, runs anti-cheat, writes `match_logs`, updates `players` + `leaderboard`
-5. `leaderboard` AFTER trigger recomputes `RANK()` for the affected division/period immediately
+1. Player visits `/` → `useGameSession` calls `generate-session` → `{ sessionId, seed }`
+2. Phaser emits `matchEnd` with score/level/combo stats
+3. `useMatchEvents` calls `submit-score` with sessionId + match stats
+4. Edge function validates, runs anti-cheat, writes `match_logs`, updates `players` + `leaderboard`
 
-**Guest players** bypass steps 1–5 entirely. Scores are local-only.
+**Guest players** bypass the auth + energy + leaderboard system entirely.
+Their scores are stored against a `device_id` for 24h, then auto-purged.
+`consumeCardEnergy()` short-circuits when there is no session.
 
 ---
 
