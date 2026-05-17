@@ -539,7 +539,7 @@ export class GameScene extends Phaser.Scene {
     // Moon gravity — delta-time based velocity + acceleration with time-based speed ramp
     if (this.activePiece && !this.chainResolving) {
       const dtSec = dt * 0.001;
-      const levelBoost = 1 + (this.level - 1) * 0.045;
+      const levelBoost = 1 + (this.level - 1) * PACING.LEVEL_BOOST_PER_LEVEL;
       const timeBoost = this.getGravityMultiplier();
       // Down-bias falls 20% faster
       const dirBoost = this.gravityDir === 0 ? 1.2 : 1.0;
