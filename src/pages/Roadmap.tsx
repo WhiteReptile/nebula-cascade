@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronDown } from 'lucide-react';
 
@@ -23,7 +23,7 @@ const ROADMAP_DATA: RoadmapMonth[] = [
     month: 'APRIL',
     year: 2026,
     monthIndex: 3,
-    goal: 'Beta launch with core NFT integration',
+    goal: 'Beta foundation with core NFT integration',
     color: '#f59e0b',
     glow: 'rgba(245,158,11,0.4)',
     milestones: [
@@ -49,7 +49,7 @@ const ROADMAP_DATA: RoadmapMonth[] = [
     month: 'MAY',
     year: 2026,
     monthIndex: 4,
-    goal: 'Marketplace launch + public access',
+    goal: 'Marketplace finalized — Public Launch on May 25',
     color: '#3b82f6',
     glow: 'rgba(59,130,246,0.4)',
     milestones: [
@@ -57,47 +57,51 @@ const ROADMAP_DATA: RoadmapMonth[] = [
       { text: '3% trading fee implemented', done: true },
       { text: 'Fee routing to rewards pool tracked', done: true },
       { text: 'Card ownership transfers with energy reset', done: true },
-      { text: 'Marketplace reaches 90% completion', done: true },
       { text: 'Swap functionality added', done: true },
-      { text: 'Public registration opens', done: true },
-      { text: 'Additional 50-100 cards minted across divisions', done: true },
-      { text: 'First season concludes (40-day cycle ends)', done: true },
+      { text: 'Marketplace reaches 100% completion', done: false },
+      { text: 'Final QA pass + load testing', done: false },
+      { text: 'Additional 50-100 cards minted across divisions', done: false },
+      { text: '🚀 PUBLIC LAUNCH — May 25, 2026', done: false },
+      { text: 'First season concludes (40-day cycle ends)', done: false },
       { text: 'Manual rewards distribution to beta players', done: false },
     ],
-    deliverable: 'Marketplace live. Public can join and trade. First rewards paid.',
+    deliverable: 'Platform launches publicly on May 25. Marketplace live. First rewards paid.',
   },
   {
     month: 'JUNE',
     year: 2026,
     monthIndex: 5,
-    goal: 'Scale and stabilize',
+    goal: 'Public access opens — full platform launch',
     color: '#10b981',
     glow: 'rgba(16,185,129,0.4)',
     milestones: [
-      { text: '100% marketplace completion', done: false },
-      { text: 'Automated off-chain rewards system', done: false },
-      { text: 'Player profiles with stats/history', done: false },
-      { text: 'Anti-bot protections', done: false },
-      { text: 'Second card collection drop', done: false },
-      { text: 'Community dashboard launch', done: false },
-      { text: 'Season 2 underway', done: false },
-      { text: 'Target: 500+ daily active users', done: false },
+      { text: 'Public registration open to everyone', done: false },
+      { text: 'Full marketplace live with secondary sales', done: false },
+      { text: 'First official competitive season begins', done: false },
+      { text: 'Onboarding flow polished for new players', done: false },
+      { text: 'Marketing push across social + Web3 channels', done: false },
+      { text: 'Community channels live (Discord / X / forum)', done: false },
+      { text: 'Automated off-chain rewards distribution', done: false },
+      { text: 'Player profiles with stats and history', done: false },
+      { text: 'Anti-bot protections hardened', done: false },
+      { text: 'Target: 1,000+ daily active users', done: false },
     ],
-    deliverable: 'Fully functional economy. Growing player base.',
+    deliverable: 'Nebula Cascade publicly live and open to all players.',
   },
   {
     month: 'JULY',
     year: 2026,
     monthIndex: 6,
-    goal: 'Expansion',
+    goal: 'Expansion & content drops',
     color: '#a855f7',
     glow: 'rgba(168,85,247,0.4)',
     milestones: [
-      { text: 'Third card collection release', done: false },
+      { text: 'Second card collection release', done: false },
       { text: 'Mobile-responsive optimization', done: false },
-      { text: 'Seasonal event (tournament style)', done: false },
+      { text: 'Seasonal tournament event', done: false },
       { text: 'Referral system launch', done: false },
-      { text: 'Target: 1,000+ daily active users', done: false },
+      { text: 'Community dashboard with treasury stats', done: false },
+      { text: 'Target: 2,000+ daily active users', done: false },
     ],
     deliverable: 'Expanded card ecosystem. Tournament events live.',
   },
@@ -105,7 +109,7 @@ const ROADMAP_DATA: RoadmapMonth[] = [
     month: 'AUGUST',
     year: 2026,
     monthIndex: 7,
-    goal: 'Platform maturity',
+    goal: 'Platform maturity & governance',
     color: '#f43f5e',
     glow: 'rgba(244,63,94,0.4)',
     milestones: [
@@ -113,7 +117,7 @@ const ROADMAP_DATA: RoadmapMonth[] = [
       { text: 'Multi-chain exploration (optional chain support)', done: false },
       { text: 'Treasury transparency reports', done: false },
       { text: 'Community governance on 30% allocation', done: false },
-      { text: 'Target: 2,000+ daily active users', done: false },
+      { text: 'Target: 5,000+ daily active users', done: false },
     ],
     deliverable: 'Mature platform with community governance.',
   },
@@ -125,7 +129,34 @@ const Roadmap = () => {
   const currentMonth = now.getMonth();
   const currentYear = now.getFullYear();
 
-  // Start with all months expanded so the user can explore everything immediately.
+  // Opt out of the game-shell viewport lock so this page can scroll natively.
+  useEffect(() => {
+    const html = document.documentElement;
+    const body = document.body;
+    const hadHtml = html.classList.contains('game-shell-active');
+    const hadBody = body.classList.contains('game-shell-active');
+    html.classList.remove('game-shell-active');
+    body.classList.remove('game-shell-active');
+    const prevHtmlOverflow = html.style.overflow;
+    const prevBodyOverflow = body.style.overflow;
+    const prevHtmlHeight = html.style.height;
+    const prevBodyHeight = body.style.height;
+    html.style.overflow = 'auto';
+    body.style.overflow = 'auto';
+    html.style.height = 'auto';
+    body.style.height = 'auto';
+    html.style.scrollBehavior = 'smooth';
+    return () => {
+      if (hadHtml) html.classList.add('game-shell-active');
+      if (hadBody) body.classList.add('game-shell-active');
+      html.style.overflow = prevHtmlOverflow;
+      body.style.overflow = prevBodyOverflow;
+      html.style.height = prevHtmlHeight;
+      body.style.height = prevBodyHeight;
+      html.style.scrollBehavior = '';
+    };
+  }, []);
+
   const [expanded, setExpanded] = useState<number[]>(ROADMAP_DATA.map((_, i) => i));
 
   const toggle = (i: number) =>
@@ -138,13 +169,12 @@ const Roadmap = () => {
   };
 
   return (
-    // Full-page scroll container — the whole page scrolls naturally.
-    <div className="min-h-screen w-full overflow-y-auto bg-[#050510] text-white font-mono">
+    <div className="relative min-h-screen w-full bg-[#050510] text-white font-mono">
       {/* Header */}
-      <div className="sticky top-0 z-20 flex items-center justify-between px-6 py-4 backdrop-blur-md bg-[#050510]/80 border-b border-cyan-500/10">
+      <div className="sticky top-0 z-20 flex items-center justify-between px-6 py-4 backdrop-blur-xl bg-gradient-to-b from-[#050510]/95 to-[#050510]/70 border-b border-cyan-500/15">
         <button
           onClick={() => navigate('/')}
-          className="rounded-lg border border-red-500/50 bg-red-500/20 px-5 py-2 text-red-200 hover:bg-red-500/30 transition-colors text-sm uppercase tracking-widest"
+          className="rounded-lg border border-red-500/50 bg-red-500/20 px-5 py-2 text-red-200 hover:bg-red-500/30 hover:border-red-400 transition-all text-sm uppercase tracking-widest"
           style={{ textShadow: '0 0 8px #ff3333' }}
         >
           ← Back
@@ -155,7 +185,7 @@ const Roadmap = () => {
       </div>
 
       {/* Title */}
-      <div className="text-center pt-10 pb-10">
+      <div className="text-center pt-10 pb-6 px-4">
         <div className="mx-auto w-24 h-px bg-gradient-to-r from-transparent via-cyan-500/40 to-transparent mb-4" />
         <h1
           className="text-4xl md:text-6xl font-black uppercase tracking-[0.4em] text-white"
@@ -165,10 +195,31 @@ const Roadmap = () => {
         </h1>
         <p className="text-xs uppercase tracking-[0.5em] text-white/60 mt-3">Development Timeline · 2026</p>
         <div className="mx-auto w-24 h-px bg-gradient-to-r from-transparent via-cyan-500/40 to-transparent mt-4" />
+
+        {/* Launch banner */}
+        <div
+          className="inline-flex items-center gap-3 mt-8 px-6 py-3 rounded-full border animate-pulse"
+          style={{
+            borderColor: 'rgba(59,130,246,0.6)',
+            background: 'linear-gradient(90deg, rgba(59,130,246,0.15), rgba(16,185,129,0.15))',
+            boxShadow: '0 0 24px rgba(59,130,246,0.35)',
+          }}
+        >
+          <span className="text-lg">🚀</span>
+          <span
+            className="text-sm md:text-base font-bold uppercase tracking-[0.3em]"
+            style={{ color: '#7dd3fc', textShadow: '0 0 10px rgba(59,130,246,0.7)' }}
+          >
+            Public Launch · May 25, 2026
+          </span>
+        </div>
+        <p className="text-xs uppercase tracking-[0.3em] text-white/40 mt-3">
+          Scroll down to explore the full timeline ↓
+        </p>
       </div>
 
       {/* Timeline */}
-      <div className="max-w-3xl mx-auto px-4 pb-32 relative">
+      <div className="max-w-3xl mx-auto px-4 pb-32 pt-6 relative">
         {/* Vertical line */}
         <div className="absolute left-8 md:left-12 top-0 bottom-0 w-px bg-gradient-to-b from-cyan-500/30 via-cyan-500/15 to-transparent" />
 
@@ -179,38 +230,35 @@ const Roadmap = () => {
           const totalCount = month.milestones.length;
           const progress = Math.round((doneCount / totalCount) * 100);
           const isComplete = doneCount === totalCount;
+          const isLaunchMonth = month.month === 'MAY';
 
           return (
             <div
               key={month.month}
               className={`relative ml-12 md:ml-20 mb-6 transition-opacity duration-500 ${
-                status === 'future' ? 'opacity-80' : 'opacity-100'
+                status === 'future' ? 'opacity-90' : 'opacity-100'
               }`}
             >
               {/* Timeline dot */}
               <div
                 className={`absolute -left-[2.05rem] md:-left-[2.55rem] top-5 w-4 h-4 rounded-full border-2 ${
-                  status === 'current' ? 'animate-pulse' : ''
+                  status === 'current' || isLaunchMonth ? 'animate-pulse' : ''
                 }`}
                 style={{
                   borderColor: month.color,
                   backgroundColor:
-                    status === 'past' || isComplete
-                      ? month.color
-                      : status === 'current'
-                        ? month.color
-                        : 'transparent',
+                    status === 'past' || isComplete || isLaunchMonth ? month.color : 'transparent',
                   boxShadow: `0 0 12px ${month.glow}`,
                 }}
               />
 
               {/* Card */}
               <div
-                className="rounded-xl border overflow-hidden cursor-pointer hover:border-opacity-80 transition-all"
+                className="rounded-xl border overflow-hidden cursor-pointer transition-all duration-300 hover:scale-[1.01]"
                 style={{
                   borderColor: `${month.color}55`,
                   background: `linear-gradient(135deg, ${month.color}14, rgba(255,255,255,0.02))`,
-                  boxShadow: isOpen ? `0 0 24px ${month.glow}` : 'none',
+                  boxShadow: isOpen ? `0 0 28px ${month.glow}` : `0 0 8px ${month.color}22`,
                 }}
                 onClick={() => toggle(i)}
               >
@@ -224,9 +272,22 @@ const Roadmap = () => {
                       >
                         {month.month} {month.year}
                       </span>
-                      {month.month === 'MAY' && (
+                      {isLaunchMonth && (
                         <span
                           className="text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest animate-pulse"
+                          style={{
+                            backgroundColor: 'rgba(59,130,246,0.2)',
+                            color: '#7dd3fc',
+                            border: '1px solid rgba(59,130,246,0.6)',
+                            textShadow: '0 0 8px rgba(59,130,246,0.7)',
+                          }}
+                        >
+                          🚀 LAUNCH · MAY 25
+                        </span>
+                      )}
+                      {month.month === 'JUNE' && (
+                        <span
+                          className="text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest"
                           style={{
                             backgroundColor: 'rgba(16,185,129,0.18)',
                             color: '#34d399',
@@ -234,7 +295,7 @@ const Roadmap = () => {
                             textShadow: '0 0 8px rgba(52,211,153,0.6)',
                           }}
                         >
-                          🚀 Ahead of schedule!
+                          🌐 PUBLIC ACCESS
                         </span>
                       )}
                       {isComplete && (
@@ -313,6 +374,11 @@ const Roadmap = () => {
             </div>
           );
         })}
+
+        {/* Footer hint */}
+        <div className="text-center mt-12 text-[10px] uppercase tracking-[0.5em] text-white/30">
+          — End of Timeline —
+        </div>
       </div>
     </div>
   );
