@@ -53,11 +53,11 @@ export class GameScene extends Phaser.Scene {
   private activePiece: ActivePiece | null = null;
   private nextPieceDef = randomOrbPiece();
 
-  // Moon gravity
+  // Moon gravity — tunables sourced from PACING (src/config/gameConfig.ts)
   private fallSpeed = 0;
   private fallAccum = 0;
-  private readonly BASE_GRAVITY = 0.005;
-  private readonly MAX_FALL_SPEED = 0.09;
+  private readonly BASE_GRAVITY = PACING.BASE_GRAVITY;
+  private readonly MAX_FALL_SPEED = PACING.MAX_FALL_SPEED;
   private fallAge = 0;
 
   // Directional gravity (per piece) — -1 left, +1 right, 0 down
