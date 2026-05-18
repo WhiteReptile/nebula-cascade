@@ -105,27 +105,24 @@ export function useActiveListings() {
   return { listings, loading, error, refresh };
 }
 
-/** Tx wrapper that toasts pending → success / error and exposes a refresh hook. */
-function useTx(label: string, onSuccess?: () => void) {
+/** Tx wrapper: pending → BaseScan-linked toast → success/error, then refresh. */
+function useTx(label: import('@/lib/tx/txToast').TxKind, onSuccess?: () => void) {
   const { mutateAsync, isPending } = useSendTransaction();
   const send = useCallback(
     async (tx: any) => {
-      const t = toast.loading(`${label}: sending…`);
       try {
         const result = await mutateAsync(tx);
-        toast.success(`${label}: confirmed`, {
-          id: t,
-          description: result.transactionHash.slice(0, 10) + '…',
+        // Don't await — let the toast update in the background while UI proceeds.
+        trackTx(label, result.transactionHash).then((receipt) => {
+          if (receipt?.status === 'success') onSuccess?.();
         });
-        onSuccess?.();
         return result;
       } catch (e: any) {
         const msg = String(e?.shortMessage ?? e?.message ?? e);
-        // Silently swallow user-rejected pops
         if (/reject|denied/i.test(msg)) {
-          toast.dismiss(t);
+          // User cancelled — silent.
         } else {
-          toast.error(`${label} failed`, { id: t, description: msg.slice(0, 140) });
+          toast.error(`${label} failed`, { description: msg.slice(0, 140) });
         }
         throw e;
       }
