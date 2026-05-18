@@ -352,6 +352,63 @@ export function useLockExpiry(tokenId: bigint | null) {
 }
 
 /**
+ * useLocksMap — batch-reads lockedUntil for many tokenIds.
+ * Returns Record<tokenIdString, secondsLeft>. Polls every 30s.
+ * Used by parent components to sort lists by lock state without lifting per-row hooks.
+ */
+export function useLocksMap(tokenIds: (bigint | null)[]) {
+  const [map, setMap] = useState<Record<string, number>>({});
+
+  // Stable join so effect doesn't re-run on identical input
+  const key = tokenIds.map((t) => (t === null ? '∅' : t.toString())).join(',');
+
+  useEffect(() => {
+    if (!marketplaceContract) return;
+    let cancelled = false;
+    const fetchAll = async () => {
+      const entries = await Promise.all(
+        tokenIds.map(async (t) => {
+          if (t === null) return ['∅', 0] as const;
+          try {
+            const v = (await readContract({
+              contract: marketplaceContract!,
+              method: 'lockedUntil',
+              params: [NEBULA_COLLECTION_ADDRESS, t],
+            })) as bigint;
+            const now = Math.floor(Date.now() / 1000);
+            return [t.toString(), Math.max(0, Number(v) - now)] as const;
+          } catch {
+            return [t.toString(), 0] as const;
+          }
+        }),
+      );
+      if (cancelled) return;
+      const next: Record<string, number> = {};
+      for (const [k, v] of entries) next[k] = v;
+      setMap(next);
+    };
+    fetchAll();
+    const id = setInterval(fetchAll, 30_000);
+    return () => { cancelled = true; clearInterval(id); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
+
+  // Tick countdown locally each second between fetches
+  useEffect(() => {
+    const id = setInterval(() => {
+      setMap((m) => {
+        const out: Record<string, number> = {};
+        for (const k of Object.keys(m)) out[k] = Math.max(0, m[k] - 1);
+        return out;
+      });
+    }, 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  return map;
+}
+
+/**
  * Lifetime volume (sum of CardSold.priceWei). Reads localStorage cache first for
  * instant paint, then scans the chain. Surfaces an error string instead of throwing.
  */
