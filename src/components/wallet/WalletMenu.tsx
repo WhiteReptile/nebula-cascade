@@ -73,7 +73,7 @@ export default function WalletMenu() {
           >
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(0,255,170,0.9)] shrink-0" />
             <span className="truncate">{label}</span>
-            <ChevronDown className="h-3 w-3 opacity-60" />
+            <ChevronDown className="h-3 w-3 opacity-60 shrink-0" />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="bg-black/95 border-cyan-500/25 font-mono text-xs">
