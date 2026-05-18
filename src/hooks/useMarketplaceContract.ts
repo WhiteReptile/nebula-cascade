@@ -63,6 +63,16 @@ async function fetchAllActive(): Promise<OnChainListing[]> {
   return out;
 }
 
+/** Active listings owned by the connected wallet (filtered client-side). */
+export function useUserActiveListings() {
+  const account = useActiveAccount();
+  const { listings, loading, error, refresh } = useActiveListings();
+  const mine = account
+    ? listings.filter((l) => l.seller.toLowerCase() === account.address.toLowerCase())
+    : [];
+  return { listings: mine, loading, error, refresh };
+}
+
 export function useActiveListings() {
   const [listings, setListings] = useState<OnChainListing[]>([]);
   const [loading, setLoading] = useState(MARKETPLACE_CONFIGURED);

@@ -1,7 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { listCard, calculateFee } from '@/lib/marketplaceSystem';
 import { getCardsForPlayer, setActiveCard, type CardMetadata } from '@/lib/cardSystem';
 import { getCardEnergy, type CardEnergy } from '@/lib/energySystem';
 import { DIVISION_LABELS, type Division } from '@/lib/divisionSystem';
@@ -15,8 +14,12 @@ import TradeGrid from '@/components/marketplace/TradeGrid';
 import GalaxyBackground from '@/components/shared/GalaxyBackground';
 import { useToast } from '@/hooks/use-toast';
 import { useWalletSync } from '@/hooks/useWalletSync';
-import { useMarketplaceListings } from '@/hooks/useMarketplaceListings';
-import { useCancelListing, type OnChainListing } from '@/hooks/useMarketplaceContract';
+import {
+  useCancelListing,
+  useUserActiveListings,
+  type OnChainListing,
+} from '@/hooks/useMarketplaceContract';
+import { useActiveAccount } from 'thirdweb/react';
 
 /* ── Types ── */
 type Section = 'marketplace' | 'my-cards' | 'profile' | 'wallet';
@@ -37,21 +40,16 @@ const Marketplace = () => {
   const [cardEnergies, setCardEnergies] = useState<Record<string, CardEnergy>>({});
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
 
-  /* ── Off-chain DB listings (still used to flag MY CARDS as listed) ── */
-  const { listings, refresh: refreshListings } = useMarketplaceListings();
+  /* ── On-chain listings owned by current wallet (for MY CARDS overlay) ── */
+  const { listings: myListings, refresh: refreshMyListings } = useUserActiveListings();
+  const activeAccount = useActiveAccount();
 
   /* ── On-chain buy/cancel ── */
   const [pendingBuy, setPendingBuy] = useState<OnChainListing | null>(null);
-  const { cancel: cancelOnChain } = useCancelListing();
+  const { cancel: cancelOnChain } = useCancelListing(() => refreshMyListings());
 
   /* ── On-chain sell modal ── */
   const [sellToken, setSellToken] = useState<{ id: bigint; name: string } | null>(null);
-
-  /* ── Listing form ── */
-  const [listingCardId, setListingCardId] = useState<string | null>(null);
-  const [listPrice, setListPrice] = useState('');
-  const [estimatedFee, setEstimatedFee] = useState(5);
-  const [listingSubmitting, setListingSubmitting] = useState(false);
 
   /* ── Auth form ── */
   const [isLogin, setIsLogin] = useState(true);
@@ -115,11 +113,6 @@ const Marketplace = () => {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  /* ── Fee preview ── */
-  useEffect(() => {
-    if (listingCardId) calculateFee(listingCardId).then(setEstimatedFee);
-  }, [listingCardId]);
-
   /* ── Handlers ── */
   const handleCancelOnChain = async (l: OnChainListing) => {
     try { await cancelOnChain(l.id); } catch { /* toast handled */ }
@@ -128,16 +121,6 @@ const Marketplace = () => {
     if (!playerId) return;
     const ok = await setActiveCard(playerId, cardId);
     if (ok) setActiveCardId(cardId);
-  };
-  const handleList = async () => {
-    if (!playerId || !listingCardId || !listPrice) return;
-    setListingSubmitting(true);
-    const cents = Math.round(parseFloat(listPrice) * 100);
-    if (cents <= 0) { toast({ title: 'Invalid price', variant: 'destructive' }); setListingSubmitting(false); return; }
-    const ok = await listCard(listingCardId, playerId, cents);
-    if (ok) { toast({ title: 'Card listed!' }); setListingCardId(null); setListPrice(''); loadData(); }
-    else toast({ title: 'Listing failed', variant: 'destructive' });
-    setListingSubmitting(false);
   };
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -162,11 +145,13 @@ const Marketplace = () => {
     navigate('/');
   };
 
-  /* ── Derived ── */
-  const priceCents = Math.round((parseFloat(listPrice) || 0) * 100);
-  const feeAmount = priceCents * estimatedFee / 100;
-  const sellerReceives = priceCents - feeAmount;
-
+  /* ── Helper: find this card's on-chain listing (if any) by tokenId ── */
+  const findListingForToken = (tokenIdStr: string | number): OnChainListing | undefined => {
+    try {
+      const id = BigInt(tokenIdStr);
+      return myListings.find((l) => l.tokenId === id);
+    } catch { return undefined; }
+  };
   const navItems: { key: Section; label: string }[] = [
     { key: 'marketplace', label: 'MARKET' },
     { key: 'my-cards', label: 'MY CARDS' },
@@ -323,54 +308,6 @@ const Marketplace = () => {
                     <span className="text-sm glow-white tracking-widest border border-blue-500/30 glow-border-blue px-3 py-2 rounded">{cards.length} / 10</span>
                   </div>
 
-                  {/* Listing form */}
-                  {listingCardId && (
-                    <div className={`${panel} p-6 space-y-5 glow-border-yellow`}>
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-lg tracking-[0.25em] glow-yellow uppercase font-bold">List Card for Sale</h3>
-                        <button onClick={() => { setListingCardId(null); setListPrice(''); }} className="glow-white text-xl hover:glow-yellow transition-all w-10 h-10">✕</button>
-                      </div>
-                      <div className="flex gap-4 items-end">
-                        <div className="flex-1 space-y-2">
-                          <label className="text-xs glow-blue uppercase tracking-widest font-bold">Price (USD)</label>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            min="0.01"
-                            placeholder="0.00"
-                            value={listPrice}
-                            onChange={e => setListPrice(e.target.value)}
-                            className="bg-black/50 border-blue-500/30 text-yellow-300 placeholder:text-white/30 font-mono h-12 text-lg glow-yellow glow-border-blue"
-                          />
-                        </div>
-                        <button
-                          onClick={handleList}
-                          disabled={listingSubmitting || !listPrice || parseFloat(listPrice) <= 0}
-                          className={btnPrimary}
-                        >
-                          {listingSubmitting ? '...' : 'LIST'}
-                        </button>
-                      </div>
-                      {/* Fee converter */}
-                      {parseFloat(listPrice) > 0 && (
-                        <div className="text-sm space-y-2 border-t border-blue-500/20 pt-4">
-                          <div className="flex justify-between">
-                            <span className="glow-blue tracking-widest">Sale price</span>
-                            <span className="glow-white font-bold">${(priceCents / 100).toFixed(2)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="glow-blue tracking-widest">Fee ({estimatedFee}%)</span>
-                            <span className="glow-white font-bold">−${(feeAmount / 100).toFixed(2)}</span>
-                          </div>
-                          <div className="flex justify-between text-lg font-bold pt-2 border-t border-blue-500/20">
-                            <span className="glow-blue tracking-widest">You receive</span>
-                            <span className="glow-yellow">${(sellerReceives / 100).toFixed(2)}</span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
                   {cards.length === 0 ? (
                     <div className={`${panel} flex flex-col items-center py-16 space-y-4`}>
                       <div
@@ -388,7 +325,8 @@ const Marketplace = () => {
                       {cards.map(card => {
                         const energy = cardEnergies[card.id];
                         const isActive = card.id === activeCardId;
-                        const isListed = listings.some(l => l.cardId === card.id && l.status === 'active');
+                        const onChainListing = findListingForToken(card.tokenId);
+                        const isListed = !!onChainListing;
                         return (
                           <div
                             key={card.id}
@@ -416,7 +354,7 @@ const Marketplace = () => {
                                 <div className="text-xs tracking-widest mt-1 flex items-center gap-2">
                                   <span className="glow-white">{DIVISION_LABELS[card.division]}</span>
                                   {isActive && <span className="glow-yellow">• ACTIVE</span>}
-                                  {isListed && <span className="glow-yellow">• LISTED</span>}
+                                  {isListed && <span className="glow-yellow">• LISTED ON-CHAIN</span>}
                                 </div>
                               </div>
                               {energy && (
@@ -439,16 +377,23 @@ const Marketplace = () => {
                                 </div>
                               )}
                             </div>
-                            {!isListed && (
-                              <div className="mt-4 pt-4 border-t border-blue-500/20 flex justify-end">
+                            <div className="mt-4 pt-4 border-t border-blue-500/20 flex justify-end">
+                              {isListed ? (
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); if (onChainListing) handleCancelOnChain(onChainListing); }}
+                                  className="min-h-[40px] px-4 py-2 rounded-lg border border-blue-400/50 bg-blue-400/10 text-blue-300 text-xs tracking-[0.2em] font-bold hover:scale-105 hover:bg-blue-400/20 transition-all"
+                                >
+                                  CANCEL LISTING
+                                </button>
+                              ) : (
                                 <button
                                   onClick={(e) => { e.stopPropagation(); setSellToken({ id: BigInt(card.tokenId), name: card.name }); }}
                                   className="min-h-[40px] px-4 py-2 rounded-lg border bg-black/40 glow-yellow glow-border-yellow text-xs tracking-[0.2em] font-bold hover:scale-105 hover:bg-yellow-400/10 transition-all"
                                 >
                                   SELL ON-CHAIN
                                 </button>
-                              </div>
-                            )}
+                              )}
+                            </div>
                           </div>
                         );
                       })}
@@ -592,24 +537,34 @@ const Marketplace = () => {
             <div className="max-w-md mx-auto space-y-8 animate-fade-in">
               <h2 className="text-3xl uppercase tracking-[0.3em] glow-yellow font-bold">Wallet</h2>
 
-              {/* Coming Soon — Base */}
+              {/* Connection status */}
               <div className={`${panel} p-7 text-center space-y-4`}>
                 <div
                   className="w-20 h-20 rounded-full mx-auto"
                   style={{
-                    background: 'radial-gradient(circle at 40% 40%, rgba(255,221,0,0.4), rgba(85,153,255,0.2), transparent)',
-                    boxShadow: '0 0 40px rgba(255,221,0,0.25), 0 0 80px rgba(85,153,255,0.15)',
+                    background: activeAccount
+                      ? 'radial-gradient(circle at 40% 40%, rgba(0,255,170,0.45), rgba(85,153,255,0.2), transparent)'
+                      : 'radial-gradient(circle at 40% 40%, rgba(255,221,0,0.4), rgba(85,153,255,0.2), transparent)',
+                    boxShadow: activeAccount
+                      ? '0 0 40px rgba(0,255,170,0.3), 0 0 80px rgba(85,153,255,0.15)'
+                      : '0 0 40px rgba(255,221,0,0.25), 0 0 80px rgba(85,153,255,0.15)',
                   }}
                 />
                 <h3 className="text-xl font-bold tracking-[0.25em] glow-yellow">
-                  BASE WALLET — COMING SOON
+                  {activeAccount ? 'WALLET CONNECTED' : 'CONNECT YOUR WALLET'}
                 </h3>
-                <p className="text-sm glow-white tracking-widest leading-relaxed">
-                  Wallet connection via Thirdweb will be available when the Base integration launches.
-                </p>
+                {activeAccount ? (
+                  <p className="text-xs glow-white tracking-widest font-mono break-all">
+                    {activeAccount.address}
+                  </p>
+                ) : (
+                  <p className="text-sm glow-white tracking-widest leading-relaxed">
+                    Connect via Thirdweb to mint, list, and trade Nebula cards on Base.
+                  </p>
+                )}
               </div>
 
-              {/* Legacy wallet connect */}
+              {/* Thirdweb connect button */}
               <WalletConnect currentAddress={walletAddress} />
 
               {/* Blockchain info */}
@@ -618,15 +573,19 @@ const Marketplace = () => {
                 <div className="text-sm space-y-2">
                   <div className="flex justify-between">
                     <span className="glow-blue tracking-widest">Chain</span>
-                    <span className="glow-white font-bold">Base (planned)</span>
+                    <span className="glow-white font-bold">Base · 8453</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="glow-blue tracking-widest">Auth Provider</span>
-                    <span className="glow-white font-bold">Thirdweb (planned)</span>
+                    <span className="glow-white font-bold">Thirdweb v5</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="glow-blue tracking-widest">Fee Model</span>
+                    <span className="glow-blue tracking-widest">Marketplace Fee</span>
                     <span className="glow-yellow font-bold">Flat 3%</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="glow-blue tracking-widest">Anti-Flip Lock</span>
+                    <span className="glow-white font-bold">24h on-chain</span>
                   </div>
                 </div>
               </div>
@@ -647,7 +606,7 @@ const Marketplace = () => {
         open={!!pendingBuy}
         onOpenChange={(v) => { if (!v) setPendingBuy(null); }}
         listing={pendingBuy}
-        onBought={() => { setPendingBuy(null); refreshListings(); }}
+        onBought={() => { setPendingBuy(null); refreshMyListings(); }}
       />
 
       {/* List card modal (on-chain) */}
