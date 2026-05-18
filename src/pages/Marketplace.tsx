@@ -399,6 +399,10 @@ const Marketplace = () => {
                       })}
                     </div>
                   )}
+                </>
+              )}
+            </div>
+          )}
 
           {/* ════════ PROFILE ════════ */}
           {section === 'profile' && (
