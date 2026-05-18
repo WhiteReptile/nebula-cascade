@@ -86,11 +86,10 @@ const TradeGrid = ({ onBuy, onCancel }: Props) => {
           {FILTERS.map((f) => {
             const active = filter === f.key;
             return (
-            return (
               <button
                 key={f.key}
                 onClick={() => setFilter(f.key)}
-                className={`min-h-[40px] px-4 py-1.5 text-xs tracking-[0.2em] font-mono font-bold rounded-lg border bg-black/40 transition-all hover:scale-105 ${
+                className={`min-h-[40px] px-4 py-1.5 text-xs tracking-[0.2em] font-mono font-bold rounded-lg border bg-black/40 transition-all hover:scale-105 snap-start shrink-0 ${
                   active
                     ? 'border-yellow-400/70 text-yellow-300'
                     : 'border-white/15 text-white/60 hover:border-white/30 hover:text-white/90'
