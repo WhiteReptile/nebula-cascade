@@ -122,6 +122,18 @@ This project is a standard Vite + React SPA — no Lovable runtime is required t
 
 The only Lovable-specific pieces are the auto-generated Supabase client/types, which are standard `@supabase/supabase-js` code and work anywhere.
 
+## Run in GitHub Codespaces
+
+This repo ships with a `.devcontainer/` config — Codespaces auto-installs deps and forwards Vite on port `5000`.
+
+1. On GitHub: **Code → Codespaces → Create codespace on main**.
+2. Wait for `postCreateCommand` (`npm install`) to finish.
+3. `cp .env.example .env` and fill in the Supabase values (and optionally `VITE_MARKETPLACE_CONTRACT`).
+4. `npm run dev` — open the forwarded port in the browser.
+
+Works identically in any local clone (VS Code, Cursor, JetBrains) — the devcontainer is optional.
+
 ## License
 
 Proprietary — all rights reserved.
+
