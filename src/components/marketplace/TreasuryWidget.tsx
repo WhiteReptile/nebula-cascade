@@ -8,6 +8,8 @@ import {
   useLifetimeVolume,
 } from '@/hooks/useMarketplaceContract';
 import { useEthUsdPrice, ethToUsd } from '@/lib/priceFeed';
+import AddressLink from './AddressLink';
+import { MARKETPLACE_ADDRESS } from '@/lib/marketplace/contract';
 
 function weiToEth(w: bigint): number {
   // Safe enough for display (< 2^53 ETH never happens)
