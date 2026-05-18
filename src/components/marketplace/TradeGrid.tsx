@@ -114,13 +114,11 @@ const TradeGrid = ({ onBuy, onCancel }: Props) => {
       </div>
 
       {loading ? (
-        <div className="text-center py-20 font-mono tracking-[0.3em] text-blue-300 animate-pulse">
+        <div className="text-center py-20 font-mono tracking-[0.3em] text-blue-300 animate-pulse" role="status">
           LOADING ON-CHAIN LISTINGS…
         </div>
       ) : error ? (
-        <div className="rounded-xl border border-red-500/40 bg-black/40 p-6 text-center font-mono text-sm text-red-300">
-          Failed to read contract: {error.slice(0, 200)}
-        </div>
+        <InlineError message={`Failed to read contract: ${error}`} onRetry={refresh} />
       ) : sorted.length === 0 ? (
         <div className="rounded-xl border border-white/10 bg-black/40 backdrop-blur-xl flex flex-col items-center py-20 space-y-3">
           <div
@@ -130,8 +128,12 @@ const TradeGrid = ({ onBuy, onCancel }: Props) => {
               boxShadow: '0 0 30px rgba(85,153,255,0.3)',
             }}
           />
-          <span className="text-lg tracking-[0.3em] font-mono font-bold text-blue-300">NO LIVE LISTINGS</span>
-          <span className="text-xs font-mono tracking-widest text-white/50">Be the first to list a card</span>
+          <span className="text-lg tracking-[0.3em] font-mono font-bold text-blue-300">
+            {filter === 'all' ? 'NO LIVE LISTINGS' : `NO ${DIVISION_LABELS[filter as Division].toUpperCase()} LISTINGS`}
+          </span>
+          <span className="text-xs font-mono tracking-widest text-white/50">
+            {filter === 'all' ? 'Be the first to list a card' : 'Try another division — or be the first to list this one'}
+          </span>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
