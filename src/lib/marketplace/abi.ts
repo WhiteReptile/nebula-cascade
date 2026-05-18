@@ -53,6 +53,51 @@ export const NEBULA_MARKETPLACE_ABI = [
   },
   {
     type: 'function',
+    name: 'owner',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ type: 'address' }],
+  },
+  {
+    type: 'function',
+    name: 'setTreasury',
+    stateMutability: 'nonpayable',
+    inputs: [{ name: '_treasury', type: 'address' }],
+    outputs: [],
+  },
+  {
+    type: 'function',
+    name: 'setFeeBps',
+    stateMutability: 'nonpayable',
+    inputs: [{ name: '_feeBps', type: 'uint96' }],
+    outputs: [],
+  },
+  {
+    type: 'function',
+    name: 'lockedUntil',
+    stateMutability: 'view',
+    inputs: [
+      { name: 'nftAddress', type: 'address' },
+      { name: 'tokenId', type: 'uint256' },
+    ],
+    outputs: [{ type: 'uint64' }],
+  },
+  {
+    type: 'event',
+    name: 'CardSold',
+    inputs: [
+      { name: 'listingId', type: 'uint256', indexed: true },
+      { name: 'seller', type: 'address', indexed: true },
+      { name: 'buyer', type: 'address', indexed: true },
+      { name: 'nftAddress', type: 'address', indexed: false },
+      { name: 'tokenId', type: 'uint256', indexed: false },
+      { name: 'priceWei', type: 'uint256', indexed: false },
+      { name: 'feePaid', type: 'uint256', indexed: false },
+    ],
+    anonymous: false,
+  },
+  {
+    type: 'function',
     name: 'isLocked',
     stateMutability: 'view',
     inputs: [
