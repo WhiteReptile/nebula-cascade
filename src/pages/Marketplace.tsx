@@ -1,7 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { listCard, calculateFee } from '@/lib/marketplaceSystem';
 import { getCardsForPlayer, setActiveCard, type CardMetadata } from '@/lib/cardSystem';
 import { getCardEnergy, type CardEnergy } from '@/lib/energySystem';
 import { DIVISION_LABELS, type Division } from '@/lib/divisionSystem';
@@ -15,8 +14,12 @@ import TradeGrid from '@/components/marketplace/TradeGrid';
 import GalaxyBackground from '@/components/shared/GalaxyBackground';
 import { useToast } from '@/hooks/use-toast';
 import { useWalletSync } from '@/hooks/useWalletSync';
-import { useMarketplaceListings } from '@/hooks/useMarketplaceListings';
-import { useCancelListing, type OnChainListing } from '@/hooks/useMarketplaceContract';
+import {
+  useCancelListing,
+  useUserActiveListings,
+  type OnChainListing,
+} from '@/hooks/useMarketplaceContract';
+import { useActiveAccount } from 'thirdweb/react';
 
 /* ── Types ── */
 type Section = 'marketplace' | 'my-cards' | 'profile' | 'wallet';
@@ -37,21 +40,16 @@ const Marketplace = () => {
   const [cardEnergies, setCardEnergies] = useState<Record<string, CardEnergy>>({});
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
 
-  /* ── Off-chain DB listings (still used to flag MY CARDS as listed) ── */
-  const { listings, refresh: refreshListings } = useMarketplaceListings();
+  /* ── On-chain listings owned by current wallet (for MY CARDS overlay) ── */
+  const { listings: myListings, refresh: refreshMyListings } = useUserActiveListings();
+  const activeAccount = useActiveAccount();
 
   /* ── On-chain buy/cancel ── */
   const [pendingBuy, setPendingBuy] = useState<OnChainListing | null>(null);
-  const { cancel: cancelOnChain } = useCancelListing();
+  const { cancel: cancelOnChain } = useCancelListing(() => refreshMyListings());
 
   /* ── On-chain sell modal ── */
   const [sellToken, setSellToken] = useState<{ id: bigint; name: string } | null>(null);
-
-  /* ── Listing form ── */
-  const [listingCardId, setListingCardId] = useState<string | null>(null);
-  const [listPrice, setListPrice] = useState('');
-  const [estimatedFee, setEstimatedFee] = useState(5);
-  const [listingSubmitting, setListingSubmitting] = useState(false);
 
   /* ── Auth form ── */
   const [isLogin, setIsLogin] = useState(true);
