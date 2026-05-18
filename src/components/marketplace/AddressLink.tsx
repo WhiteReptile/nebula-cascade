@@ -26,8 +26,6 @@ export default function AddressLink({ address, kind = 'address', truncate = true
   const resolved = useResolvedName(kind === 'address' && !noResolve ? address : null);
   const [copied, setCopied] = useState(false);
   if (!address) return <span className={`glow-white font-mono ${className}`}>—</span>;
-  const [copied, setCopied] = useState(false);
-  if (!address) return <span className={`glow-white font-mono ${className}`}>—</span>;
   const display = resolved ?? (truncate ? shorten(address) : address);
   const href = `https://basescan.org/${kind}/${address}`;
 
