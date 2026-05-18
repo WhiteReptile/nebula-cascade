@@ -308,54 +308,6 @@ const Marketplace = () => {
                     <span className="text-sm glow-white tracking-widest border border-blue-500/30 glow-border-blue px-3 py-2 rounded">{cards.length} / 10</span>
                   </div>
 
-                  {/* Listing form */}
-                  {listingCardId && (
-                    <div className={`${panel} p-6 space-y-5 glow-border-yellow`}>
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-lg tracking-[0.25em] glow-yellow uppercase font-bold">List Card for Sale</h3>
-                        <button onClick={() => { setListingCardId(null); setListPrice(''); }} className="glow-white text-xl hover:glow-yellow transition-all w-10 h-10">✕</button>
-                      </div>
-                      <div className="flex gap-4 items-end">
-                        <div className="flex-1 space-y-2">
-                          <label className="text-xs glow-blue uppercase tracking-widest font-bold">Price (USD)</label>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            min="0.01"
-                            placeholder="0.00"
-                            value={listPrice}
-                            onChange={e => setListPrice(e.target.value)}
-                            className="bg-black/50 border-blue-500/30 text-yellow-300 placeholder:text-white/30 font-mono h-12 text-lg glow-yellow glow-border-blue"
-                          />
-                        </div>
-                        <button
-                          onClick={handleList}
-                          disabled={listingSubmitting || !listPrice || parseFloat(listPrice) <= 0}
-                          className={btnPrimary}
-                        >
-                          {listingSubmitting ? '...' : 'LIST'}
-                        </button>
-                      </div>
-                      {/* Fee converter */}
-                      {parseFloat(listPrice) > 0 && (
-                        <div className="text-sm space-y-2 border-t border-blue-500/20 pt-4">
-                          <div className="flex justify-between">
-                            <span className="glow-blue tracking-widest">Sale price</span>
-                            <span className="glow-white font-bold">${(priceCents / 100).toFixed(2)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="glow-blue tracking-widest">Fee ({estimatedFee}%)</span>
-                            <span className="glow-white font-bold">−${(feeAmount / 100).toFixed(2)}</span>
-                          </div>
-                          <div className="flex justify-between text-lg font-bold pt-2 border-t border-blue-500/20">
-                            <span className="glow-blue tracking-widest">You receive</span>
-                            <span className="glow-yellow">${(sellerReceives / 100).toFixed(2)}</span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
                   {cards.length === 0 ? (
                     <div className={`${panel} flex flex-col items-center py-16 space-y-4`}>
                       <div
@@ -373,7 +325,8 @@ const Marketplace = () => {
                       {cards.map(card => {
                         const energy = cardEnergies[card.id];
                         const isActive = card.id === activeCardId;
-                        const isListed = listings.some(l => l.cardId === card.id && l.status === 'active');
+                        const onChainListing = findListingForToken(card.tokenId);
+                        const isListed = !!onChainListing;
                         return (
                           <div
                             key={card.id}
@@ -401,7 +354,7 @@ const Marketplace = () => {
                                 <div className="text-xs tracking-widest mt-1 flex items-center gap-2">
                                   <span className="glow-white">{DIVISION_LABELS[card.division]}</span>
                                   {isActive && <span className="glow-yellow">• ACTIVE</span>}
-                                  {isListed && <span className="glow-yellow">• LISTED</span>}
+                                  {isListed && <span className="glow-yellow">• LISTED ON-CHAIN</span>}
                                 </div>
                               </div>
                               {energy && (
@@ -424,25 +377,28 @@ const Marketplace = () => {
                                 </div>
                               )}
                             </div>
-                            {!isListed && (
-                              <div className="mt-4 pt-4 border-t border-blue-500/20 flex justify-end">
+                            <div className="mt-4 pt-4 border-t border-blue-500/20 flex justify-end">
+                              {isListed ? (
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); if (onChainListing) handleCancelOnChain(onChainListing); }}
+                                  className="min-h-[40px] px-4 py-2 rounded-lg border border-blue-400/50 bg-blue-400/10 text-blue-300 text-xs tracking-[0.2em] font-bold hover:scale-105 hover:bg-blue-400/20 transition-all"
+                                >
+                                  CANCEL LISTING
+                                </button>
+                              ) : (
                                 <button
                                   onClick={(e) => { e.stopPropagation(); setSellToken({ id: BigInt(card.tokenId), name: card.name }); }}
                                   className="min-h-[40px] px-4 py-2 rounded-lg border bg-black/40 glow-yellow glow-border-yellow text-xs tracking-[0.2em] font-bold hover:scale-105 hover:bg-yellow-400/10 transition-all"
                                 >
                                   SELL ON-CHAIN
                                 </button>
-                              </div>
-                            )}
+                              )}
+                            </div>
                           </div>
                         );
                       })}
                     </div>
                   )}
-                </>
-              )}
-            </div>
-          )}
 
           {/* ════════ PROFILE ════════ */}
           {section === 'profile' && (
