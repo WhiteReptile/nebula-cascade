@@ -10,13 +10,15 @@ interface SEOProps {
   path: string;
   type?: 'website' | 'article';
   jsonLd?: Record<string, unknown>;
+  noindex?: boolean;
 }
 
-export default function SEO({ title, description, path, type = 'website', jsonLd }: SEOProps) {
+export default function SEO({ title, description, path, type = 'website', jsonLd, noindex = false }: SEOProps) {
   return (
     <Helmet>
       <title>{title}</title>
       <meta name="description" content={description} />
+      {noindex && <meta name="robots" content="noindex, nofollow" />}
       <link rel="canonical" href={path} />
       <meta property="og:title" content={title} />
       <meta property="og:description" content={description} />
