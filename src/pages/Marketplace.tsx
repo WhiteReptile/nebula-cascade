@@ -113,11 +113,6 @@ const Marketplace = () => {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  /* ── Fee preview ── */
-  useEffect(() => {
-    if (listingCardId) calculateFee(listingCardId).then(setEstimatedFee);
-  }, [listingCardId]);
-
   /* ── Handlers ── */
   const handleCancelOnChain = async (l: OnChainListing) => {
     try { await cancelOnChain(l.id); } catch { /* toast handled */ }
@@ -126,16 +121,6 @@ const Marketplace = () => {
     if (!playerId) return;
     const ok = await setActiveCard(playerId, cardId);
     if (ok) setActiveCardId(cardId);
-  };
-  const handleList = async () => {
-    if (!playerId || !listingCardId || !listPrice) return;
-    setListingSubmitting(true);
-    const cents = Math.round(parseFloat(listPrice) * 100);
-    if (cents <= 0) { toast({ title: 'Invalid price', variant: 'destructive' }); setListingSubmitting(false); return; }
-    const ok = await listCard(listingCardId, playerId, cents);
-    if (ok) { toast({ title: 'Card listed!' }); setListingCardId(null); setListPrice(''); loadData(); }
-    else toast({ title: 'Listing failed', variant: 'destructive' });
-    setListingSubmitting(false);
   };
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -160,11 +145,13 @@ const Marketplace = () => {
     navigate('/');
   };
 
-  /* ── Derived ── */
-  const priceCents = Math.round((parseFloat(listPrice) || 0) * 100);
-  const feeAmount = priceCents * estimatedFee / 100;
-  const sellerReceives = priceCents - feeAmount;
-
+  /* ── Helper: find this card's on-chain listing (if any) by tokenId ── */
+  const findListingForToken = (tokenIdStr: string | number): OnChainListing | undefined => {
+    try {
+      const id = BigInt(tokenIdStr);
+      return myListings.find((l) => l.tokenId === id);
+    } catch { return undefined; }
+  };
   const navItems: { key: Section; label: string }[] = [
     { key: 'marketplace', label: 'MARKET' },
     { key: 'my-cards', label: 'MY CARDS' },
