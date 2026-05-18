@@ -10,6 +10,7 @@ import WalletConnect from '@/components/wallet/WalletConnect';
 import WalletMismatchModal from '@/components/wallet/WalletMismatchModal';
 import NFTGrid from '@/components/marketplace/NFTGrid';
 import BuyCardModal from '@/components/marketplace/BuyCardModal';
+import ListCardModal from '@/components/marketplace/ListCardModal';
 import TradeGrid from '@/components/marketplace/TradeGrid';
 import GalaxyBackground from '@/components/shared/GalaxyBackground';
 import { useToast } from '@/hooks/use-toast';
@@ -42,6 +43,9 @@ const Marketplace = () => {
   /* ── On-chain buy/cancel ── */
   const [pendingBuy, setPendingBuy] = useState<OnChainListing | null>(null);
   const { cancel: cancelOnChain } = useCancelListing();
+
+  /* ── On-chain sell modal ── */
+  const [sellToken, setSellToken] = useState<{ id: bigint; name: string } | null>(null);
 
   /* ── Listing form ── */
   const [listingCardId, setListingCardId] = useState<string | null>(null);
@@ -438,10 +442,10 @@ const Marketplace = () => {
                             {!isListed && (
                               <div className="mt-4 pt-4 border-t border-blue-500/20 flex justify-end">
                                 <button
-                                  onClick={(e) => { e.stopPropagation(); setListingCardId(card.id); setSection('my-cards'); }}
+                                  onClick={(e) => { e.stopPropagation(); setSellToken({ id: BigInt(card.tokenId), name: card.name }); }}
                                   className="min-h-[40px] px-4 py-2 rounded-lg border bg-black/40 glow-yellow glow-border-yellow text-xs tracking-[0.2em] font-bold hover:scale-105 hover:bg-yellow-400/10 transition-all"
                                 >
-                                  LIST ON MARKETPLACE
+                                  SELL ON-CHAIN
                                 </button>
                               </div>
                             )}
@@ -644,6 +648,14 @@ const Marketplace = () => {
         onOpenChange={(v) => { if (!v) setPendingBuy(null); }}
         listing={pendingBuy}
         onBought={() => { setPendingBuy(null); refreshListings(); }}
+      />
+
+      {/* List card modal (on-chain) */}
+      <ListCardModal
+        open={!!sellToken}
+        onOpenChange={(v) => { if (!v) setSellToken(null); }}
+        tokenId={sellToken?.id ?? null}
+        tokenName={sellToken?.name}
       />
     </div>
   );
