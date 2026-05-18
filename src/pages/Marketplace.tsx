@@ -20,9 +20,6 @@ import { useCancelListing, type OnChainListing } from '@/hooks/useMarketplaceCon
 /* ── Types ── */
 type Section = 'marketplace' | 'my-cards' | 'profile' | 'wallet';
 
-const DIVISIONS: (Division | 'all')[] = ['all', 'gem_v', 'gem_iv', 'gem_iii', 'gem_ii', 'gem_i'];
-const DIV_FILTER_LABELS: Record<string, string> = { all: 'ALL', gem_v: 'V', gem_iv: 'IV', gem_iii: 'III', gem_ii: 'II', gem_i: 'I' };
-
 const Marketplace = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -175,8 +172,8 @@ const Marketplace = () => {
 
   /* ── Shared classes ── */
   const panel = "rounded-xl border border-white/10 bg-black/40 backdrop-blur-xl";
+  const panel = "rounded-xl border border-white/10 bg-black/40 backdrop-blur-xl";
   const btnPrimary = "min-h-[44px] px-5 rounded-lg border bg-black/40 glow-yellow glow-border-yellow text-sm tracking-[0.2em] font-bold hover:bg-yellow-400/10 hover:scale-[1.03] transition-all disabled:opacity-40";
-  const btnSecondary = "min-h-[44px] px-5 rounded-lg border bg-black/40 glow-blue glow-border-blue text-sm tracking-[0.2em] font-bold hover:bg-blue-400/10 hover:scale-[1.03] transition-all disabled:opacity-40";
 
   return (
     <div className="min-h-screen w-full font-mono relative overflow-visible" style={{ background: 'transparent' }}>
