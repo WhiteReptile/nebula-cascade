@@ -12,8 +12,10 @@
  * All writes show toasts. React Query cache is invalidated after each tx.
  */
 import { useCallback, useEffect, useState } from 'react';
-import { prepareContractCall, readContract } from 'thirdweb';
+import { prepareContractCall, readContract, eth_getBalance, getRpcClient, getContractEvents, prepareEvent } from 'thirdweb';
 import { useActiveAccount, useSendTransaction, useReadContract } from 'thirdweb/react';
+import { thirdwebClient } from '@/lib/thirdweb/client';
+import { nebulaChain } from '@/lib/thirdweb/chains';
 import { toast } from 'sonner';
 import {
   marketplaceContract,
