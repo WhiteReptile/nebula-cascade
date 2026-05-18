@@ -9,6 +9,7 @@ import {
   useSetTreasury,
   useSetFeeBps,
 } from '@/hooks/useMarketplaceContract';
+import SkeletonPanel from './SkeletonPanel';
 
 const ADDR_RE = /^0x[a-fA-F0-9]{40}$/;
 
