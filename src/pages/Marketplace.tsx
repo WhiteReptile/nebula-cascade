@@ -10,6 +10,7 @@ import WalletConnect from '@/components/wallet/WalletConnect';
 import WalletMismatchModal from '@/components/wallet/WalletMismatchModal';
 import NFTGrid from '@/components/marketplace/NFTGrid';
 import BuyCardModal from '@/components/marketplace/BuyCardModal';
+import ListCardModal from '@/components/marketplace/ListCardModal';
 import TradeGrid from '@/components/marketplace/TradeGrid';
 import GalaxyBackground from '@/components/shared/GalaxyBackground';
 import { useToast } from '@/hooks/use-toast';
