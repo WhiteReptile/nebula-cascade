@@ -174,8 +174,14 @@ const Marketplace = () => {
 
   return (
     <div className="min-h-screen w-full font-mono relative overflow-visible" style={{ background: 'transparent' }}>
+      <SEO
+        title="Marketplace — Nebula Cascade"
+        description="Mint, list, and trade Nebula Cascade NFT cards on Base. Flat 3% fee, 24h anti-flip lock."
+        path="/marketplace"
+      />
       {/* Cosmic galaxy — same canvas as MainMenu for visual continuity */}
       <GalaxyBackground zIndex={0} />
+
 
       {/* ── Header ── */}
       <header className="relative z-10 flex items-center justify-between px-6 py-5">
