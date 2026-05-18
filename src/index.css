@@ -126,6 +126,24 @@ All colors MUST be HSL.
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Cosmic focus ring — only when keyboard-focused, never on click */
+  :focus { outline: none; }
+  :focus-visible {
+    outline: 2px solid rgba(102, 255, 238, 0.85);
+    outline-offset: 2px;
+    box-shadow: 0 0 12px rgba(102, 255, 238, 0.45);
+    border-radius: 4px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* ═══════════════════════════════════════════
