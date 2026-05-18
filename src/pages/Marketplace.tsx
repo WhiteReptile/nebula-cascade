@@ -384,7 +384,7 @@ const Marketplace = () => {
 
                           {/* Actions */}
                           {playerId && listing.sellerPlayerId !== playerId && (
-                            <button onClick={() => handleBuy(listing.id)} className={`w-full ${btnPrimary}`}>
+                            <button onClick={() => openBuyConfirm(listing)} className={`w-full ${btnPrimary}`}>
                               BUY
                             </button>
                           )}
