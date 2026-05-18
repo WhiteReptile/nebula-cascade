@@ -14,6 +14,8 @@ import TradeGrid from '@/components/marketplace/TradeGrid';
 import MyCardTile from '@/components/marketplace/MyCardTile';
 import OwnerControlsPanel from '@/components/marketplace/OwnerControlsPanel';
 import TreasuryWidget from '@/components/marketplace/TreasuryWidget';
+import AddressLink from '@/components/marketplace/AddressLink';
+import { MARKETPLACE_ADDRESS, MARKETPLACE_CONFIGURED } from '@/lib/marketplace/contract';
 import GalaxyBackground from '@/components/shared/GalaxyBackground';
 import { useToast } from '@/hooks/use-toast';
 import { useWalletSync } from '@/hooks/useWalletSync';
