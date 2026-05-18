@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { buyCard, cancelListing, listCard, calculateFee } from '@/lib/marketplaceSystem';
+import { listCard, calculateFee } from '@/lib/marketplaceSystem';
 import { getCardsForPlayer, setActiveCard, type CardMetadata } from '@/lib/cardSystem';
 import { getCardEnergy, type CardEnergy } from '@/lib/energySystem';
 import { DIVISION_LABELS, type Division } from '@/lib/divisionSystem';
@@ -10,16 +10,15 @@ import WalletConnect from '@/components/wallet/WalletConnect';
 import WalletMismatchModal from '@/components/wallet/WalletMismatchModal';
 import NFTGrid from '@/components/marketplace/NFTGrid';
 import BuyCardModal from '@/components/marketplace/BuyCardModal';
+import TradeGrid from '@/components/marketplace/TradeGrid';
 import GalaxyBackground from '@/components/shared/GalaxyBackground';
 import { useToast } from '@/hooks/use-toast';
 import { useWalletSync } from '@/hooks/useWalletSync';
-import { useMarketplaceListings, type EnrichedListing } from '@/hooks/useMarketplaceListings';
+import { useMarketplaceListings } from '@/hooks/useMarketplaceListings';
+import { useCancelListing, type OnChainListing } from '@/hooks/useMarketplaceContract';
 
 /* ── Types ── */
 type Section = 'marketplace' | 'my-cards' | 'profile' | 'wallet';
-
-const DIVISIONS: (Division | 'all')[] = ['all', 'gem_v', 'gem_iv', 'gem_iii', 'gem_ii', 'gem_i'];
-const DIV_FILTER_LABELS: Record<string, string> = { all: 'ALL', gem_v: 'V', gem_iv: 'IV', gem_iii: 'III', gem_ii: 'II', gem_i: 'I' };
 
 const Marketplace = () => {
   const navigate = useNavigate();
@@ -37,13 +36,12 @@ const Marketplace = () => {
   const [cardEnergies, setCardEnergies] = useState<Record<string, CardEnergy>>({});
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
 
-  /* ── Marketplace listings (realtime) ── */
-  const { listings, loading, refresh: refreshListings } = useMarketplaceListings();
-  const [divFilter, setDivFilter] = useState<Division | 'all'>('all');
+  /* ── Off-chain DB listings (still used to flag MY CARDS as listed) ── */
+  const { listings, refresh: refreshListings } = useMarketplaceListings();
 
-  /* ── Buy confirmation ── */
-  const [pendingBuy, setPendingBuy] = useState<EnrichedListing | null>(null);
-  const [buySubmitting, setBuySubmitting] = useState(false);
+  /* ── On-chain buy/cancel ── */
+  const [pendingBuy, setPendingBuy] = useState<OnChainListing | null>(null);
+  const { cancel: cancelOnChain } = useCancelListing();
 
   /* ── Listing form ── */
   const [listingCardId, setListingCardId] = useState<string | null>(null);
@@ -119,24 +117,8 @@ const Marketplace = () => {
   }, [listingCardId]);
 
   /* ── Handlers ── */
-  const openBuyConfirm = (listing: EnrichedListing) => setPendingBuy(listing);
-  const confirmBuy = async () => {
-    if (!playerId || !pendingBuy) return;
-    setBuySubmitting(true);
-    const ok = await buyCard(pendingBuy.id, playerId);
-    setBuySubmitting(false);
-    if (ok) {
-      toast({ title: 'Card purchased!' });
-      setPendingBuy(null);
-      refreshListings();
-      loadData();
-    } else {
-      toast({ title: 'Purchase failed', variant: 'destructive' });
-    }
-  };
-  const handleCancel = async (id: string) => {
-    const ok = await cancelListing(id);
-    if (ok) { toast({ title: 'Listing cancelled' }); refreshListings(); }
+  const handleCancelOnChain = async (l: OnChainListing) => {
+    try { await cancelOnChain(l.id); } catch { /* toast handled */ }
   };
   const handleSetActive = async (cardId: string) => {
     if (!playerId) return;
@@ -177,7 +159,6 @@ const Marketplace = () => {
   };
 
   /* ── Derived ── */
-  const filteredListings = divFilter === 'all' ? listings : listings.filter(l => l.cardDivision === divFilter);
   const priceCents = Math.round((parseFloat(listPrice) || 0) * 100);
   const feeAmount = priceCents * estimatedFee / 100;
   const sellerReceives = priceCents - feeAmount;
@@ -192,7 +173,6 @@ const Marketplace = () => {
   /* ── Shared classes ── */
   const panel = "rounded-xl border border-white/10 bg-black/40 backdrop-blur-xl";
   const btnPrimary = "min-h-[44px] px-5 rounded-lg border bg-black/40 glow-yellow glow-border-yellow text-sm tracking-[0.2em] font-bold hover:bg-yellow-400/10 hover:scale-[1.03] transition-all disabled:opacity-40";
-  const btnSecondary = "min-h-[44px] px-5 rounded-lg border bg-black/40 glow-blue glow-border-blue text-sm tracking-[0.2em] font-bold hover:bg-blue-400/10 hover:scale-[1.03] transition-all disabled:opacity-40";
 
   return (
     <div className="min-h-screen w-full font-mono relative overflow-visible" style={{ background: 'transparent' }}>
@@ -263,11 +243,6 @@ const Marketplace = () => {
             <div className={`${marketTab === 'mint' ? 'w-full' : 'max-w-6xl mx-auto'} space-y-6 animate-fade-in`}>
               <div className="flex items-center justify-between flex-wrap gap-3">
                 <h2 className="text-3xl uppercase tracking-[0.3em] menu-neon-title-red font-bold">Nebula Cascade: Collection Cards</h2>
-                {marketTab === 'trade' && (
-                  <span className="text-sm glow-white tracking-widest">
-                    {filteredListings.length} LISTING{filteredListings.length !== 1 ? 'S' : ''}
-                  </span>
-                )}
               </div>
 
               {/* Mint / Trade tab bar */}
@@ -308,100 +283,13 @@ const Marketplace = () => {
                 </div>
               )}
 
-              {/* TRADE — existing peer-to-peer listings */}
+              {/* TRADE — on-chain peer-to-peer marketplace */}
               {marketTab === 'trade' && (
                 <div className="space-y-5">
-                  {/* Division filter */}
-                  <div className="flex gap-3 flex-wrap">
-                    {DIVISIONS.map(d => {
-                      const active = divFilter === d;
-                      return (
-                        <button
-                          key={d}
-                          onClick={() => setDivFilter(d)}
-                          className={`min-h-[44px] px-5 py-2 text-sm tracking-[0.2em] font-bold rounded-lg border bg-black/40 transition-all hover:scale-105 ${
-                            active ? 'glow-yellow glow-border-yellow' : 'glow-white glow-border-blue opacity-70 hover:opacity-100'
-                          }`}
-                        >
-                          {DIV_FILTER_LABELS[d]}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {loading ? (
-                    <div className="text-center glow-blue text-lg tracking-widest py-20 animate-pulse">LOADING LISTINGS…</div>
-                  ) : filteredListings.length === 0 ? (
-                    <div className={`${panel} flex flex-col items-center py-20 space-y-4`}>
-                      <div
-                        className="w-20 h-20 rounded-full"
-                        style={{
-                          background: 'radial-gradient(circle at 40% 40%, rgba(85,153,255,0.5), rgba(255,221,0,0.2), transparent)',
-                          boxShadow: '0 0 40px rgba(85,153,255,0.3), 0 0 80px rgba(255,221,0,0.15)',
-                        }}
-                      />
-                      <span className="text-xl tracking-[0.3em] glow-blue font-bold">NO ACTIVE LISTINGS</span>
-                      <span className="text-sm glow-white tracking-widest">Cards listed for trade will appear here</span>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                      {filteredListings.map(listing => (
-                        <div
-                          key={listing.id}
-                          className={`${panel} p-5 transition-all group hover:scale-[1.03] hover:glow-border-yellow cursor-pointer`}
-                        >
-                          {/* Card orb */}
-                          <div className="flex items-center gap-4 mb-5">
-                            <div
-                              className="w-14 h-14 rounded-full flex-shrink-0 transition-transform group-hover:scale-110"
-                              style={{
-                                background: `radial-gradient(circle at 35% 35%, ${listing.cardColor}ee, ${listing.cardColor}50)`,
-                                boxShadow: `0 0 25px ${listing.cardColor}60, 0 0 50px ${listing.cardColor}30, inset 0 -2px 6px ${listing.cardColor}30`,
-                              }}
-                            />
-                            <div className="flex-1 min-w-0">
-                              <div className="text-base font-bold truncate glow-blue">{listing.cardName}</div>
-                              <div className="text-xs glow-white tracking-widest mt-1">
-                                {DIVISION_LABELS[listing.cardDivision!]}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Price + fee */}
-                          <div className="flex items-end justify-between mb-5">
-                            <div>
-                              <div className="text-xs glow-white uppercase tracking-widest mb-1">Price</div>
-                              <div className="text-2xl font-bold glow-yellow">
-                                ${(listing.priceCents / 100).toFixed(2)}
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <div className="text-xs glow-white tracking-widest">
-                                {listing.feePercent}% FEE
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Actions */}
-                          {playerId && listing.sellerPlayerId !== playerId && (
-                            <button onClick={() => openBuyConfirm(listing)} className={`w-full ${btnPrimary}`}>
-                              BUY
-                            </button>
-                          )}
-                          {playerId && listing.sellerPlayerId === playerId && (
-                            <button onClick={() => handleCancel(listing.id)} className={`w-full ${btnSecondary}`}>
-                              CANCEL LISTING
-                            </button>
-                          )}
-                          {!playerId && (
-                            <button onClick={() => setSection('profile')} className={`w-full ${btnSecondary}`}>
-                              SIGN IN TO BUY
-                            </button>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  <p className="text-xs text-white/40 font-mono tracking-widest uppercase">
+                    Secondary market · On-chain · Native ETH · 3% fee
+                  </p>
+                  <TradeGrid onBuy={setPendingBuy} onCancel={handleCancelOnChain} />
                 </div>
               )}
             </div>
@@ -750,13 +638,12 @@ const Marketplace = () => {
         conflictingAddress={mismatchAddr}
       />
 
-      {/* Buy confirmation modal */}
+      {/* Buy confirmation modal (on-chain) */}
       <BuyCardModal
         open={!!pendingBuy}
         onOpenChange={(v) => { if (!v) setPendingBuy(null); }}
         listing={pendingBuy}
-        submitting={buySubmitting}
-        onConfirm={confirmBuy}
+        onBought={() => { setPendingBuy(null); refreshListings(); }}
       />
     </div>
   );
