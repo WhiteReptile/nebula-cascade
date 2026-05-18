@@ -1,0 +1,22 @@
+{
+  "name": "Nebula Cascade",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:20",
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "forwardPorts": [5000],
+  "portsAttributes": {
+    "5000": { "label": "Vite", "onAutoForward": "openPreview" }
+  },
+  "postCreateCommand": "npm install",
+  "postStartCommand": "echo 'Ready. Copy .env.example to .env, fill values, then: npm run dev'",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss"
+      ]
+    }
+  }
+}

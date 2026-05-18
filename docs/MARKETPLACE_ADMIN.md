@@ -51,7 +51,7 @@ Every write action returns a tx hash visible in the toast. Click through to Base
 
 ## Env vars
 
-- `VITE_MARKETPLACE_ADDRESS` — deployed marketplace contract address on Base (8453).
+- `VITE_MARKETPLACE_CONTRACT` — deployed marketplace contract address on Base (8453).
   If unset, the UI flags **NOT DEPLOYED** in the Blockchain Info panel.
 
 ## Future migration
