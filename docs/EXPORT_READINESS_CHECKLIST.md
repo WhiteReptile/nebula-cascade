@@ -41,11 +41,13 @@ VITE_MARKETPLACE_ADDRESS=0x...
 ### Sitemap generation
 
 `predev` and `prebuild` npm scripts run `scripts/generate-sitemap.ts`,
-which writes `public/sitemap.xml`. When you assign a custom domain,
-edit `BASE_URL` in that script. Owner controls + administration are
-documented in `docs/MARKETPLACE_ADMIN.md`.
+which writes `public/sitemap.xml`. **Before publishing**, set
+`BASE_URL` in that script to your absolute project URL — sitemap.org
+requires absolute `<loc>` values, and crawlers will reject the file
+while it ships with relative paths. Owner controls + administration
+are documented in `docs/MARKETPLACE_ADMIN.md`.
 
-All three are **publishable** values. Never commit a service-role key.
+All four are **publishable** values. Never commit a service-role key.
 
 No env variables are required for Thirdweb / Base — the public client ID
 and contract address live in `src/config/web3Config.ts`.
