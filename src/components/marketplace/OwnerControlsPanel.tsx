@@ -23,6 +23,7 @@ export default function OwnerControlsPanel() {
   const [newTreasury, setNewTreasury] = useState('');
   const [newBps, setNewBps] = useState('');
 
+  if (!MARKETPLACE_CONFIGURED) return null;
   // Owner not yet resolved → render a slim skeleton so layout doesn't jump.
   if (owner == null) return <SkeletonPanel lines={2} />;
   if (!isOwner) return null;
