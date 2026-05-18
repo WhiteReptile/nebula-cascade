@@ -10,6 +10,7 @@ import {
   useSetFeeBps,
 } from '@/hooks/useMarketplaceContract';
 import SkeletonPanel from './SkeletonPanel';
+import { MARKETPLACE_CONFIGURED } from '@/lib/marketplace/contract';
 
 const ADDR_RE = /^0x[a-fA-F0-9]{40}$/;
 
