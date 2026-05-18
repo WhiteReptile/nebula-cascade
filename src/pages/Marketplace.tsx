@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { buyCard, cancelListing, listCard, calculateFee } from '@/lib/marketplaceSystem';
+import { listCard, calculateFee } from '@/lib/marketplaceSystem';
 import { getCardsForPlayer, setActiveCard, type CardMetadata } from '@/lib/cardSystem';
 import { getCardEnergy, type CardEnergy } from '@/lib/energySystem';
 import { DIVISION_LABELS, type Division } from '@/lib/divisionSystem';
@@ -10,10 +10,12 @@ import WalletConnect from '@/components/wallet/WalletConnect';
 import WalletMismatchModal from '@/components/wallet/WalletMismatchModal';
 import NFTGrid from '@/components/marketplace/NFTGrid';
 import BuyCardModal from '@/components/marketplace/BuyCardModal';
+import TradeGrid from '@/components/marketplace/TradeGrid';
 import GalaxyBackground from '@/components/shared/GalaxyBackground';
 import { useToast } from '@/hooks/use-toast';
 import { useWalletSync } from '@/hooks/useWalletSync';
-import { useMarketplaceListings, type EnrichedListing } from '@/hooks/useMarketplaceListings';
+import { useMarketplaceListings } from '@/hooks/useMarketplaceListings';
+import { useCancelListing, type OnChainListing } from '@/hooks/useMarketplaceContract';
 
 /* ── Types ── */
 type Section = 'marketplace' | 'my-cards' | 'profile' | 'wallet';
@@ -37,13 +39,12 @@ const Marketplace = () => {
   const [cardEnergies, setCardEnergies] = useState<Record<string, CardEnergy>>({});
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
 
-  /* ── Marketplace listings (realtime) ── */
-  const { listings, loading, refresh: refreshListings } = useMarketplaceListings();
-  const [divFilter, setDivFilter] = useState<Division | 'all'>('all');
+  /* ── Off-chain DB listings (still used to flag MY CARDS as listed) ── */
+  const { listings, refresh: refreshListings } = useMarketplaceListings();
 
-  /* ── Buy confirmation ── */
-  const [pendingBuy, setPendingBuy] = useState<EnrichedListing | null>(null);
-  const [buySubmitting, setBuySubmitting] = useState(false);
+  /* ── On-chain buy/cancel ── */
+  const [pendingBuy, setPendingBuy] = useState<OnChainListing | null>(null);
+  const { cancel: cancelOnChain } = useCancelListing();
 
   /* ── Listing form ── */
   const [listingCardId, setListingCardId] = useState<string | null>(null);
@@ -119,24 +120,8 @@ const Marketplace = () => {
   }, [listingCardId]);
 
   /* ── Handlers ── */
-  const openBuyConfirm = (listing: EnrichedListing) => setPendingBuy(listing);
-  const confirmBuy = async () => {
-    if (!playerId || !pendingBuy) return;
-    setBuySubmitting(true);
-    const ok = await buyCard(pendingBuy.id, playerId);
-    setBuySubmitting(false);
-    if (ok) {
-      toast({ title: 'Card purchased!' });
-      setPendingBuy(null);
-      refreshListings();
-      loadData();
-    } else {
-      toast({ title: 'Purchase failed', variant: 'destructive' });
-    }
-  };
-  const handleCancel = async (id: string) => {
-    const ok = await cancelListing(id);
-    if (ok) { toast({ title: 'Listing cancelled' }); refreshListings(); }
+  const handleCancelOnChain = async (l: OnChainListing) => {
+    try { await cancelOnChain(l.id); } catch { /* toast handled */ }
   };
   const handleSetActive = async (cardId: string) => {
     if (!playerId) return;
