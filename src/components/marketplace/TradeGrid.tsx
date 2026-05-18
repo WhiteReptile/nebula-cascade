@@ -82,8 +82,8 @@ const TradeGrid = ({ onBuy, onCancel }: Props) => {
     <div className="space-y-5">
       {/* Filter + sort row */}
       <div className="flex flex-wrap items-center gap-3 justify-between">
-        <div className="flex gap-2 flex-wrap">
-          {FILTERS.map((f) => {
+        <div className="flex gap-2 overflow-x-auto overscroll-contain max-w-full -mx-1 px-1 pb-1 snap-x snap-mandatory">
+          {/* horizontal-scroll on narrow viewports */}
             const active = filter === f.key;
             return (
               <button
