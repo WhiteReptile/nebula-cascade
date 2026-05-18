@@ -649,6 +649,14 @@ const Marketplace = () => {
         listing={pendingBuy}
         onBought={() => { setPendingBuy(null); refreshListings(); }}
       />
+
+      {/* List card modal (on-chain) */}
+      <ListCardModal
+        open={!!sellToken}
+        onOpenChange={(v) => { if (!v) setSellToken(null); }}
+        tokenId={sellToken?.id ?? null}
+        tokenName={sellToken?.name}
+      />
     </div>
   );
 };
