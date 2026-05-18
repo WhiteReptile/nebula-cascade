@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronDown } from 'lucide-react';
+import SEO from '@/components/SEO';
 
 interface Milestone {
   text: string;
@@ -184,6 +185,11 @@ const Roadmap = () => {
 
   return (
     <div className="relative min-h-screen w-full bg-[#050510] text-white font-mono">
+      <SEO
+        title="Roadmap — Nebula Cascade"
+        description="Development milestones and seasonal goals for Nebula Cascade."
+        path="/roadmap"
+      />
       {/* Header */}
       <div className="sticky top-0 z-20 flex items-center justify-between px-6 py-4 backdrop-blur-xl bg-gradient-to-b from-[#050510]/95 to-[#050510]/70 border-b border-cyan-500/15">
         <button

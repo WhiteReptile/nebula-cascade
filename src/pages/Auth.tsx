@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { signInWithGoogle } from '@/lib/auth';
+import SEO from '@/components/SEO';
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -45,6 +46,11 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#050510' }}>
+      <SEO
+        title="Sign In — Nebula Cascade"
+        description="Sign in or create an account to play Nebula Cascade and collect NFT cards on Base."
+        path="/auth"
+      />
       <div className="w-full max-w-sm mx-auto p-6">
         <h1
           className="text-2xl font-bold font-mono tracking-[0.3em] text-center mb-8"

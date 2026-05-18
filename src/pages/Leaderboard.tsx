@@ -14,6 +14,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { DIVISION_LABELS, DIVISION_COLORS, getCurrentPeriod, type Division } from '@/lib/divisionSystem';
+import SEO from '@/components/SEO';
 
 type BoardTab = 'no_nft' | 'nft' | 'guests' | 'all';
 type SortKey = 'avg_top3_score' | 'best_score' | 'matches_played';
@@ -89,6 +90,11 @@ const Leaderboard = () => {
 
   return (
     <div className="min-h-screen text-white font-mono" style={{ backgroundColor: '#05050d' }}>
+      <SEO
+        title="Leaderboard — Nebula Cascade"
+        description="Live division rankings for Nebula Cascade. Compete across NFT, No-NFT, and guest tiers."
+        path="/leaderboard"
+      />
       {/* Top bar */}
       <div className="flex items-center justify-between px-6 py-3 border-b border-white/10">
         <button

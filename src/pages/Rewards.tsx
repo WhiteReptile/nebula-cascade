@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DIVISION_LABELS, DIVISION_COLORS, DIVISION_RARITY, type Division } from '@/lib/divisionSystem';
+import SEO from '@/components/SEO';
 
 type Tab = 'divisions' | 'cards' | 'no-nft' | 'rewards' | 'season';
 
@@ -324,6 +325,11 @@ const Rewards = () => {
           'radial-gradient(ellipse at 30% 20%, rgba(102,255,238,0.06) 0%, transparent 50%), radial-gradient(ellipse at 70% 60%, rgba(170,68,255,0.05) 0%, transparent 50%), #050510',
       }}
     >
+      <SEO
+        title="Rewards & Rules — Nebula Cascade"
+        description="Division rewards, NFT card economy, anti-flip lock, and season payouts for Nebula Cascade."
+        path="/rewards"
+      />
       {/* Sticky Header */}
       <header className="sticky top-0 z-20 flex items-center justify-between px-6 py-3 border-b border-cyan-500/15 backdrop-blur-md bg-[#050510]/80">
         <button

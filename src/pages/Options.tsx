@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import SEO from '@/components/SEO';
 
 const Options = () => {
   const navigate = useNavigate();
@@ -8,6 +9,11 @@ const Options = () => {
       className="min-h-screen w-full flex flex-col items-center justify-center font-mono overflow-visible"
       style={{ backgroundColor: '#050510' }}
     >
+      <SEO
+        title="Options — Nebula Cascade"
+        description="Settings and preferences for Nebula Cascade."
+        path="/options"
+      />
       <h1
         className="menu-title-glow uppercase tracking-[0.4em] text-3xl md:text-5xl font-bold mb-4 select-none"
         style={{ color: '#e0f0ff' }}

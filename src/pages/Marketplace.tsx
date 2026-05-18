@@ -27,6 +27,8 @@ import {
 } from '@/hooks/useMarketplaceContract';
 import { useActiveAccount } from 'thirdweb/react';
 import NetworkPill from '@/components/wallet/NetworkPill';
+import WalletMenu from '@/components/wallet/WalletMenu';
+import SEO from '@/components/SEO';
 
 /* ── Types ── */
 type Section = 'marketplace' | 'my-cards' | 'profile' | 'wallet';
@@ -172,8 +174,14 @@ const Marketplace = () => {
 
   return (
     <div className="min-h-screen w-full font-mono relative overflow-visible" style={{ background: 'transparent' }}>
+      <SEO
+        title="Marketplace — Nebula Cascade"
+        description="Mint, list, and trade Nebula Cascade NFT cards on Base. Flat 3% fee, 24h anti-flip lock."
+        path="/marketplace"
+      />
       {/* Cosmic galaxy — same canvas as MainMenu for visual continuity */}
       <GalaxyBackground zIndex={0} />
+
 
       {/* ── Header ── */}
       <header className="relative z-10 flex items-center justify-between px-6 py-5">
@@ -524,8 +532,11 @@ const Marketplace = () => {
                   </div>
                 )}
                 {activeAccount ? (
-                  <div className="text-xs tracking-widest font-mono break-all">
-                    <AddressLink address={activeAccount.address} truncate={false} />
+                  <div className="flex flex-col items-center gap-2">
+                    <WalletMenu />
+                    <div className="text-[10px] tracking-widest font-mono break-all opacity-70">
+                      <AddressLink address={activeAccount.address} truncate={false} noResolve />
+                    </div>
                   </div>
                 ) : (
                   <p className="text-sm glow-white tracking-widest leading-relaxed">
