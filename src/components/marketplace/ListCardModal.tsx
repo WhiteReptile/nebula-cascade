@@ -6,8 +6,9 @@
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { useApprovalStatus, useListCard } from '@/hooks/useMarketplaceContract';
+import { useApprovalStatus, useListCard, useTreasuryStats } from '@/hooks/useMarketplaceContract';
 import { NEBULA_COLLECTION_ADDRESS } from '@/lib/marketplace/contract';
+import { useEthUsdPrice, ethToUsd } from '@/lib/priceFeed';
 
 interface Props {
   open: boolean;
@@ -35,7 +36,17 @@ const ListCardModal = ({ open, onOpenChange, tokenId, tokenName, onListed }: Pro
     onListed?.();
     onOpenChange(false);
   });
+  const { feeBps } = useTreasuryStats();
+  const { ethUsd } = useEthUsdPrice();
   const [price, setPrice] = useState('');
+
+  const wei = ethToWei(price);
+  const priceEth = wei ? Number(wei) / 1e18 : 0;
+  const feePct = (feeBps ?? 300) / 100;
+  const feeEth = priceEth * (feePct / 100);
+  const youGetEth = priceEth - feeEth;
+  const youGetUsd = ethToUsd(youGetEth, ethUsd);
+  const priceUsd = ethToUsd(priceEth, ethUsd);
 
   const submit = async () => {
     if (tokenId === null) return;
@@ -93,8 +104,30 @@ const ListCardModal = ({ open, onOpenChange, tokenId, tokenName, onListed }: Pro
                 onChange={(e) => setPrice(e.target.value)}
                 className="bg-black/50 border-blue-500/30 text-yellow-300 placeholder:text-white/30 font-mono h-12 text-lg"
               />
+              {priceEth > 0 && (
+                <div className="rounded-lg border border-blue-500/20 bg-black/40 p-3 space-y-1.5 font-mono text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-white/50 tracking-widest uppercase">Buyer pays</span>
+                    <span className="text-yellow-300">
+                      {priceEth.toFixed(6)} ETH
+                      {priceUsd != null && <span className="text-white/40 ml-2">≈ ${priceUsd.toFixed(2)}</span>}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-white/50 tracking-widest uppercase">Fee ({feePct.toFixed(2)}%)</span>
+                    <span className="text-red-300">− {feeEth.toFixed(6)} ETH</span>
+                  </div>
+                  <div className="flex justify-between pt-1.5 border-t border-blue-500/20">
+                    <span className="text-blue-300 tracking-widest uppercase font-bold">You receive</span>
+                    <span className="text-yellow-300 font-bold" style={{ textShadow: '0 0 8px rgba(255,221,0,0.4)' }}>
+                      {youGetEth.toFixed(6)} ETH
+                      {youGetUsd != null && <span className="text-white/40 ml-2 font-normal">≈ ${youGetUsd.toFixed(2)}</span>}
+                    </span>
+                  </div>
+                </div>
+              )}
               <div className="text-[11px] font-mono tracking-widest text-white/40">
-                3% marketplace fee · 24h relist lock applies after sale
+                24h relist lock applies after sale
               </div>
             </div>
           )}
