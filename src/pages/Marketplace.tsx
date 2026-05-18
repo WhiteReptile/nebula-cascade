@@ -22,9 +22,11 @@ import { useWalletSync } from '@/hooks/useWalletSync';
 import {
   useCancelListing,
   useUserActiveListings,
+  useLocksMap,
   type OnChainListing,
 } from '@/hooks/useMarketplaceContract';
 import { useActiveAccount } from 'thirdweb/react';
+import NetworkPill from '@/components/wallet/NetworkPill';
 
 /* ── Types ── */
 type Section = 'marketplace' | 'my-cards' | 'profile' | 'wallet';
