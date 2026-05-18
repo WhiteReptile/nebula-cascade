@@ -44,6 +44,9 @@ const Marketplace = () => {
   const [pendingBuy, setPendingBuy] = useState<OnChainListing | null>(null);
   const { cancel: cancelOnChain } = useCancelListing();
 
+  /* ── On-chain sell modal ── */
+  const [sellToken, setSellToken] = useState<{ id: bigint; name: string } | null>(null);
+
   /* ── Listing form ── */
   const [listingCardId, setListingCardId] = useState<string | null>(null);
   const [listPrice, setListPrice] = useState('');
