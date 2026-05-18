@@ -749,6 +749,15 @@ const Marketplace = () => {
         onOpenChange={setMismatchOpen}
         conflictingAddress={mismatchAddr}
       />
+
+      {/* Buy confirmation modal */}
+      <BuyCardModal
+        open={!!pendingBuy}
+        onOpenChange={(v) => { if (!v) setPendingBuy(null); }}
+        listing={pendingBuy}
+        submitting={buySubmitting}
+        onConfirm={confirmBuy}
+      />
     </div>
   );
 };
