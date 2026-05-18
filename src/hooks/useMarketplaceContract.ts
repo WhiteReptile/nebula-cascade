@@ -257,13 +257,21 @@ export function useTreasuryStats() {
   });
 
   const [contractBalanceWei, setContractBalanceWei] = useState<bigint>(0n);
+  const [balanceLoading, setBalanceLoading] = useState<boolean>(MARKETPLACE_CONFIGURED);
+  const [balanceError, setBalanceError] = useState<string | null>(null);
   const refreshBalance = useCallback(async () => {
     if (!MARKETPLACE_ADDRESS) return;
+    setBalanceLoading(true);
     try {
       const rpc = getRpcClient({ client: thirdwebClient, chain: nebulaChain });
       const bal = await eth_getBalance(rpc, { address: MARKETPLACE_ADDRESS });
       setContractBalanceWei(bal);
-    } catch { /* swallow */ }
+      setBalanceError(null);
+    } catch (e: any) {
+      setBalanceError(String(e?.shortMessage ?? e?.message ?? e));
+    } finally {
+      setBalanceLoading(false);
+    }
   }, []);
   useEffect(() => {
     refreshBalance();
@@ -279,6 +287,8 @@ export function useTreasuryStats() {
     treasury: (treasury as string | undefined) ?? null,
     feeBps: feeBps != null ? Number(feeBps as bigint) : null,
     contractBalanceWei,
+    loading: balanceLoading || treasury == null || feeBps == null,
+    error: balanceError,
     refresh,
   };
 }
