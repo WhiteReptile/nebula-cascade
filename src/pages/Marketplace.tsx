@@ -537,24 +537,34 @@ const Marketplace = () => {
             <div className="max-w-md mx-auto space-y-8 animate-fade-in">
               <h2 className="text-3xl uppercase tracking-[0.3em] glow-yellow font-bold">Wallet</h2>
 
-              {/* Coming Soon — Base */}
+              {/* Connection status */}
               <div className={`${panel} p-7 text-center space-y-4`}>
                 <div
                   className="w-20 h-20 rounded-full mx-auto"
                   style={{
-                    background: 'radial-gradient(circle at 40% 40%, rgba(255,221,0,0.4), rgba(85,153,255,0.2), transparent)',
-                    boxShadow: '0 0 40px rgba(255,221,0,0.25), 0 0 80px rgba(85,153,255,0.15)',
+                    background: activeAccount
+                      ? 'radial-gradient(circle at 40% 40%, rgba(0,255,170,0.45), rgba(85,153,255,0.2), transparent)'
+                      : 'radial-gradient(circle at 40% 40%, rgba(255,221,0,0.4), rgba(85,153,255,0.2), transparent)',
+                    boxShadow: activeAccount
+                      ? '0 0 40px rgba(0,255,170,0.3), 0 0 80px rgba(85,153,255,0.15)'
+                      : '0 0 40px rgba(255,221,0,0.25), 0 0 80px rgba(85,153,255,0.15)',
                   }}
                 />
                 <h3 className="text-xl font-bold tracking-[0.25em] glow-yellow">
-                  BASE WALLET — COMING SOON
+                  {activeAccount ? 'WALLET CONNECTED' : 'CONNECT YOUR WALLET'}
                 </h3>
-                <p className="text-sm glow-white tracking-widest leading-relaxed">
-                  Wallet connection via Thirdweb will be available when the Base integration launches.
-                </p>
+                {activeAccount ? (
+                  <p className="text-xs glow-white tracking-widest font-mono break-all">
+                    {activeAccount.address}
+                  </p>
+                ) : (
+                  <p className="text-sm glow-white tracking-widest leading-relaxed">
+                    Connect via Thirdweb to mint, list, and trade Nebula cards on Base.
+                  </p>
+                )}
               </div>
 
-              {/* Legacy wallet connect */}
+              {/* Thirdweb connect button */}
               <WalletConnect currentAddress={walletAddress} />
 
               {/* Blockchain info */}
@@ -563,15 +573,19 @@ const Marketplace = () => {
                 <div className="text-sm space-y-2">
                   <div className="flex justify-between">
                     <span className="glow-blue tracking-widest">Chain</span>
-                    <span className="glow-white font-bold">Base (planned)</span>
+                    <span className="glow-white font-bold">Base · 8453</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="glow-blue tracking-widest">Auth Provider</span>
-                    <span className="glow-white font-bold">Thirdweb (planned)</span>
+                    <span className="glow-white font-bold">Thirdweb v5</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="glow-blue tracking-widest">Fee Model</span>
+                    <span className="glow-blue tracking-widest">Marketplace Fee</span>
                     <span className="glow-yellow font-bold">Flat 3%</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="glow-blue tracking-widest">Anti-Flip Lock</span>
+                    <span className="glow-white font-bold">24h on-chain</span>
                   </div>
                 </div>
               </div>
@@ -592,7 +606,7 @@ const Marketplace = () => {
         open={!!pendingBuy}
         onOpenChange={(v) => { if (!v) setPendingBuy(null); }}
         listing={pendingBuy}
-        onBought={() => { setPendingBuy(null); refreshListings(); }}
+        onBought={() => { setPendingBuy(null); refreshMyListings(); }}
       />
 
       {/* List card modal (on-chain) */}
