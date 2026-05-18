@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { getActiveListings, buyCard, cancelListing, listCard, calculateFee, type MarketplaceListing } from '@/lib/marketplaceSystem';
+import { buyCard, cancelListing, listCard, calculateFee } from '@/lib/marketplaceSystem';
 import { getCardsForPlayer, setActiveCard, type CardMetadata } from '@/lib/cardSystem';
 import { getCardEnergy, type CardEnergy } from '@/lib/energySystem';
 import { DIVISION_LABELS, type Division } from '@/lib/divisionSystem';
@@ -9,12 +9,13 @@ import { Input } from '@/components/ui/input';
 import WalletConnect from '@/components/wallet/WalletConnect';
 import WalletMismatchModal from '@/components/wallet/WalletMismatchModal';
 import NFTGrid from '@/components/marketplace/NFTGrid';
+import BuyCardModal from '@/components/marketplace/BuyCardModal';
 import GalaxyBackground from '@/components/shared/GalaxyBackground';
 import { useToast } from '@/hooks/use-toast';
 import { useWalletSync } from '@/hooks/useWalletSync';
+import { useMarketplaceListings, type EnrichedListing } from '@/hooks/useMarketplaceListings';
 
 /* ── Types ── */
-type EnrichedListing = MarketplaceListing & { cardName?: string; cardDivision?: Division; cardColor?: string };
 type Section = 'marketplace' | 'my-cards' | 'profile' | 'wallet';
 
 const DIVISIONS: (Division | 'all')[] = ['all', 'gem_v', 'gem_iv', 'gem_iii', 'gem_ii', 'gem_i'];
