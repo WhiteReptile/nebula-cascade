@@ -10,7 +10,8 @@ import { extractDivisionFromNFT } from '@/lib/thirdweb/divisionFromMetadata';
 import { MARKETPLACE_CONFIGURED } from '@/lib/marketplace/contract';
 import { useActiveAccount } from 'thirdweb/react';
 import ListingCard from './ListingCard';
-import type { Division } from '@/lib/divisionSystem';
+import InlineError from './InlineError';
+import { DIVISION_LABELS, type Division } from '@/lib/divisionSystem';
 
 type DivFilter = Division | 'all';
 type Sort = 'newest' | 'price_asc' | 'price_desc';
@@ -51,7 +52,7 @@ function FilterableListing({
 
 const TradeGrid = ({ onBuy, onCancel }: Props) => {
   const account = useActiveAccount();
-  const { listings, loading, error } = useActiveListings();
+  const { listings, loading, error, refresh } = useActiveListings();
   const [filter, setFilter] = useState<DivFilter>('all');
   const [sort, setSort] = useState<Sort>('newest');
 
@@ -81,14 +82,14 @@ const TradeGrid = ({ onBuy, onCancel }: Props) => {
     <div className="space-y-5">
       {/* Filter + sort row */}
       <div className="flex flex-wrap items-center gap-3 justify-between">
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-2 overflow-x-auto overscroll-contain max-w-full -mx-1 px-1 pb-1 snap-x snap-mandatory">
           {FILTERS.map((f) => {
             const active = filter === f.key;
             return (
               <button
                 key={f.key}
                 onClick={() => setFilter(f.key)}
-                className={`min-h-[40px] px-4 py-1.5 text-xs tracking-[0.2em] font-mono font-bold rounded-lg border bg-black/40 transition-all hover:scale-105 ${
+                className={`min-h-[40px] px-4 py-1.5 text-xs tracking-[0.2em] font-mono font-bold rounded-lg border bg-black/40 transition-all hover:scale-105 snap-start shrink-0 ${
                   active
                     ? 'border-yellow-400/70 text-yellow-300'
                     : 'border-white/15 text-white/60 hover:border-white/30 hover:text-white/90'
@@ -113,13 +114,11 @@ const TradeGrid = ({ onBuy, onCancel }: Props) => {
       </div>
 
       {loading ? (
-        <div className="text-center py-20 font-mono tracking-[0.3em] text-blue-300 animate-pulse">
+        <div className="text-center py-20 font-mono tracking-[0.3em] text-blue-300 animate-pulse" role="status">
           LOADING ON-CHAIN LISTINGS…
         </div>
       ) : error ? (
-        <div className="rounded-xl border border-red-500/40 bg-black/40 p-6 text-center font-mono text-sm text-red-300">
-          Failed to read contract: {error.slice(0, 200)}
-        </div>
+        <InlineError message={`Failed to read contract: ${error}`} onRetry={refresh} />
       ) : sorted.length === 0 ? (
         <div className="rounded-xl border border-white/10 bg-black/40 backdrop-blur-xl flex flex-col items-center py-20 space-y-3">
           <div
@@ -129,8 +128,12 @@ const TradeGrid = ({ onBuy, onCancel }: Props) => {
               boxShadow: '0 0 30px rgba(85,153,255,0.3)',
             }}
           />
-          <span className="text-lg tracking-[0.3em] font-mono font-bold text-blue-300">NO LIVE LISTINGS</span>
-          <span className="text-xs font-mono tracking-widest text-white/50">Be the first to list a card</span>
+          <span className="text-lg tracking-[0.3em] font-mono font-bold text-blue-300">
+            {filter === 'all' ? 'NO LIVE LISTINGS' : `NO ${DIVISION_LABELS[filter as Division].toUpperCase()} LISTINGS`}
+          </span>
+          <span className="text-xs font-mono tracking-widest text-white/50">
+            {filter === 'all' ? 'Be the first to list a card' : 'Try another division — or be the first to list this one'}
+          </span>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">

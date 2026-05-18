@@ -22,9 +22,11 @@ import { useWalletSync } from '@/hooks/useWalletSync';
 import {
   useCancelListing,
   useUserActiveListings,
+  useLocksMap,
   type OnChainListing,
 } from '@/hooks/useMarketplaceContract';
 import { useActiveAccount } from 'thirdweb/react';
+import NetworkPill from '@/components/wallet/NetworkPill';
 
 /* ── Types ── */
 type Section = 'marketplace' | 'my-cards' | 'profile' | 'wallet';
@@ -329,23 +331,37 @@ const Marketplace = () => {
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                      {cards.map(card => {
-                        const energy = cardEnergies[card.id];
-                        const isActive = card.id === activeCardId;
-                        const onChainListing = findListingForToken(card.tokenId);
-                        return (
-                          <MyCardTile
-                            key={card.id}
-                            card={card}
-                            energy={energy}
-                            isActive={isActive}
-                            onChainListing={onChainListing}
-                            onSelectActive={() => handleSetActive(card.id)}
-                            onSell={() => setSellToken({ id: BigInt(card.tokenId), name: card.name })}
-                            onCancel={() => { if (onChainListing) handleCancelOnChain(onChainListing); }}
-                          />
-                        );
-                      })}
+                      {(() => {
+                        // Sort: listed last; among the rest, unlocked first, locked by ascending secondsLeft.
+                        const tokenIdsBig = cards.map((c) => { try { return BigInt(c.tokenId); } catch { return null; } });
+                        // eslint-disable-next-line react-hooks/rules-of-hooks
+                        const locks = useLocksMap(tokenIdsBig);
+                        const sorted = [...cards].sort((a, b) => {
+                          const la = !!findListingForToken(a.tokenId);
+                          const lb = !!findListingForToken(b.tokenId);
+                          if (la !== lb) return la ? 1 : -1;
+                          const sa = locks[String(a.tokenId)] ?? 0;
+                          const sb = locks[String(b.tokenId)] ?? 0;
+                          return sa - sb;
+                        });
+                        return sorted.map(card => {
+                          const energy = cardEnergies[card.id];
+                          const isActive = card.id === activeCardId;
+                          const onChainListing = findListingForToken(card.tokenId);
+                          return (
+                            <MyCardTile
+                              key={card.id}
+                              card={card}
+                              energy={energy}
+                              isActive={isActive}
+                              onChainListing={onChainListing}
+                              onSelectActive={() => handleSetActive(card.id)}
+                              onSell={() => setSellToken({ id: BigInt(card.tokenId), name: card.name })}
+                              onCancel={() => { if (onChainListing) handleCancelOnChain(onChainListing); }}
+                            />
+                          );
+                        });
+                      })()}
                     </div>
                   )}
                 </>
@@ -502,6 +518,11 @@ const Marketplace = () => {
                 <h3 className="text-xl font-bold tracking-[0.25em] glow-yellow">
                   {activeAccount ? 'WALLET CONNECTED' : 'CONNECT YOUR WALLET'}
                 </h3>
+                {activeAccount && (
+                  <div className="flex justify-center">
+                    <NetworkPill />
+                  </div>
+                )}
                 {activeAccount ? (
                   <div className="text-xs tracking-widest font-mono break-all">
                     <AddressLink address={activeAccount.address} truncate={false} />

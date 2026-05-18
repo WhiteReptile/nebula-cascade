@@ -9,11 +9,13 @@ import {
   useSetTreasury,
   useSetFeeBps,
 } from '@/hooks/useMarketplaceContract';
+import SkeletonPanel from './SkeletonPanel';
+import { MARKETPLACE_CONFIGURED } from '@/lib/marketplace/contract';
 
 const ADDR_RE = /^0x[a-fA-F0-9]{40}$/;
 
 export default function OwnerControlsPanel() {
-  const { isOwner } = useMarketplaceOwner();
+  const { isOwner, owner } = useMarketplaceOwner();
   const { treasury, feeBps, refresh } = useTreasuryStats();
   const { setTreasury, isPending: tPending } = useSetTreasury(refresh);
   const { setFeeBps, isPending: fPending } = useSetFeeBps(refresh);
@@ -21,6 +23,9 @@ export default function OwnerControlsPanel() {
   const [newTreasury, setNewTreasury] = useState('');
   const [newBps, setNewBps] = useState('');
 
+  if (!MARKETPLACE_CONFIGURED) return null;
+  // Owner not yet resolved → render a slim skeleton so layout doesn't jump.
+  if (owner == null) return <SkeletonPanel lines={2} />;
   if (!isOwner) return null;
 
   const bpsNum = Number(newBps);

@@ -1,6 +1,7 @@
 /**
  * TreasuryWidget — owner-only stats for the marketplace contract.
  * Shows treasury address, fee, contract ETH balance, and lifetime volume.
+ * Surfaces inline errors with retry; uses skeleton while first paint loads.
  */
 import {
   useMarketplaceOwner,
@@ -9,18 +10,35 @@ import {
 } from '@/hooks/useMarketplaceContract';
 import { useEthUsdPrice, ethToUsd } from '@/lib/priceFeed';
 import AddressLink from './AddressLink';
+import InlineError from './InlineError';
+import SkeletonPanel from './SkeletonPanel';
 import { MARKETPLACE_ADDRESS } from '@/lib/marketplace/contract';
+import { useState } from 'react';
 
 function weiToEth(w: bigint): number {
-  // Safe enough for display (< 2^53 ETH never happens)
   return Number(w) / 1e18;
+}
+
+function RefreshButton({ onClick, spinning, label = 'Refresh' }: { onClick: () => void; spinning?: boolean; label?: string }) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={spinning}
+      aria-label={label}
+      className="text-[10px] glow-white tracking-[0.2em] uppercase border border-blue-500/40 px-2 py-1 rounded hover:border-yellow-400/60 transition-all disabled:opacity-60"
+    >
+      <span className={`inline-block ${spinning ? 'animate-spin' : ''}`} aria-hidden>↻</span> {label}
+    </button>
+  );
 }
 
 export default function TreasuryWidget() {
   const { isOwner } = useMarketplaceOwner();
-  const { treasury, feeBps, contractBalanceWei, refresh } = useTreasuryStats();
-  const { volumeWei, loading: volLoading, refresh: refreshVol } = useLifetimeVolume();
+  const { treasury, feeBps, contractBalanceWei, loading, error, refresh } = useTreasuryStats();
+  const { volumeWei, loading: volLoading, error: volError, refresh: refreshVol } = useLifetimeVolume();
   const { ethUsd } = useEthUsdPrice();
+  const [spinT, setSpinT] = useState(false);
+  const [spinV, setSpinV] = useState(false);
 
   if (!isOwner) return null;
 
@@ -31,17 +49,21 @@ export default function TreasuryWidget() {
 
   const panel = "rounded-xl border border-white/10 bg-black/40 backdrop-blur-xl";
 
+  if (loading && treasury == null && feeBps == null) {
+    return <SkeletonPanel lines={5} />;
+  }
+
+  const handleT = () => { setSpinT(true); refresh(); setTimeout(() => setSpinT(false), 800); };
+  const handleV = () => { setSpinV(true); refreshVol(); setTimeout(() => setSpinV(false), 800); };
+
   return (
     <div className={`${panel} p-5 space-y-4`} style={{ boxShadow: '0 0 20px rgba(0,255,170,0.1)' }}>
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-bold glow-yellow tracking-widest">Treasury</h3>
-        <button
-          onClick={() => { refresh(); refreshVol(); }}
-          className="text-[10px] glow-white tracking-[0.2em] uppercase border border-blue-500/40 px-2 py-1 rounded hover:border-yellow-400/60 transition-all"
-        >
-          ↻ Refresh
-        </button>
+        <RefreshButton onClick={handleT} spinning={spinT} />
       </div>
+
+      {error && <InlineError message={error} onRetry={handleT} />}
 
       <div className="text-xs space-y-3">
         <div>
@@ -70,8 +92,11 @@ export default function TreasuryWidget() {
           </span>
         </div>
 
-        <div className="flex justify-between">
-          <span className="glow-blue tracking-widest">Lifetime Volume</span>
+        <div className="flex justify-between items-start">
+          <span className="glow-blue tracking-widest flex items-center gap-2">
+            Lifetime Volume
+            <RefreshButton onClick={handleV} spinning={spinV} label="↻" />
+          </span>
           <span className="text-right">
             <div className="glow-yellow font-bold">
               {volLoading && volumeWei === 0n ? '…' : `${volEth.toFixed(6)} ETH`}
@@ -81,6 +106,8 @@ export default function TreasuryWidget() {
             )}
           </span>
         </div>
+
+        {volError && <InlineError message={volError} onRetry={handleV} />}
       </div>
     </div>
   );

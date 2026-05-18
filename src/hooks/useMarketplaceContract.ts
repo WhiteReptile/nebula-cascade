@@ -15,7 +15,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { prepareContractCall, readContract, eth_getBalance, getRpcClient, getContractEvents, prepareEvent } from 'thirdweb';
 import { useActiveAccount, useSendTransaction, useReadContract } from 'thirdweb/react';
 import { thirdwebClient } from '@/lib/thirdweb/client';
-import { nebulaChain } from '@/lib/thirdweb/chains';
+import { nebulaChain, NEBULA_CHAIN_ID } from '@/lib/thirdweb/chains';
 import { toast } from 'sonner';
 import {
   marketplaceContract,
@@ -24,6 +24,8 @@ import {
   nebulaCollectionForApproval,
   NEBULA_COLLECTION_ADDRESS,
 } from '@/lib/marketplace/contract';
+import { trackTx } from '@/lib/tx/txToast';
+import { getVolumeCache, setVolumeCache } from '@/lib/marketplace/volumeCache';
 
 const REFRESH_MS = 15_000;
 const PAGE = 100n;
@@ -103,27 +105,24 @@ export function useActiveListings() {
   return { listings, loading, error, refresh };
 }
 
-/** Tx wrapper that toasts pending → success / error and exposes a refresh hook. */
-function useTx(label: string, onSuccess?: () => void) {
+/** Tx wrapper: pending → BaseScan-linked toast → success/error, then refresh. */
+function useTx(label: import('@/lib/tx/txToast').TxKind, onSuccess?: () => void) {
   const { mutateAsync, isPending } = useSendTransaction();
   const send = useCallback(
     async (tx: any) => {
-      const t = toast.loading(`${label}: sending…`);
       try {
         const result = await mutateAsync(tx);
-        toast.success(`${label}: confirmed`, {
-          id: t,
-          description: result.transactionHash.slice(0, 10) + '…',
+        // Don't await — let the toast update in the background while UI proceeds.
+        trackTx(label, result.transactionHash).then((receipt) => {
+          if (receipt?.status === 'success') onSuccess?.();
         });
-        onSuccess?.();
         return result;
       } catch (e: any) {
         const msg = String(e?.shortMessage ?? e?.message ?? e);
-        // Silently swallow user-rejected pops
         if (/reject|denied/i.test(msg)) {
-          toast.dismiss(t);
+          // User cancelled — silent.
         } else {
-          toast.error(`${label} failed`, { id: t, description: msg.slice(0, 140) });
+          toast.error(`${label} failed`, { description: msg.slice(0, 140) });
         }
         throw e;
       }
@@ -258,13 +257,21 @@ export function useTreasuryStats() {
   });
 
   const [contractBalanceWei, setContractBalanceWei] = useState<bigint>(0n);
+  const [balanceLoading, setBalanceLoading] = useState<boolean>(MARKETPLACE_CONFIGURED);
+  const [balanceError, setBalanceError] = useState<string | null>(null);
   const refreshBalance = useCallback(async () => {
     if (!MARKETPLACE_ADDRESS) return;
+    setBalanceLoading(true);
     try {
       const rpc = getRpcClient({ client: thirdwebClient, chain: nebulaChain });
       const bal = await eth_getBalance(rpc, { address: MARKETPLACE_ADDRESS });
       setContractBalanceWei(bal);
-    } catch { /* swallow */ }
+      setBalanceError(null);
+    } catch (e: any) {
+      setBalanceError(String(e?.shortMessage ?? e?.message ?? e));
+    } finally {
+      setBalanceLoading(false);
+    }
   }, []);
   useEffect(() => {
     refreshBalance();
@@ -280,6 +287,8 @@ export function useTreasuryStats() {
     treasury: (treasury as string | undefined) ?? null,
     feeBps: feeBps != null ? Number(feeBps as bigint) : null,
     contractBalanceWei,
+    loading: balanceLoading || treasury == null || feeBps == null,
+    error: balanceError,
     refresh,
   };
 }
@@ -342,13 +351,78 @@ export function useLockExpiry(tokenId: bigint | null) {
   return { lockedUntil, isLocked, secondsLeft };
 }
 
-/** Lifetime volume (sum of CardSold.priceWei). Best-effort; falls back to 0n on RPC errors. */
+/**
+ * useLocksMap — batch-reads lockedUntil for many tokenIds.
+ * Returns Record<tokenIdString, secondsLeft>. Polls every 30s.
+ * Used by parent components to sort lists by lock state without lifting per-row hooks.
+ */
+export function useLocksMap(tokenIds: (bigint | null)[]) {
+  const [map, setMap] = useState<Record<string, number>>({});
+
+  // Stable join so effect doesn't re-run on identical input
+  const key = tokenIds.map((t) => (t === null ? '∅' : t.toString())).join(',');
+
+  useEffect(() => {
+    if (!marketplaceContract) return;
+    let cancelled = false;
+    const fetchAll = async () => {
+      const entries = await Promise.all(
+        tokenIds.map(async (t) => {
+          if (t === null) return ['∅', 0] as const;
+          try {
+            const v = (await readContract({
+              contract: marketplaceContract!,
+              method: 'lockedUntil',
+              params: [NEBULA_COLLECTION_ADDRESS, t],
+            })) as bigint;
+            const now = Math.floor(Date.now() / 1000);
+            return [t.toString(), Math.max(0, Number(v) - now)] as const;
+          } catch {
+            return [t.toString(), 0] as const;
+          }
+        }),
+      );
+      if (cancelled) return;
+      const next: Record<string, number> = {};
+      for (const [k, v] of entries) next[k] = v;
+      setMap(next);
+    };
+    fetchAll();
+    const id = setInterval(fetchAll, 30_000);
+    return () => { cancelled = true; clearInterval(id); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
+
+  // Tick countdown locally each second between fetches
+  useEffect(() => {
+    const id = setInterval(() => {
+      setMap((m) => {
+        const out: Record<string, number> = {};
+        for (const k of Object.keys(m)) out[k] = Math.max(0, m[k] - 1);
+        return out;
+      });
+    }, 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  return map;
+}
+
+/**
+ * Lifetime volume (sum of CardSold.priceWei). Reads localStorage cache first for
+ * instant paint, then scans the chain. Surfaces an error string instead of throwing.
+ */
 export function useLifetimeVolume() {
-  const [volumeWei, setVolumeWei] = useState<bigint>(0n);
-  const [loading, setLoading] = useState(false);
+  const cached =
+    MARKETPLACE_ADDRESS ? getVolumeCache(NEBULA_CHAIN_ID, MARKETPLACE_ADDRESS) : null;
+  const [volumeWei, setVolumeWei] = useState<bigint>(() => {
+    try { return cached ? BigInt(cached.volumeWei) : 0n; } catch { return 0n; }
+  });
+  const [loading, setLoading] = useState<boolean>(!cached);
+  const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
-    if (!marketplaceContract) return;
+    if (!marketplaceContract || !MARKETPLACE_ADDRESS) return;
     setLoading(true);
     try {
       const ev = prepareEvent({
@@ -359,13 +433,24 @@ export function useLifetimeVolume() {
         events: [ev],
       });
       let total = 0n;
+      let maxBlock = 0;
       for (const e of events as any[]) {
         const p = e?.args?.priceWei;
         if (typeof p === 'bigint') total += p;
+        const bn = Number(e?.blockNumber ?? 0);
+        if (bn > maxBlock) maxBlock = bn;
       }
       setVolumeWei(total);
-    } catch { /* ignore */ }
-    finally { setLoading(false); }
+      setError(null);
+      setVolumeCache(NEBULA_CHAIN_ID, MARKETPLACE_ADDRESS, {
+        volumeWei: total.toString(),
+        lastBlock: maxBlock,
+      });
+    } catch (e: any) {
+      setError(String(e?.shortMessage ?? e?.message ?? e));
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -374,5 +459,5 @@ export function useLifetimeVolume() {
     return () => clearInterval(id);
   }, [refresh]);
 
-  return { volumeWei, loading, refresh };
+  return { volumeWei, loading, error, refresh };
 }
