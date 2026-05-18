@@ -172,7 +172,6 @@ const Marketplace = () => {
 
   /* ── Shared classes ── */
   const panel = "rounded-xl border border-white/10 bg-black/40 backdrop-blur-xl";
-  const panel = "rounded-xl border border-white/10 bg-black/40 backdrop-blur-xl";
   const btnPrimary = "min-h-[44px] px-5 rounded-lg border bg-black/40 glow-yellow glow-border-yellow text-sm tracking-[0.2em] font-bold hover:bg-yellow-400/10 hover:scale-[1.03] transition-all disabled:opacity-40";
 
   return (
