@@ -50,10 +50,17 @@ export default function WalletMenu() {
     }
   };
 
-  const doDisconnect = () => {
-    if (wallet) disconnect(wallet);
-    toast.success('Wallet disconnected');
+  const doDisconnect = async () => {
     setConfirmOpen(false);
+    if (!wallet) return;
+    try {
+      await disconnect(wallet);
+      toast.success('Wallet disconnected');
+    } catch (err) {
+      toast.error('Disconnect failed', {
+        description: err instanceof Error ? err.message : 'Please try again.',
+      });
+    }
   };
 
   return (
@@ -61,12 +68,12 @@ export default function WalletMenu() {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
-            className="inline-flex items-center gap-1.5 rounded-md border border-cyan-500/25 bg-black/50 px-2.5 py-1 font-mono text-[11px] tracking-widest text-cyan-200 hover:border-cyan-400/60 hover:text-cyan-100 transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-md border border-cyan-500/25 bg-black/50 px-2.5 py-1 font-mono text-[11px] tracking-widest text-cyan-200 hover:border-cyan-400/60 hover:text-cyan-100 transition-colors max-w-[180px]"
             title={addr}
           >
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(0,255,170,0.9)]" />
-            <span>{label}</span>
-            <ChevronDown className="h-3 w-3 opacity-60" />
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(0,255,170,0.9)] shrink-0" />
+            <span className="truncate">{label}</span>
+            <ChevronDown className="h-3 w-3 opacity-60 shrink-0" />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="bg-black/95 border-cyan-500/25 font-mono text-xs">
