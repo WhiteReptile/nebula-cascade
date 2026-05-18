@@ -26,7 +26,9 @@ export default function AddressLink({ address, kind = 'address', truncate = true
   const resolved = useResolvedName(kind === 'address' && !noResolve ? address : null);
   const [copied, setCopied] = useState(false);
   if (!address) return <span className={`glow-white font-mono ${className}`}>—</span>;
-  const display = truncate ? shorten(address) : address;
+  const [copied, setCopied] = useState(false);
+  if (!address) return <span className={`glow-white font-mono ${className}`}>—</span>;
+  const display = resolved ?? (truncate ? shorten(address) : address);
   const href = `https://basescan.org/${kind}/${address}`;
 
   const copy = async (e: React.MouseEvent) => {
@@ -43,7 +45,7 @@ export default function AddressLink({ address, kind = 'address', truncate = true
   };
 
   return (
-    <span className={`inline-flex items-center gap-1.5 font-mono ${className}`}>
+    <span className={`inline-flex items-center gap-1.5 font-mono ${className}`} title={resolved ? address : undefined}>
       <span className="glow-white">{display}</span>
       <button
         onClick={copy}
