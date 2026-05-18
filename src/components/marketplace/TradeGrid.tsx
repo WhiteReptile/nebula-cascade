@@ -52,7 +52,7 @@ function FilterableListing({
 
 const TradeGrid = ({ onBuy, onCancel }: Props) => {
   const account = useActiveAccount();
-  const { listings, loading, error } = useActiveListings();
+  const { listings, loading, error, refresh } = useActiveListings();
   const [filter, setFilter] = useState<DivFilter>('all');
   const [sort, setSort] = useState<Sort>('newest');
 
