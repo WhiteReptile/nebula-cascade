@@ -536,6 +536,14 @@ const Marketplace = () => {
                     <span className="glow-blue tracking-widest">Anti-Flip Lock</span>
                     <span className="glow-white font-bold">24h on-chain</span>
                   </div>
+                  <div className="flex justify-between items-center gap-3">
+                    <span className="glow-blue tracking-widest">Marketplace</span>
+                    {MARKETPLACE_CONFIGURED ? (
+                      <AddressLink address={MARKETPLACE_ADDRESS} className="text-xs" />
+                    ) : (
+                      <span className="text-red-300 font-bold text-xs tracking-widest">NOT DEPLOYED</span>
+                    )}
+                  </div>
                 </div>
               </div>
 
