@@ -1,9 +1,10 @@
 /**
  * AddressLink — monospace address with copy-to-clipboard + BaseScan link.
- * Pure UI, no chain calls.
+ * Resolves ENS / Base names on the fly for `kind='address'`.
  */
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { useResolvedName } from '@/hooks/useResolvedName';
 
 interface Props {
   address: string | null | undefined;
@@ -11,6 +12,8 @@ interface Props {
   kind?: 'address' | 'tx';
   /** Truncate middle of the string (default true for short rendering). */
   truncate?: boolean;
+  /** Disable ENS / Base name resolution (default false). */
+  noResolve?: boolean;
   className?: string;
 }
 
@@ -19,7 +22,8 @@ function shorten(s: string): string {
   return `${s.slice(0, 8)}…${s.slice(-6)}`;
 }
 
-export default function AddressLink({ address, kind = 'address', truncate = true, className = '' }: Props) {
+export default function AddressLink({ address, kind = 'address', truncate = true, noResolve = false, className = '' }: Props) {
+  const resolved = useResolvedName(kind === 'address' && !noResolve ? address : null);
   const [copied, setCopied] = useState(false);
   if (!address) return <span className={`glow-white font-mono ${className}`}>—</span>;
   const display = truncate ? shorten(address) : address;
