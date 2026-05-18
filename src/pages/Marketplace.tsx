@@ -11,6 +11,9 @@ import NFTGrid from '@/components/marketplace/NFTGrid';
 import BuyCardModal from '@/components/marketplace/BuyCardModal';
 import ListCardModal from '@/components/marketplace/ListCardModal';
 import TradeGrid from '@/components/marketplace/TradeGrid';
+import MyCardTile from '@/components/marketplace/MyCardTile';
+import OwnerControlsPanel from '@/components/marketplace/OwnerControlsPanel';
+import TreasuryWidget from '@/components/marketplace/TreasuryWidget';
 import GalaxyBackground from '@/components/shared/GalaxyBackground';
 import { useToast } from '@/hooks/use-toast';
 import { useWalletSync } from '@/hooks/useWalletSync';
@@ -234,6 +237,8 @@ const Marketplace = () => {
                 <h2 className="text-3xl uppercase tracking-[0.3em] menu-neon-title-red font-bold">Nebula Cascade: Collection Cards</h2>
               </div>
 
+              <OwnerControlsPanel />
+
               {/* Mint / Trade tab bar */}
               <div
                 className="inline-flex rounded-lg border bg-black/55 p-1 backdrop-blur-md"
@@ -326,75 +331,17 @@ const Marketplace = () => {
                         const energy = cardEnergies[card.id];
                         const isActive = card.id === activeCardId;
                         const onChainListing = findListingForToken(card.tokenId);
-                        const isListed = !!onChainListing;
                         return (
-                          <div
+                          <MyCardTile
                             key={card.id}
-                            className={`${panel} p-5 transition-all cursor-pointer group hover:scale-[1.02] ${
-                              isActive ? 'glow-border-yellow' : 'hover:glow-border-yellow'
-                            }`}
-                            onClick={() => !isListed && handleSetActive(card.id)}
-                          >
-                            <div className="flex items-center gap-4">
-                              <div
-                                className={`w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold flex-shrink-0 transition-all glow-white ${
-                                  isActive ? 'animate-pulse' : 'group-hover:scale-110'
-                                }`}
-                                style={{
-                                  background: `radial-gradient(circle at 35% 35%, ${card.colorHex}ee, ${card.colorHex}50)`,
-                                  boxShadow: isActive
-                                    ? `0 0 30px ${card.colorHex}80, 0 0 60px ${card.colorHex}40`
-                                    : `0 0 18px ${card.colorHex}50`,
-                                }}
-                              >
-                                {card.tokenId}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="text-base font-bold truncate glow-blue">{card.name}</div>
-                                <div className="text-xs tracking-widest mt-1 flex items-center gap-2">
-                                  <span className="glow-white">{DIVISION_LABELS[card.division]}</span>
-                                  {isActive && <span className="glow-yellow">• ACTIVE</span>}
-                                  {isListed && <span className="glow-yellow">• LISTED ON-CHAIN</span>}
-                                </div>
-                              </div>
-                              {energy && (
-                                <div className="text-right flex-shrink-0">
-                                  <div className={`text-base font-bold ${energy.energy > 0 ? 'glow-yellow' : 'glow-white'}`}>
-                                    ⚡ {energy.energy}/{energy.maxEnergy}
-                                  </div>
-                                  <div className="flex gap-1 mt-2 justify-end">
-                                    {Array.from({ length: energy.maxEnergy }).map((_, i) => (
-                                      <div
-                                        key={i}
-                                        className="w-2.5 h-2.5 rounded-full"
-                                        style={{
-                                          background: i < energy.energy ? '#ffdd00' : '#ffffff15',
-                                          boxShadow: i < energy.energy ? '0 0 6px #ffdd00' : 'none',
-                                        }}
-                                      />
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                            <div className="mt-4 pt-4 border-t border-blue-500/20 flex justify-end">
-                              {isListed ? (
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); if (onChainListing) handleCancelOnChain(onChainListing); }}
-                                  className="min-h-[40px] px-4 py-2 rounded-lg border border-blue-400/50 bg-blue-400/10 text-blue-300 text-xs tracking-[0.2em] font-bold hover:scale-105 hover:bg-blue-400/20 transition-all"
-                                >
-                                  CANCEL LISTING
-                                </button>
-                              ) : (
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); setSellToken({ id: BigInt(card.tokenId), name: card.name }); }}
-                                  className="min-h-[40px] px-4 py-2 rounded-lg border bg-black/40 glow-yellow glow-border-yellow text-xs tracking-[0.2em] font-bold hover:scale-105 hover:bg-yellow-400/10 transition-all"
-                                >
-                                  SELL ON-CHAIN
-                                </button>
-                              )}
-                            </div>
-                          </div>
+                            card={card}
+                            energy={energy}
+                            isActive={isActive}
+                            onChainListing={onChainListing}
+                            onSelectActive={() => handleSetActive(card.id)}
+                            onSell={() => setSellToken({ id: BigInt(card.tokenId), name: card.name })}
+                            onCancel={() => { if (onChainListing) handleCancelOnChain(onChainListing); }}
+                          />
                         );
                       })}
                     </div>
@@ -589,6 +536,9 @@ const Marketplace = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Owner-only treasury widget */}
+              <TreasuryWidget />
             </div>
           )}
         </main>
