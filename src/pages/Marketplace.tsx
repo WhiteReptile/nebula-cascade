@@ -536,6 +536,9 @@ const Marketplace = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Owner-only treasury widget */}
+              <TreasuryWidget />
             </div>
           )}
         </main>
