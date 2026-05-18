@@ -237,6 +237,8 @@ const Marketplace = () => {
                 <h2 className="text-3xl uppercase tracking-[0.3em] menu-neon-title-red font-bold">Nebula Cascade: Collection Cards</h2>
               </div>
 
+              <OwnerControlsPanel />
+
               {/* Mint / Trade tab bar */}
               <div
                 className="inline-flex rounded-lg border bg-black/55 p-1 backdrop-blur-md"
