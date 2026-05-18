@@ -503,9 +503,9 @@ const Marketplace = () => {
                   {activeAccount ? 'WALLET CONNECTED' : 'CONNECT YOUR WALLET'}
                 </h3>
                 {activeAccount ? (
-                  <p className="text-xs glow-white tracking-widest font-mono break-all">
-                    {activeAccount.address}
-                  </p>
+                  <div className="text-xs tracking-widest font-mono break-all">
+                    <AddressLink address={activeAccount.address} truncate={false} />
+                  </div>
                 ) : (
                   <p className="text-sm glow-white tracking-widest leading-relaxed">
                     Connect via Thirdweb to mint, list, and trade Nebula cards on Base.
