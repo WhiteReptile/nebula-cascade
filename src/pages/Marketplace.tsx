@@ -37,10 +37,13 @@ const Marketplace = () => {
   const [cardEnergies, setCardEnergies] = useState<Record<string, CardEnergy>>({});
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
 
-  /* ── Marketplace state ── */
-  const [listings, setListings] = useState<EnrichedListing[]>([]);
-  const [loading, setLoading] = useState(true);
+  /* ── Marketplace listings (realtime) ── */
+  const { listings, loading, refresh: refreshListings } = useMarketplaceListings();
   const [divFilter, setDivFilter] = useState<Division | 'all'>('all');
+
+  /* ── Buy confirmation ── */
+  const [pendingBuy, setPendingBuy] = useState<EnrichedListing | null>(null);
+  const [buySubmitting, setBuySubmitting] = useState(false);
 
   /* ── Listing form ── */
   const [listingCardId, setListingCardId] = useState<string | null>(null);
