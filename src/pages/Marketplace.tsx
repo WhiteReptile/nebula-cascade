@@ -518,6 +518,11 @@ const Marketplace = () => {
                 <h3 className="text-xl font-bold tracking-[0.25em] glow-yellow">
                   {activeAccount ? 'WALLET CONNECTED' : 'CONNECT YOUR WALLET'}
                 </h3>
+                {activeAccount && (
+                  <div className="flex justify-center">
+                    <NetworkPill />
+                  </div>
+                )}
                 {activeAccount ? (
                   <div className="text-xs tracking-widest font-mono break-all">
                     <AddressLink address={activeAccount.address} truncate={false} />
