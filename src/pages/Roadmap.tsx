@@ -133,18 +133,27 @@ const Roadmap = () => {
   useEffect(() => {
     const html = document.documentElement;
     const body = document.body;
+    const root = document.getElementById('root');
     const hadHtml = html.classList.contains('game-shell-active');
     const hadBody = body.classList.contains('game-shell-active');
     html.classList.remove('game-shell-active');
     body.classList.remove('game-shell-active');
     const prevHtmlOverflow = html.style.overflow;
     const prevBodyOverflow = body.style.overflow;
+    const prevRootOverflow = root?.style.overflow ?? '';
     const prevHtmlHeight = html.style.height;
     const prevBodyHeight = body.style.height;
+    const prevRootHeight = root?.style.height ?? '';
+    const prevRootMinHeight = root?.style.minHeight ?? '';
     html.style.overflow = 'auto';
     body.style.overflow = 'auto';
     html.style.height = 'auto';
     body.style.height = 'auto';
+    if (root) {
+      root.style.overflow = 'visible';
+      root.style.height = 'auto';
+      root.style.minHeight = '100vh';
+    }
     html.style.scrollBehavior = 'smooth';
     return () => {
       if (hadHtml) html.classList.add('game-shell-active');
@@ -153,6 +162,11 @@ const Roadmap = () => {
       body.style.overflow = prevBodyOverflow;
       html.style.height = prevHtmlHeight;
       body.style.height = prevBodyHeight;
+      if (root) {
+        root.style.overflow = prevRootOverflow;
+        root.style.height = prevRootHeight;
+        root.style.minHeight = prevRootMinHeight;
+      }
       html.style.scrollBehavior = '';
     };
   }, []);
