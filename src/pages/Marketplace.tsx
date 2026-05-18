@@ -27,6 +27,8 @@ import {
 } from '@/hooks/useMarketplaceContract';
 import { useActiveAccount } from 'thirdweb/react';
 import NetworkPill from '@/components/wallet/NetworkPill';
+import WalletMenu from '@/components/wallet/WalletMenu';
+import SEO from '@/components/SEO';
 
 /* ── Types ── */
 type Section = 'marketplace' | 'my-cards' | 'profile' | 'wallet';
@@ -524,8 +526,11 @@ const Marketplace = () => {
                   </div>
                 )}
                 {activeAccount ? (
-                  <div className="text-xs tracking-widest font-mono break-all">
-                    <AddressLink address={activeAccount.address} truncate={false} />
+                  <div className="flex flex-col items-center gap-2">
+                    <WalletMenu />
+                    <div className="text-[10px] tracking-widest font-mono break-all opacity-70">
+                      <AddressLink address={activeAccount.address} truncate={false} noResolve />
+                    </div>
                   </div>
                 ) : (
                   <p className="text-sm glow-white tracking-widest leading-relaxed">
