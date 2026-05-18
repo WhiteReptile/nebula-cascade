@@ -86,9 +86,8 @@ const Marketplace = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  /* ── Load player + cards + listings ── */
+  /* ── Load player + cards (listings come from realtime hook) ── */
   const loadData = useCallback(async () => {
-    setLoading(true);
     if (user) {
       const { data: player } = await supabase
         .from('players')
@@ -110,19 +109,6 @@ const Marketplace = () => {
         setCardEnergies(energies);
       }
     }
-
-    const active = await getActiveListings();
-    const cardIds = active.map(l => l.cardId);
-    const { data: listingCards } = await supabase
-      .from('cards')
-      .select('id, name, division, color_hex')
-      .in('id', cardIds.length > 0 ? cardIds : ['00000000-0000-0000-0000-000000000000']);
-    const cardMap = new Map(listingCards?.map(c => [c.id, c]) ?? []);
-    setListings(active.map(l => {
-      const card = cardMap.get(l.cardId);
-      return { ...l, cardName: card?.name ?? 'Unknown', cardDivision: (card?.division as Division) ?? 'gem_v', cardColor: card?.color_hex ?? '#5599ff' };
-    }));
-    setLoading(false);
   }, [user]);
 
   useEffect(() => { loadData(); }, [loadData]);
@@ -133,15 +119,24 @@ const Marketplace = () => {
   }, [listingCardId]);
 
   /* ── Handlers ── */
-  const handleBuy = async (id: string) => {
-    if (!playerId) return;
-    const ok = await buyCard(id, playerId);
-    if (ok) { toast({ title: 'Card purchased!' }); loadData(); }
-    else toast({ title: 'Purchase failed', variant: 'destructive' });
+  const openBuyConfirm = (listing: EnrichedListing) => setPendingBuy(listing);
+  const confirmBuy = async () => {
+    if (!playerId || !pendingBuy) return;
+    setBuySubmitting(true);
+    const ok = await buyCard(pendingBuy.id, playerId);
+    setBuySubmitting(false);
+    if (ok) {
+      toast({ title: 'Card purchased!' });
+      setPendingBuy(null);
+      refreshListings();
+      loadData();
+    } else {
+      toast({ title: 'Purchase failed', variant: 'destructive' });
+    }
   };
   const handleCancel = async (id: string) => {
     const ok = await cancelListing(id);
-    if (ok) { toast({ title: 'Listing cancelled' }); setListings(prev => prev.filter(l => l.id !== id)); }
+    if (ok) { toast({ title: 'Listing cancelled' }); refreshListings(); }
   };
   const handleSetActive = async (cardId: string) => {
     if (!playerId) return;
