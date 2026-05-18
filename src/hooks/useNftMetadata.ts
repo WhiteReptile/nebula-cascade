@@ -11,7 +11,7 @@ export function useNftMetadata(tokenId: bigint | null) {
   const { data, isLoading } = useReadContract(getNFT, {
     contract: nebulaCollection,
     tokenId: enabled ? tokenId! : 0n,
-    queryOptions: { enabled, staleTime: 60_000 },
+    queryOptions: { enabled },
   });
   return { nft: data ?? null, loading: isLoading };
 }
