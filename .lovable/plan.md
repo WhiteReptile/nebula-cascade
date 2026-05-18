@@ -1,64 +1,91 @@
-# Final Bug-Check & Stability Pass
+## What's left & GitHub Codespaces prep
 
-Plan-mode report. No files were modified. Below is what I tested, what's clean, what's broken/inconsistent, and the minimal fix list I'd apply on approval.
+Frontend polish is done. To make the repo plug-and-play in **GitHub Codespaces** (and any cloned dev environment), a small set of additions is needed — no app code changes.
 
-## What I tested
+---
 
-- TypeScript compile (`tsc --noEmit`) across the project
-- `react-helmet-async` provider wiring (`src/main.tsx`) and per-page `SEO` usage
-- `index.html` head tags + Organization JSON-LD
-- Sitemap generator (`scripts/generate-sitemap.ts`) — ran it, inspected output
-- Routes in `src/App.tsx` vs sitemap entries
-- `WalletMenu` integration in `Marketplace.tsx` (mount, hooks, dropdown, AlertDialog)
-- `useResolvedName` against thirdweb v5 `resolveName` signature
-- `AddressLink` (copy / BaseScan / resolution toggle)
-- Mobile layout assumptions at 1047×672 and at 390px (reading `index.css`, route layouts)
-- Docs consistency: `EXPORT_READINESS_CHECKLIST.md`, `MARKETPLACE_ADMIN.md`
+### 1. Add `.devcontainer/devcontainer.json`
 
-## What's clean
+Boots Codespaces with Node 20, installs deps, forwards Vite's port, and opens the preview automatically.
 
-- `tsc --noEmit` passes with zero errors.
-- `HelmetProvider` correctly wraps `<App />` in `src/main.tsx`.
-- `WalletMenu` imports, hooks (`useActiveAccount`, `useActiveWallet`, `useDisconnect`), Radix dropdown, and AlertDialog are all consistent. Disconnect path is guarded by the confirm dialog and fires the sonner toast.
-- `useResolvedName` matches thirdweb's `ResolveNameOptions` shape (`client`, `address`, `resolverChain: ethereum`) and caches in-memory; failures fall back silently to short address.
-- Sitemap generator runs cleanly, writes 7 entries to `public/sitemap.xml`, matches the public routes in `App.tsx`.
-- Organization JSON-LD in `index.html` is valid.
-- 7 of 9 pages render an `<SEO>` block.
+```json
+{
+  "name": "Nebula Cascade",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:20",
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "forwardPorts": [5000],
+  "portsAttributes": { "5000": { "label": "Vite", "onAutoForward": "openPreview" } },
+  "postCreateCommand": "npm install",
+  "postStartCommand": "echo 'Run: npm run dev'",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss"
+      ]
+    }
+  }
+}
+```
 
-## What's broken / inconsistent
+### 2. Add `.env.example`
 
-1. **`NotFound.tsx` has no `<SEO>` and no `noindex`.** 404s will be indexed with whatever sitewide title the previous route left in `document.head`. Minor SEO bug.
-2. **`AdminRewards.tsx` has no `<SEO>` and is not gated from indexing.** It's an admin route; it should be `noindex, nofollow` and excluded from the sitemap (it already is excluded — good — but the page itself doesn't emit a robots meta).
-3. **`sitemap.xml` `<loc>` values are relative (`/marketplace`, etc.).** The sitemap spec requires absolute URLs. Crawlers will reject the file until `BASE_URL` is set. This is expected (TODO in the script) but the `EXPORT_READINESS_CHECKLIST.md` doesn't call it out as a blocker before publish.
-4. **`index.html` `<meta property="og:url">` is missing** (only `og:title`, `og:description`, `og:type`, `og:site_name` are present). Per-route Helmet sets it, but JS-disabled social crawlers (LinkedIn, Slack, Facebook) won't see it.
-5. **`docs/EXPORT_READINESS_CHECKLIST.md` env block** lists `VITE_MARKETPLACE_ADDRESS` but the surrounding sentence still reads "All three are publishable values" — should be "All four".
-6. **`useResolvedName` resolves ENS off the `ethereum` chain only.** Base-native names (`*.base.eth` via Basenames) actually resolve through ENS mainnet too, so this is correct in practice — flagging here so it isn't "fixed" by mistake later.
-7. **Mobile (≤390px) — `Marketplace.tsx` header row** mounts `<NetworkPill>` + `<WalletMenu>` + tab strip on the same flex line. On a 360px viewport this can overflow because `WalletMenu`'s trigger button has no `max-width` and the resolved ENS name (e.g. `somethinglong.base.eth`) won't truncate. Cosmetic, not a crash.
-8. **`WalletMenu`** calls `useDisconnect()` and then `disconnect(wallet)` without awaiting. Works, but the toast fires before the wallet actually disconnects; if the wallet rejects (rare), the toast is misleading.
+Currently referenced in `docs/SETUP.md` but not present. Codespaces users need a copy-paste template:
 
-No crashes, no broken imports, no runtime errors observed.
+```
+VITE_SUPABASE_URL=
+VITE_SUPABASE_PUBLISHABLE_KEY=
+VITE_SUPABASE_PROJECT_ID=
+VITE_MARKETPLACE_CONTRACT=
+```
 
-## Proposed fixes (small, contained)
+Note: code reads `VITE_MARKETPLACE_CONTRACT` (web3Config.ts), but the checklist says `VITE_MARKETPLACE_ADDRESS` — fix the docs to match the code.
 
-1. Add `<SEO ... />` with `noindex` support to `NotFound.tsx` and `AdminRewards.tsx`. Extend `SEO.tsx` with an optional `noindex?: boolean` prop that emits `<meta name="robots" content="noindex, nofollow" />`.
-2. Add `<meta property="og:url" content="/" />` to `index.html` to round out the static fallback head.
-3. In `EXPORT_READINESS_CHECKLIST.md`:
-   - Fix "All three" → "All four".
-   - Add a one-line warning: "Set `BASE_URL` in `scripts/generate-sitemap.ts` before publishing — relative `<loc>` values are invalid per sitemap spec."
-4. In `WalletMenu.tsx`: add `max-w-[140px] truncate` to the label `<span>` so long ENS names don't blow out the header on mobile.
-5. In `WalletMenu.tsx`: move the success toast into a `.then()` / `try` after `disconnect(wallet)` resolves so the user only sees confirmation on actual disconnect.
+### 3. Fix Vite host binding for Codespaces
+
+`vite.config.ts` already uses `host: "0.0.0.0"` and port `5000` ✅. Add `cors: true` and rely on `allowedHosts: true` (already set) so the forwarded `*.app.github.dev` URL loads without warnings. No code change strictly required — works as-is.
+
+### 4. `.gitignore` audit
+
+Verify it ignores: `node_modules`, `dist`, `.env`, `.env.local`, `public/sitemap.xml` (auto-generated by predev/prebuild), `.lovable/`, `*.log`.
+
+### 5. README quick-start block
+
+Append a "Run in GitHub Codespaces" section: one-click badge + manual steps (`cp .env.example .env` → fill three Supabase values → `npm run dev`).
+
+### 6. Doc consistency fix
+
+In `docs/EXPORT_READINESS_CHECKLIST.md` and `docs/MARKETPLACE_ADMIN.md`, rename `VITE_MARKETPLACE_ADDRESS` → `VITE_MARKETPLACE_CONTRACT` to match `src/config/web3Config.ts`.
+
+### 7. Sitemap `BASE_URL` reminder
+
+Already documented. No action until a custom domain is live.
+
+---
+
+## Still on the "later" list (unchanged from previous pass)
+
+- Social-crawler previews (need SSR or pre-render) — out of scope until hosting decided
+- `BASE_URL` swap in `scripts/generate-sitemap.ts` after custom domain
+- 320px viewport pass on a real device
+- Backend items you own: OpenZeppelin marketplace contracts, custom-domain migration, Supanova Google OAuth redirect, wallet architecture cleanup, backend ownership logic
 
 ## Out of scope (per your instructions)
 
-- No new features, no redesign.
-- No changes to gameplay, contracts, auth, routing foundations, or backend.
-- No changes to ENS resolver chain (correct as-is).
-- No SSR / pre-render work for social crawlers — that needs a hosting change.
+No gameplay, contract, auth, or routing changes. Frontend + repo plumbing only.
 
-## What may still need attention later (not fixing now)
+---
 
-- Social-preview crawlers won't see per-route Helmet tags — accept until SSR or a published custom domain.
-- `BASE_URL` in the sitemap will need updating the moment a custom domain is live.
-- `NetworkPill` + `WalletMenu` row could use a dedicated mobile reflow if a real device review reveals overflow on 320px.
+## Files I'd add/edit on approval
 
-Approve and I'll apply fixes 1–5 in a single pass.
+- **Create** `.devcontainer/devcontainer.json`
+- **Create** `.env.example`
+- **Edit** `.gitignore` (only if anything from §4 is missing)
+- **Edit** `README.md` (append Codespaces section)
+- **Edit** `docs/EXPORT_READINESS_CHECKLIST.md` (env-var name fix)
+- **Edit** `docs/MARKETPLACE_ADMIN.md` (env-var name fix, if referenced)
+
+Approve and I'll apply all of the above in one pass.
