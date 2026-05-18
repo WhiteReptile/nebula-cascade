@@ -33,7 +33,17 @@ Create `.env` in the new environment with:
 VITE_SUPABASE_URL=https://<project-ref>.supabase.co
 VITE_SUPABASE_PUBLISHABLE_KEY=<anon key>
 VITE_SUPABASE_PROJECT_ID=<project-ref>
+# Marketplace contract (Base mainnet). Without it, the Marketplace UI
+# flags "NOT DEPLOYED" and writes are disabled.
+VITE_MARKETPLACE_ADDRESS=0x...
 ```
+
+### Sitemap generation
+
+`predev` and `prebuild` npm scripts run `scripts/generate-sitemap.ts`,
+which writes `public/sitemap.xml`. When you assign a custom domain,
+edit `BASE_URL` in that script. Owner controls + administration are
+documented in `docs/MARKETPLACE_ADMIN.md`.
 
 All three are **publishable** values. Never commit a service-role key.
 
