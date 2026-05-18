@@ -642,13 +642,12 @@ const Marketplace = () => {
         conflictingAddress={mismatchAddr}
       />
 
-      {/* Buy confirmation modal */}
+      {/* Buy confirmation modal (on-chain) */}
       <BuyCardModal
         open={!!pendingBuy}
         onOpenChange={(v) => { if (!v) setPendingBuy(null); }}
         listing={pendingBuy}
-        submitting={buySubmitting}
-        onConfirm={confirmBuy}
+        onBought={() => { setPendingBuy(null); refreshListings(); }}
       />
     </div>
   );
