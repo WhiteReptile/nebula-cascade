@@ -221,3 +221,158 @@ export function useIsLocked(tokenId: bigint | null) {
   });
   return Boolean(data);
 }
+
+// ─────────────────────────────────────────────────────────────
+// Owner / admin hooks
+// ─────────────────────────────────────────────────────────────
+
+/** Returns marketplace owner address and whether the connected wallet is the owner. */
+export function useMarketplaceOwner() {
+  const account = useActiveAccount();
+  const enabled = !!marketplaceContract;
+  const { data: owner } = useReadContract({
+    contract: marketplaceContract ?? nebulaCollectionForApproval,
+    method: 'owner',
+    params: [],
+    queryOptions: { enabled, refetchInterval: 60_000 },
+  });
+  const ownerAddr = (owner as string | undefined) ?? null;
+  const isOwner = !!(ownerAddr && account && ownerAddr.toLowerCase() === account.address.toLowerCase());
+  return { owner: ownerAddr, isOwner };
+}
+
+/** Treasury address, fee bps, and live contract ETH balance. */
+export function useTreasuryStats() {
+  const enabled = !!marketplaceContract;
+  const { data: treasury, refetch: refetchT } = useReadContract({
+    contract: marketplaceContract ?? nebulaCollectionForApproval,
+    method: 'treasury',
+    params: [],
+    queryOptions: { enabled, refetchInterval: 30_000 },
+  });
+  const { data: feeBps, refetch: refetchF } = useReadContract({
+    contract: marketplaceContract ?? nebulaCollectionForApproval,
+    method: 'feeBps',
+    params: [],
+    queryOptions: { enabled, refetchInterval: 30_000 },
+  });
+
+  const [contractBalanceWei, setContractBalanceWei] = useState<bigint>(0n);
+  const refreshBalance = useCallback(async () => {
+    if (!MARKETPLACE_ADDRESS) return;
+    try {
+      const rpc = getRpcClient({ client: thirdwebClient, chain: nebulaChain });
+      const bal = await eth_getBalance(rpc, { address: MARKETPLACE_ADDRESS });
+      setContractBalanceWei(bal);
+    } catch { /* swallow */ }
+  }, []);
+  useEffect(() => {
+    refreshBalance();
+    const id = setInterval(refreshBalance, 30_000);
+    return () => clearInterval(id);
+  }, [refreshBalance]);
+
+  const refresh = useCallback(() => {
+    refetchT(); refetchF(); refreshBalance();
+  }, [refetchT, refetchF, refreshBalance]);
+
+  return {
+    treasury: (treasury as string | undefined) ?? null,
+    feeBps: feeBps != null ? Number(feeBps as bigint) : null,
+    contractBalanceWei,
+    refresh,
+  };
+}
+
+export function useSetTreasury(onSuccess?: () => void) {
+  const { send, isPending } = useTx('Update treasury', onSuccess);
+  const setTreasury = useCallback(
+    async (addr: string) => {
+      if (!marketplaceContract) throw new Error('Marketplace not configured');
+      const tx = prepareContractCall({
+        contract: marketplaceContract,
+        method: 'setTreasury',
+        params: [addr],
+      });
+      return send(tx);
+    },
+    [send],
+  );
+  return { setTreasury, isPending };
+}
+
+export function useSetFeeBps(onSuccess?: () => void) {
+  const { send, isPending } = useTx('Update fee', onSuccess);
+  const setFeeBps = useCallback(
+    async (bps: number) => {
+      if (!marketplaceContract) throw new Error('Marketplace not configured');
+      const tx = prepareContractCall({
+        contract: marketplaceContract,
+        method: 'setFeeBps',
+        params: [BigInt(bps)],
+      });
+      return send(tx);
+    },
+    [send],
+  );
+  return { setFeeBps, isPending };
+}
+
+/** Reads lockedUntil(collection, tokenId) and exposes a per-second countdown. */
+export function useLockExpiry(tokenId: bigint | null) {
+  const enabled = !!(marketplaceContract && tokenId !== null);
+  const { data } = useReadContract({
+    contract: marketplaceContract ?? nebulaCollectionForApproval,
+    method: 'lockedUntil',
+    params: enabled
+      ? [NEBULA_COLLECTION_ADDRESS, tokenId!]
+      : ['0x0000000000000000000000000000000000000000', 0n],
+    queryOptions: { enabled, refetchInterval: 60_000 },
+  });
+  const lockedUntil = (data as bigint | undefined) ?? 0n;
+
+  const [now, setNow] = useState(() => Math.floor(Date.now() / 1000));
+  useEffect(() => {
+    const id = setInterval(() => setNow(Math.floor(Date.now() / 1000)), 1000);
+    return () => clearInterval(id);
+  }, []);
+  const expiry = Number(lockedUntil);
+  const secondsLeft = Math.max(0, expiry - now);
+  const isLocked = secondsLeft > 0;
+  return { lockedUntil, isLocked, secondsLeft };
+}
+
+/** Lifetime volume (sum of CardSold.priceWei). Best-effort; falls back to 0n on RPC errors. */
+export function useLifetimeVolume() {
+  const [volumeWei, setVolumeWei] = useState<bigint>(0n);
+  const [loading, setLoading] = useState(false);
+
+  const refresh = useCallback(async () => {
+    if (!marketplaceContract) return;
+    setLoading(true);
+    try {
+      const ev = prepareEvent({
+        signature: 'event CardSold(uint256 indexed listingId, address indexed seller, address indexed buyer, address nftAddress, uint256 tokenId, uint256 priceWei, uint256 feePaid)',
+      });
+      const events = await getContractEvents({
+        contract: marketplaceContract,
+        events: [ev],
+      });
+      let total = 0n;
+      for (const e of events as any[]) {
+        const p = e?.args?.priceWei;
+        if (typeof p === 'bigint') total += p;
+      }
+      setVolumeWei(total);
+    } catch { /* ignore */ }
+    finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => {
+    refresh();
+    const id = setInterval(refresh, 60_000);
+    return () => clearInterval(id);
+  }, [refresh]);
+
+  return { volumeWei, loading, refresh };
+}
