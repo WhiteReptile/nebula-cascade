@@ -351,13 +351,21 @@ export function useLockExpiry(tokenId: bigint | null) {
   return { lockedUntil, isLocked, secondsLeft };
 }
 
-/** Lifetime volume (sum of CardSold.priceWei). Best-effort; falls back to 0n on RPC errors. */
+/**
+ * Lifetime volume (sum of CardSold.priceWei). Reads localStorage cache first for
+ * instant paint, then scans the chain. Surfaces an error string instead of throwing.
+ */
 export function useLifetimeVolume() {
-  const [volumeWei, setVolumeWei] = useState<bigint>(0n);
-  const [loading, setLoading] = useState(false);
+  const cached =
+    MARKETPLACE_ADDRESS ? getVolumeCache(NEBULA_CHAIN_ID, MARKETPLACE_ADDRESS) : null;
+  const [volumeWei, setVolumeWei] = useState<bigint>(() => {
+    try { return cached ? BigInt(cached.volumeWei) : 0n; } catch { return 0n; }
+  });
+  const [loading, setLoading] = useState<boolean>(!cached);
+  const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
-    if (!marketplaceContract) return;
+    if (!marketplaceContract || !MARKETPLACE_ADDRESS) return;
     setLoading(true);
     try {
       const ev = prepareEvent({
@@ -368,13 +376,24 @@ export function useLifetimeVolume() {
         events: [ev],
       });
       let total = 0n;
+      let maxBlock = 0;
       for (const e of events as any[]) {
         const p = e?.args?.priceWei;
         if (typeof p === 'bigint') total += p;
+        const bn = Number(e?.blockNumber ?? 0);
+        if (bn > maxBlock) maxBlock = bn;
       }
       setVolumeWei(total);
-    } catch { /* ignore */ }
-    finally { setLoading(false); }
+      setError(null);
+      setVolumeCache(NEBULA_CHAIN_ID, MARKETPLACE_ADDRESS, {
+        volumeWei: total.toString(),
+        lastBlock: maxBlock,
+      });
+    } catch (e: any) {
+      setError(String(e?.shortMessage ?? e?.message ?? e));
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -383,5 +402,5 @@ export function useLifetimeVolume() {
     return () => clearInterval(id);
   }, [refresh]);
 
-  return { volumeWei, loading, refresh };
+  return { volumeWei, loading, error, refresh };
 }
