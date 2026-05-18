@@ -15,7 +15,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { prepareContractCall, readContract, eth_getBalance, getRpcClient, getContractEvents, prepareEvent } from 'thirdweb';
 import { useActiveAccount, useSendTransaction, useReadContract } from 'thirdweb/react';
 import { thirdwebClient } from '@/lib/thirdweb/client';
-import { nebulaChain } from '@/lib/thirdweb/chains';
+import { nebulaChain, NEBULA_CHAIN_ID } from '@/lib/thirdweb/chains';
 import { toast } from 'sonner';
 import {
   marketplaceContract,
@@ -24,6 +24,8 @@ import {
   nebulaCollectionForApproval,
   NEBULA_COLLECTION_ADDRESS,
 } from '@/lib/marketplace/contract';
+import { trackTx } from '@/lib/tx/txToast';
+import { getVolumeCache, setVolumeCache } from '@/lib/marketplace/volumeCache';
 
 const REFRESH_MS = 15_000;
 const PAGE = 100n;
