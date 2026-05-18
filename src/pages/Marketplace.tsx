@@ -162,9 +162,9 @@ const Marketplace = () => {
   };
 
   /* ── Derived ── */
-  const filteredListings = divFilter === 'all' ? listings : listings.filter(l => l.cardDivision === divFilter);
   const priceCents = Math.round((parseFloat(listPrice) || 0) * 100);
   const feeAmount = priceCents * estimatedFee / 100;
+  const sellerReceives = priceCents - feeAmount;
   const sellerReceives = priceCents - feeAmount;
 
   const navItems: { key: Section; label: string }[] = [
