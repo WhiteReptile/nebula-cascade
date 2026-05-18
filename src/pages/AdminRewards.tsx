@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { DIVISION_LABELS, type Division, getCurrentPeriod } from '@/lib/divisionSystem';
 import { exportPayoutCSV, type PayoutData } from '@/lib/payoutIntegrations';
+import SEO from '@/components/SEO';
 
 const STATUS_STYLES: Record<string, string> = {
   open: 'bg-green-500/20 text-green-400',
