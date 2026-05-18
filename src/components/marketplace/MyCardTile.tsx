@@ -64,8 +64,17 @@ export default function MyCardTile({
             {isListed && <span className="glow-yellow">• LISTED ON-CHAIN</span>}
             {isLocked && !isListed && (
               <span
-                className="px-2 py-0.5 rounded border border-red-500/50 text-red-300 font-mono"
-                style={{ textShadow: '0 0 8px rgba(255,50,80,0.7)', boxShadow: '0 0 10px rgba(255,50,80,0.25)' }}
+                className={`px-2 py-0.5 rounded border font-mono ${
+                  secondsLeft < 60
+                    ? 'border-red-400 text-red-200 animate-pulse'
+                    : 'border-red-500/50 text-red-300'
+                }`}
+                style={{
+                  textShadow: '0 0 8px rgba(255,50,80,0.7)',
+                  boxShadow: secondsLeft < 60
+                    ? '0 0 18px rgba(255,50,80,0.55)'
+                    : '0 0 10px rgba(255,50,80,0.25)',
+                }}
                 title="24h anti-flip lock active"
               >
                 🔒 {fmtHMS(secondsLeft)}

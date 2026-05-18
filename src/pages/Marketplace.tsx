@@ -14,6 +14,8 @@ import TradeGrid from '@/components/marketplace/TradeGrid';
 import MyCardTile from '@/components/marketplace/MyCardTile';
 import OwnerControlsPanel from '@/components/marketplace/OwnerControlsPanel';
 import TreasuryWidget from '@/components/marketplace/TreasuryWidget';
+import AddressLink from '@/components/marketplace/AddressLink';
+import { MARKETPLACE_ADDRESS, MARKETPLACE_CONFIGURED } from '@/lib/marketplace/contract';
 import GalaxyBackground from '@/components/shared/GalaxyBackground';
 import { useToast } from '@/hooks/use-toast';
 import { useWalletSync } from '@/hooks/useWalletSync';
@@ -501,9 +503,9 @@ const Marketplace = () => {
                   {activeAccount ? 'WALLET CONNECTED' : 'CONNECT YOUR WALLET'}
                 </h3>
                 {activeAccount ? (
-                  <p className="text-xs glow-white tracking-widest font-mono break-all">
-                    {activeAccount.address}
-                  </p>
+                  <div className="text-xs tracking-widest font-mono break-all">
+                    <AddressLink address={activeAccount.address} truncate={false} />
+                  </div>
                 ) : (
                   <p className="text-sm glow-white tracking-widest leading-relaxed">
                     Connect via Thirdweb to mint, list, and trade Nebula cards on Base.
@@ -533,6 +535,14 @@ const Marketplace = () => {
                   <div className="flex justify-between">
                     <span className="glow-blue tracking-widest">Anti-Flip Lock</span>
                     <span className="glow-white font-bold">24h on-chain</span>
+                  </div>
+                  <div className="flex justify-between items-center gap-3">
+                    <span className="glow-blue tracking-widest">Marketplace</span>
+                    {MARKETPLACE_CONFIGURED ? (
+                      <AddressLink address={MARKETPLACE_ADDRESS} className="text-xs" />
+                    ) : (
+                      <span className="text-red-300 font-bold text-xs tracking-widest">NOT DEPLOYED</span>
+                    )}
                   </div>
                 </div>
               </div>

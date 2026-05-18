@@ -8,6 +8,8 @@ import {
   useLifetimeVolume,
 } from '@/hooks/useMarketplaceContract';
 import { useEthUsdPrice, ethToUsd } from '@/lib/priceFeed';
+import AddressLink from './AddressLink';
+import { MARKETPLACE_ADDRESS } from '@/lib/marketplace/contract';
 
 function weiToEth(w: bigint): number {
   // Safe enough for display (< 2^53 ETH never happens)
@@ -44,7 +46,11 @@ export default function TreasuryWidget() {
       <div className="text-xs space-y-3">
         <div>
           <div className="glow-blue tracking-widest uppercase text-[10px] mb-1">Treasury Address</div>
-          <div className="glow-white font-mono break-all">{treasury ?? '—'}</div>
+          <AddressLink address={treasury} truncate={false} className="text-[11px] break-all" />
+        </div>
+        <div>
+          <div className="glow-blue tracking-widest uppercase text-[10px] mb-1">Marketplace Contract</div>
+          <AddressLink address={MARKETPLACE_ADDRESS} truncate={false} className="text-[11px] break-all" />
         </div>
 
         <div className="flex justify-between">
