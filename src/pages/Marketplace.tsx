@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { getActiveListings, buyCard, cancelListing, listCard, calculateFee, type MarketplaceListing } from '@/lib/marketplaceSystem';
+import { buyCard, cancelListing, listCard, calculateFee } from '@/lib/marketplaceSystem';
 import { getCardsForPlayer, setActiveCard, type CardMetadata } from '@/lib/cardSystem';
 import { getCardEnergy, type CardEnergy } from '@/lib/energySystem';
 import { DIVISION_LABELS, type Division } from '@/lib/divisionSystem';
@@ -9,12 +9,13 @@ import { Input } from '@/components/ui/input';
 import WalletConnect from '@/components/wallet/WalletConnect';
 import WalletMismatchModal from '@/components/wallet/WalletMismatchModal';
 import NFTGrid from '@/components/marketplace/NFTGrid';
+import BuyCardModal from '@/components/marketplace/BuyCardModal';
 import GalaxyBackground from '@/components/shared/GalaxyBackground';
 import { useToast } from '@/hooks/use-toast';
 import { useWalletSync } from '@/hooks/useWalletSync';
+import { useMarketplaceListings, type EnrichedListing } from '@/hooks/useMarketplaceListings';
 
 /* ── Types ── */
-type EnrichedListing = MarketplaceListing & { cardName?: string; cardDivision?: Division; cardColor?: string };
 type Section = 'marketplace' | 'my-cards' | 'profile' | 'wallet';
 
 const DIVISIONS: (Division | 'all')[] = ['all', 'gem_v', 'gem_iv', 'gem_iii', 'gem_ii', 'gem_i'];
@@ -36,10 +37,13 @@ const Marketplace = () => {
   const [cardEnergies, setCardEnergies] = useState<Record<string, CardEnergy>>({});
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
 
-  /* ── Marketplace state ── */
-  const [listings, setListings] = useState<EnrichedListing[]>([]);
-  const [loading, setLoading] = useState(true);
+  /* ── Marketplace listings (realtime) ── */
+  const { listings, loading, refresh: refreshListings } = useMarketplaceListings();
   const [divFilter, setDivFilter] = useState<Division | 'all'>('all');
+
+  /* ── Buy confirmation ── */
+  const [pendingBuy, setPendingBuy] = useState<EnrichedListing | null>(null);
+  const [buySubmitting, setBuySubmitting] = useState(false);
 
   /* ── Listing form ── */
   const [listingCardId, setListingCardId] = useState<string | null>(null);
@@ -82,9 +86,8 @@ const Marketplace = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  /* ── Load player + cards + listings ── */
+  /* ── Load player + cards (listings come from realtime hook) ── */
   const loadData = useCallback(async () => {
-    setLoading(true);
     if (user) {
       const { data: player } = await supabase
         .from('players')
@@ -106,19 +109,6 @@ const Marketplace = () => {
         setCardEnergies(energies);
       }
     }
-
-    const active = await getActiveListings();
-    const cardIds = active.map(l => l.cardId);
-    const { data: listingCards } = await supabase
-      .from('cards')
-      .select('id, name, division, color_hex')
-      .in('id', cardIds.length > 0 ? cardIds : ['00000000-0000-0000-0000-000000000000']);
-    const cardMap = new Map(listingCards?.map(c => [c.id, c]) ?? []);
-    setListings(active.map(l => {
-      const card = cardMap.get(l.cardId);
-      return { ...l, cardName: card?.name ?? 'Unknown', cardDivision: (card?.division as Division) ?? 'gem_v', cardColor: card?.color_hex ?? '#5599ff' };
-    }));
-    setLoading(false);
   }, [user]);
 
   useEffect(() => { loadData(); }, [loadData]);
@@ -129,15 +119,24 @@ const Marketplace = () => {
   }, [listingCardId]);
 
   /* ── Handlers ── */
-  const handleBuy = async (id: string) => {
-    if (!playerId) return;
-    const ok = await buyCard(id, playerId);
-    if (ok) { toast({ title: 'Card purchased!' }); loadData(); }
-    else toast({ title: 'Purchase failed', variant: 'destructive' });
+  const openBuyConfirm = (listing: EnrichedListing) => setPendingBuy(listing);
+  const confirmBuy = async () => {
+    if (!playerId || !pendingBuy) return;
+    setBuySubmitting(true);
+    const ok = await buyCard(pendingBuy.id, playerId);
+    setBuySubmitting(false);
+    if (ok) {
+      toast({ title: 'Card purchased!' });
+      setPendingBuy(null);
+      refreshListings();
+      loadData();
+    } else {
+      toast({ title: 'Purchase failed', variant: 'destructive' });
+    }
   };
   const handleCancel = async (id: string) => {
     const ok = await cancelListing(id);
-    if (ok) { toast({ title: 'Listing cancelled' }); setListings(prev => prev.filter(l => l.id !== id)); }
+    if (ok) { toast({ title: 'Listing cancelled' }); refreshListings(); }
   };
   const handleSetActive = async (cardId: string) => {
     if (!playerId) return;
@@ -385,7 +384,7 @@ const Marketplace = () => {
 
                           {/* Actions */}
                           {playerId && listing.sellerPlayerId !== playerId && (
-                            <button onClick={() => handleBuy(listing.id)} className={`w-full ${btnPrimary}`}>
+                            <button onClick={() => openBuyConfirm(listing)} className={`w-full ${btnPrimary}`}>
                               BUY
                             </button>
                           )}
@@ -749,6 +748,15 @@ const Marketplace = () => {
         open={mismatchOpen}
         onOpenChange={setMismatchOpen}
         conflictingAddress={mismatchAddr}
+      />
+
+      {/* Buy confirmation modal */}
+      <BuyCardModal
+        open={!!pendingBuy}
+        onOpenChange={(v) => { if (!v) setPendingBuy(null); }}
+        listing={pendingBuy}
+        submitting={buySubmitting}
+        onConfirm={confirmBuy}
       />
     </div>
   );
