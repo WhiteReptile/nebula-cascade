@@ -1,0 +1,211 @@
+/**
+ * useMarketplaceContract — Thirdweb v5 hooks for the NebulaMarketplace contract.
+ *
+ * Exports:
+ *   useActiveListings()    → active listings, refetched every 15s + after writes
+ *   useListCard()          → list(nftAddr, tokenId, priceEth)
+ *   useBuyCard()           → buy(listingId, priceWei)
+ *   useCancelListing()     → cancel(listingId)
+ *   useApprovalStatus()    → isApprovedForAll + approve() for the collection
+ *   useIsLocked()          → 24h cooldown check
+ *
+ * All writes show toasts. React Query cache is invalidated after each tx.
+ */
+import { useCallback, useEffect, useState } from 'react';
+import { prepareContractCall, readContract } from 'thirdweb';
+import { useActiveAccount, useSendTransaction, useReadContract } from 'thirdweb/react';
+import { toast } from 'sonner';
+import {
+  marketplaceContract,
+  MARKETPLACE_CONFIGURED,
+  MARKETPLACE_ADDRESS,
+  nebulaCollectionForApproval,
+  NEBULA_COLLECTION_ADDRESS,
+} from '@/lib/marketplace/contract';
+
+const REFRESH_MS = 15_000;
+const PAGE = 100n;
+
+export interface OnChainListing {
+  id: bigint;
+  seller: string;
+  nftAddress: string;
+  tokenId: bigint;
+  priceWei: bigint;
+  createdAt: bigint;
+  active: boolean;
+}
+
+/** Walks getActiveListings(cursor, limit) until exhausted. Safe for low listing counts. */
+async function fetchAllActive(): Promise<OnChainListing[]> {
+  if (!marketplaceContract) return [];
+  const out: OnChainListing[] = [];
+  let cursor = 0n;
+  // Hard guard: never loop more than 20 pages
+  for (let i = 0; i < 20; i++) {
+    const res = (await readContract({
+      contract: marketplaceContract,
+      method: 'getActiveListings',
+      params: [cursor, PAGE],
+    })) as unknown as [OnChainListing[], bigint];
+    const [page, nextCursor] = res;
+    out.push(...page);
+    if (nextCursor === cursor || page.length === 0) break;
+    cursor = nextCursor;
+    // Also stop when we've reached the end (next == prev end)
+    const next = (await readContract({
+      contract: marketplaceContract,
+      method: 'nextListingId',
+      params: [],
+    })) as bigint;
+    if (cursor >= next) break;
+  }
+  return out;
+}
+
+export function useActiveListings() {
+  const [listings, setListings] = useState<OnChainListing[]>([]);
+  const [loading, setLoading] = useState(MARKETPLACE_CONFIGURED);
+  const [error, setError] = useState<string | null>(null);
+
+  const refresh = useCallback(async () => {
+    if (!MARKETPLACE_CONFIGURED) return;
+    try {
+      const data = await fetchAllActive();
+      setListings(data);
+      setError(null);
+    } catch (e: any) {
+      setError(String(e?.message ?? e));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    refresh();
+    if (!MARKETPLACE_CONFIGURED) return;
+    const id = setInterval(refresh, REFRESH_MS);
+    return () => clearInterval(id);
+  }, [refresh]);
+
+  return { listings, loading, error, refresh };
+}
+
+/** Tx wrapper that toasts pending → success / error and exposes a refresh hook. */
+function useTx(label: string, onSuccess?: () => void) {
+  const { mutateAsync, isPending } = useSendTransaction();
+  const send = useCallback(
+    async (tx: any) => {
+      const t = toast.loading(`${label}: sending…`);
+      try {
+        const result = await mutateAsync(tx);
+        toast.success(`${label}: confirmed`, {
+          id: t,
+          description: result.transactionHash.slice(0, 10) + '…',
+        });
+        onSuccess?.();
+        return result;
+      } catch (e: any) {
+        const msg = String(e?.shortMessage ?? e?.message ?? e);
+        // Silently swallow user-rejected pops
+        if (/reject|denied/i.test(msg)) {
+          toast.dismiss(t);
+        } else {
+          toast.error(`${label} failed`, { id: t, description: msg.slice(0, 140) });
+        }
+        throw e;
+      }
+    },
+    [mutateAsync, label, onSuccess],
+  );
+  return { send, isPending };
+}
+
+export function useListCard(onSuccess?: () => void) {
+  const { send, isPending } = useTx('List card', onSuccess);
+  const list = useCallback(
+    async (nftAddress: string, tokenId: bigint, priceWei: bigint) => {
+      if (!marketplaceContract) throw new Error('Marketplace not configured');
+      const tx = prepareContractCall({
+        contract: marketplaceContract,
+        method: 'listCard',
+        params: [nftAddress, tokenId, priceWei],
+      });
+      return send(tx);
+    },
+    [send],
+  );
+  return { list, isPending };
+}
+
+export function useBuyCard(onSuccess?: () => void) {
+  const { send, isPending } = useTx('Purchase', onSuccess);
+  const buy = useCallback(
+    async (listingId: bigint, priceWei: bigint) => {
+      if (!marketplaceContract) throw new Error('Marketplace not configured');
+      const tx = prepareContractCall({
+        contract: marketplaceContract,
+        method: 'buyCard',
+        params: [listingId],
+        value: priceWei,
+      });
+      return send(tx);
+    },
+    [send],
+  );
+  return { buy, isPending };
+}
+
+export function useCancelListing(onSuccess?: () => void) {
+  const { send, isPending } = useTx('Cancel', onSuccess);
+  const cancel = useCallback(
+    async (listingId: bigint) => {
+      if (!marketplaceContract) throw new Error('Marketplace not configured');
+      const tx = prepareContractCall({
+        contract: marketplaceContract,
+        method: 'cancelListing',
+        params: [listingId],
+      });
+      return send(tx);
+    },
+    [send],
+  );
+  return { cancel, isPending };
+}
+
+/** Returns approval status of the marketplace for the user's NFT collection + an approve() helper. */
+export function useApprovalStatus() {
+  const account = useActiveAccount();
+  const enabled = !!(account && MARKETPLACE_CONFIGURED && MARKETPLACE_ADDRESS);
+  const { data: isApproved, refetch } = useReadContract({
+    contract: nebulaCollectionForApproval,
+    method: 'isApprovedForAll',
+    params: enabled ? [account!.address, MARKETPLACE_ADDRESS!] : ['0x0000000000000000000000000000000000000000', '0x0000000000000000000000000000000000000000'],
+    queryOptions: { enabled, refetchInterval: 30_000 },
+  });
+  const { send, isPending } = useTx('Approve marketplace', () => { refetch(); });
+  const approve = useCallback(async () => {
+    if (!MARKETPLACE_ADDRESS) throw new Error('Marketplace not configured');
+    const tx = prepareContractCall({
+      contract: nebulaCollectionForApproval,
+      method: 'setApprovalForAll',
+      params: [MARKETPLACE_ADDRESS, true],
+    });
+    return send(tx);
+  }, [send]);
+  return { isApproved: Boolean(isApproved), approve, approving: isPending };
+}
+
+/** True if the (collection, tokenId) is within the 24h sale lock. */
+export function useIsLocked(tokenId: bigint | null) {
+  const enabled = !!(marketplaceContract && tokenId !== null);
+  const { data } = useReadContract({
+    contract: marketplaceContract ?? nebulaCollectionForApproval, // fallback so hook stays mounted
+    method: 'isLocked',
+    params: enabled
+      ? [NEBULA_COLLECTION_ADDRESS, tokenId!]
+      : ['0x0000000000000000000000000000000000000000', 0n],
+    queryOptions: { enabled, refetchInterval: 30_000 },
+  });
+  return Boolean(data);
+}

@@ -9,6 +9,7 @@ export const WEB3 = {
   CHAIN_NAME: 'Base',
   THIRDWEB_CLIENT_ID: '0ee0974906e5b6b9d18c8f635d4a3df0',
   NFT_COLLECTION: '0xa89C9d428321291fF9b3609D62861123690aa07e',
-  // Marketplace V3 NOT used — primary sales via collection claim phases,
-  // secondary trades currently off-chain (Supabase marketplace_listings).
+  // Custom on-chain marketplace: deploy contracts/NebulaMarketplace.sol via Remix,
+  // then set VITE_MARKETPLACE_CONTRACT in .env (read at runtime).
+  MARKETPLACE_ADDRESS: (import.meta.env.VITE_MARKETPLACE_CONTRACT ?? '').trim() || null,
 } as const;
