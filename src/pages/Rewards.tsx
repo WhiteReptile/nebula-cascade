@@ -329,7 +329,7 @@ const Rewards = () => {
         title="Rewards & Rules — Nebula Cascade"
         description="Division rewards, NFT card economy, anti-flip lock, and season payouts for Nebula Cascade."
         path="/rewards"
-      >
+      />
       {/* Sticky Header */}
       <header className="sticky top-0 z-20 flex items-center justify-between px-6 py-3 border-b border-cyan-500/15 backdrop-blur-md bg-[#050510]/80">
         <button
