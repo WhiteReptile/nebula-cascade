@@ -129,7 +129,9 @@ const AdminRewards = () => {
 
   return (
     <div className="min-h-screen bg-[#0a0a1a] text-white font-mono p-6">
+      <SEO title="Rewards Admin" description="Internal rewards administration." path="/admin/rewards" noindex />
       <div className="flex items-center justify-between mb-8">
+
         <button onClick={() => navigate('/')} className="text-yellow-400/70 hover:text-yellow-400 text-sm">← Back</button>
         <h1 className="text-xl font-bold tracking-[0.3em] text-yellow-400/80" style={{ textShadow: '0 0 15px #ffdd00' }}>REWARDS ADMIN</h1>
         <div />
