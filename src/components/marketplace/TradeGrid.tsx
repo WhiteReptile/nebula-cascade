@@ -10,7 +10,8 @@ import { extractDivisionFromNFT } from '@/lib/thirdweb/divisionFromMetadata';
 import { MARKETPLACE_CONFIGURED } from '@/lib/marketplace/contract';
 import { useActiveAccount } from 'thirdweb/react';
 import ListingCard from './ListingCard';
-import type { Division } from '@/lib/divisionSystem';
+import InlineError from './InlineError';
+import { DIVISION_LABELS, type Division } from '@/lib/divisionSystem';
 
 type DivFilter = Division | 'all';
 type Sort = 'newest' | 'price_asc' | 'price_desc';
