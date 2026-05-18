@@ -35,7 +35,7 @@ VITE_SUPABASE_PUBLISHABLE_KEY=<anon key>
 VITE_SUPABASE_PROJECT_ID=<project-ref>
 # Marketplace contract (Base mainnet). Without it, the Marketplace UI
 # flags "NOT DEPLOYED" and writes are disabled.
-VITE_MARKETPLACE_ADDRESS=0x...
+VITE_MARKETPLACE_CONTRACT=0x...
 ```
 
 ### Sitemap generation
