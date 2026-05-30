@@ -80,7 +80,7 @@ The app throws a clear startup error if either of these is missing.
 |---|---|---|
 | `VITE_NEBULA_TESTNET` | `false` | Set `true` to flip all on-chain reads/writes to Base Sepolia (84532) |
 | `VITE_NEBULA_COLLECTION_ADDRESS` | `0xa89C9d428321291fF9b3609D62861123690aa07e` | ERC-1155 card contract address override |
-| `VITE_MARKETPLACE_V3_ADDRESS` | _(unset)_ | MarketplaceV3 contract — **Trade tab shows "under deployment" banner until this is set** |
+| `VITE_MARKETPLACE_V3_ADDRESS` | 0xa89C9d428321291fF9b3609D62861123690aa07e | MarketplaceV3 contract — **Trade tab shows "under deployment" banner until this is set** |
 
 ### Edge function secrets (set in Supabase dashboard, not Replit)
 

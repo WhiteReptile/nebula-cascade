@@ -1,64 +1,90 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Contract, parseUnits, type Signer } from 'ethers';
 import { supabase } from '@/integrations/supabase/client';
+import { useEthUsdPrice, usdCentsToWei } from '@/lib/priceFeed';
+import {
+  getActiveListings,
+  buyCard,
+  cancelListing,
+  listCard,
+  calculateFee,
+  mirrorListingCanceledOnChain,
+  mirrorListingSoldOnChain,
+  type MarketplaceListing,
+} from '@/lib/marketplaceSystem';
 import { getCardsForPlayer, setActiveCard, type CardMetadata } from '@/lib/cardSystem';
 import { getCardEnergy, type CardEnergy } from '@/lib/energySystem';
 import { DIVISION_LABELS, type Division } from '@/lib/divisionSystem';
+import { WEB3 } from '@/config/web3Config';
 import { Input } from '@/components/ui/input';
-import WalletConnect from '@/components/wallet/WalletConnect';
 import WalletMismatchModal from '@/components/wallet/WalletMismatchModal';
 import NFTGrid from '@/components/marketplace/NFTGrid';
-import BuyCardModal from '@/components/marketplace/BuyCardModal';
-import ListCardModal from '@/components/marketplace/ListCardModal';
-import TradeGrid from '@/components/marketplace/TradeGrid';
-import MyCardTile from '@/components/marketplace/MyCardTile';
-import OwnerControlsPanel from '@/components/marketplace/OwnerControlsPanel';
-import TreasuryWidget from '@/components/marketplace/TreasuryWidget';
-import AddressLink from '@/components/marketplace/AddressLink';
-import { MARKETPLACE_ADDRESS, MARKETPLACE_CONFIGURED } from '@/lib/marketplace/contract';
 import GalaxyBackground from '@/components/shared/GalaxyBackground';
 import { useToast } from '@/hooks/use-toast';
-import { useWalletSync } from '@/hooks/useWalletSync';
-import {
-  useCancelListing,
-  useUserActiveListings,
-  useLocksMap,
-  type OnChainListing,
-} from '@/hooks/useMarketplaceContract';
-import { useActiveAccount } from 'thirdweb/react';
-import NetworkPill from '@/components/wallet/NetworkPill';
-import WalletMenu from '@/components/wallet/WalletMenu';
-import SEO from '@/components/SEO';
+import { useGlobalAuth } from '@/context/AuthContext';
 
 /* ── Types ── */
+type EnrichedListing = MarketplaceListing & { cardName?: string; cardDivision?: Division; cardColor?: string };
 type Section = 'marketplace' | 'my-cards' | 'profile' | 'wallet';
+
+const DIVISIONS: (Division | 'all')[] = ['all', 'gem_v', 'gem_iv', 'gem_iii', 'gem_ii', 'gem_i'];
+const DIV_FILTER_LABELS: Record<string, string> = { all: 'ALL', gem_v: 'V', gem_iv: 'IV', gem_iii: 'III', gem_ii: 'II', gem_i: 'I' };
+
+const MARKETPLACE_CONTRACT_ADDRESS = import.meta.env.VITE_MARKETPLACE_V3_ADDRESS || '';
+const COLLECTION_CONTRACT_ADDRESS = import.meta.env.VITE_NEBULA_COLLECTION_ADDRESS || WEB3.NFT_COLLECTION;
+const MARKETPLACE_ABI = [
+  'function listCard(uint256 _tokenId, uint256 _price) external',
+  'function buyCard(uint256 _listingId) external payable',
+  'function cancelListing(uint256 _listingId) external',
+  'event CardListed(uint256 indexed listingId, uint256 indexed tokenId, address indexed seller, uint256 price)',
+  'event CardSold(uint256 indexed listingId, uint256 indexed tokenId, address indexed buyer, address seller, uint256 price)',
+  'event CardListingCanceled(uint256 indexed listingId)',
+];
+const ERC721_APPROVAL_ABI = [
+  'function isApprovedForAll(address owner, address operator) view returns (bool)',
+  'function setApprovalForAll(address operator, bool approved) external',
+];
+
+const getMarketplaceContract = (signerOrProvider: Signer | any) =>
+  new Contract(MARKETPLACE_CONTRACT_ADDRESS, MARKETPLACE_ABI, signerOrProvider);
+
+const getCollectionContract = (signerOrProvider: Signer | any) =>
+  new Contract(COLLECTION_CONTRACT_ADDRESS, ERC721_APPROVAL_ABI, signerOrProvider);
 
 const Marketplace = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-
-  /* ── Auth state ── */
-  const [user, setUser] = useState<any>(null);
-  const [authLoading, setAuthLoading] = useState(true);
+  const { ethUsd, loading: priceLoading } = useEthUsdPrice();
+  const {
+    user,
+    isLoading: authLoading,
+    walletAddress,
+    isWalletConnected,
+    isConnecting,
+    web3Provider,
+    connectWallet,
+    disconnectWallet,
+    signOut,
+  } = useGlobalAuth();
 
   /* ── Player state ── */
   const [playerId, setPlayerId] = useState<string | null>(null);
   const [playerData, setPlayerData] = useState<any>(null);
-  const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [cards, setCards] = useState<CardMetadata[]>([]);
   const [cardEnergies, setCardEnergies] = useState<Record<string, CardEnergy>>({});
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
 
-  /* ── On-chain listings owned by current wallet (for MY CARDS overlay) ── */
-  const { listings: myListings, refresh: refreshMyListings } = useUserActiveListings();
-  const activeAccount = useActiveAccount();
+  /* ── Marketplace state ── */
+  const [listings, setListings] = useState<EnrichedListing[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [divFilter, setDivFilter] = useState<Division | 'all'>('all');
 
-  /* ── On-chain buy/cancel ── */
-  const [pendingBuy, setPendingBuy] = useState<OnChainListing | null>(null);
-  const { cancel: cancelOnChain } = useCancelListing(() => refreshMyListings());
-
-  /* ── On-chain sell modal ── */
-  const [sellToken, setSellToken] = useState<{ id: bigint; name: string } | null>(null);
+  /* ── Listing form ── */
+  const [listingCardId, setListingCardId] = useState<string | null>(null);
+  const [listPrice, setListPrice] = useState('');
+  const [estimatedFee, setEstimatedFee] = useState(5);
+  const [listingSubmitting, setListingSubmitting] = useState(false);
 
   /* ── Auth form ── */
   const [isLogin, setIsLogin] = useState(true);
@@ -75,28 +101,9 @@ const Marketplace = () => {
   const [mismatchOpen, setMismatchOpen] = useState(false);
   const [mismatchAddr, setMismatchAddr] = useState<string | null>(null);
 
-  /* ── Wallet sync (Thirdweb ↔ Supabase) ── */
-  useWalletSync({
-    userId: user?.id ?? null,
-    onLinked: (addr) => setWalletAddress(addr),
-    onMismatch: (addr) => { setMismatchAddr(addr); setMismatchOpen(true); },
-  });
-
-  /* ── Auth listener ── */
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      setAuthLoading(false);
-    });
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user);
-      setAuthLoading(false);
-    });
-    return () => subscription.unsubscribe();
-  }, []);
-
-  /* ── Load player + cards (listings come from realtime hook) ── */
+  /* ── Load player + cards + listings ── */
   const loadData = useCallback(async () => {
+    setLoading(true);
     if (user) {
       const { data: player } = await supabase
         .from('players')
@@ -106,7 +113,6 @@ const Marketplace = () => {
       if (player) {
         setPlayerId(player.id);
         setPlayerData(player);
-        setWalletAddress(player.wallet_address ?? null);
         setActiveCardId(player.active_card_id ?? null);
         const playerCards = await getCardsForPlayer(player.id);
         setCards(playerCards);
@@ -118,20 +124,180 @@ const Marketplace = () => {
         setCardEnergies(energies);
       }
     }
+
+    const active = await getActiveListings();
+    const cardIds = active.map(l => l.cardId);
+    const { data: listingCards } = await supabase
+      .from('cards')
+      .select('id, name, division, color_hex')
+      .in('id', cardIds.length > 0 ? cardIds : ['00000000-0000-0000-0000-000000000000']);
+    const cardMap = new Map(listingCards?.map(c => [c.id, c]) ?? []);
+    setListings(active.map(l => {
+      const card = cardMap.get(l.cardId);
+      return { ...l, cardName: card?.name ?? 'Unknown', cardDivision: (card?.division as Division) ?? 'gem_v', cardColor: card?.color_hex ?? '#5599ff' };
+    }));
+    setLoading(false);
   }, [user]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  /* ── Handlers ── */
-  const handleCancelOnChain = async (l: OnChainListing) => {
-    try { await cancelOnChain(l.id); } catch { /* toast handled */ }
+  useEffect(() => {
+    if (!web3Provider || !MARKETPLACE_CONTRACT_ADDRESS) return;
+
+    const marketplace = getMarketplaceContract(web3Provider);
+    const handleCardSold = async (_listingId: any, tokenId: any, buyer: string) => {
+      await mirrorListingSoldOnChain(Number(tokenId.toString()), buyer);
+      loadData();
+    };
+
+    const handleCardCanceled = async (_listingId: any, tokenId: any) => {
+      await mirrorListingCanceledOnChain(Number(tokenId.toString()));
+      loadData();
+    };
+
+    marketplace.on('CardSold', handleCardSold);
+    marketplace.on('CardListingCanceled', handleCardCanceled);
+
+    return () => {
+      marketplace.off('CardSold', handleCardSold);
+      marketplace.off('CardListingCanceled', handleCardCanceled);
+    };
+  }, [web3Provider, loadData]);
+
+  /* ── Fee preview ── */
+  useEffect(() => {
+    if (listingCardId) calculateFee(listingCardId).then(setEstimatedFee);
+  }, [listingCardId]);
+
+  /* ── Marketplace helpers ── */
+  const handleApproveAndList = async (cardId: string, priceCents: number) => {
+    if (!web3Provider) throw new Error('Web3 provider is not connected');
+    if (!MARKETPLACE_CONTRACT_ADDRESS) throw new Error('Marketplace contract address is not configured');
+    if (!COLLECTION_CONTRACT_ADDRESS) throw new Error('NFT collection contract address is not configured');
+    if (!ethUsd || ethUsd <= 0) throw new Error('ETH price feed not available');
+
+    const signer = web3Provider.getSigner();
+    const account = await signer.getAddress();
+    const card = cards.find(c => c.id === cardId);
+    if (!card) throw new Error('Card not found');
+
+    // Calculate Wei price from USD cents
+    const priceWei = usdCentsToWei(priceCents, ethUsd);
+    if (!priceWei) throw new Error('Could not calculate Wei price');
+
+    const nftContract = getCollectionContract(signer);
+    const approved = await nftContract.isApprovedForAll(account, MARKETPLACE_CONTRACT_ADDRESS);
+    if (!approved) {
+      const approvalTx = await nftContract.setApprovalForAll(MARKETPLACE_CONTRACT_ADDRESS, true);
+      await approvalTx.wait();
+    }
+
+    const marketplace = getMarketplaceContract(signer);
+    const tx = await marketplace.listCard(card.tokenId, priceWei);
+    const receipt = await tx.wait();
+    const event = receipt.events?.find(e => e.event === 'CardListed');
+    const onchainListingId = event ? Number((event.args as any)?.listingId?.toString()) : null;
+    if (onchainListingId === null) {
+      throw new Error('Could not read on-chain listing ID from transaction receipt');
+    }
+
+    const ok = await listCard(cardId, playerId ?? '', priceCents, onchainListingId, priceWei);
+    if (!ok) {
+      throw new Error('Failed to mirror listing to Supabase');
+    }
+
+    return receipt;
   };
+
+  const handleBuyCard = async (listingId: string, priceCents: number, priceWei: string | null, onchainListingId: number | null) => {
+    if (!web3Provider) throw new Error('Web3 provider is not connected');
+    if (!MARKETPLACE_CONTRACT_ADDRESS) throw new Error('Marketplace contract address is not configured');
+    if (!onchainListingId) throw new Error('Listing has no on-chain ID');
+    if (!priceWei) throw new Error('Listing has no Wei price');
+
+    const signer = web3Provider.getSigner();
+    const marketplace = getMarketplaceContract(signer);
+    const tx = await marketplace.buyCard(onchainListingId, {
+      value: priceWei,
+    });
+    const receipt = await tx.wait();
+    return receipt;
+  };
+
+  const handleBuy = async (listing: EnrichedListing) => {
+    if (!playerId) return;
+    if (!isWalletConnected) {
+      const address = await connectWallet();
+      if (!address) {
+        toast({ title: 'Wallet connection required', variant: 'destructive' });
+        return;
+      }
+    }
+
+    try {
+      await handleBuyCard(listing.id, listing.priceCents, listing.priceWei ?? null, listing.onchainListingId ?? null);
+      const ok = await buyCard(listing.id, playerId);
+      if (ok) {
+        toast({ title: 'Card purchased!' });
+        loadData();
+      } else {
+        toast({ title: 'Purchase failed', variant: 'destructive' });
+      }
+    } catch (error: any) {
+      toast({ title: 'Blockchain purchase failed', description: error?.message ?? 'Try reconnecting your wallet.', variant: 'destructive' });
+    }
+  };
+
+  const handleCancel = async (listing: EnrichedListing) => {
+    if (listing.onchainListingId && web3Provider) {
+      const signer = web3Provider.getSigner();
+      const marketplace = getMarketplaceContract(signer);
+      await marketplace.cancelListing(listing.onchainListingId);
+    }
+
+    const ok = await cancelListing(listing.id);
+    if (ok) {
+      toast({ title: 'Listing cancelled' });
+      setListings(prev => prev.filter(l => l.id !== listing.id));
+    }
+  };
+
   const handleSetActive = async (cardId: string) => {
     if (!playerId) return;
     const ok = await setActiveCard(playerId, cardId);
     if (ok) setActiveCardId(cardId);
   };
-  const handleAuth = async (e: React.FormEvent) => {
+  const handleList = async () => {
+    if (!playerId || !listingCardId || !listPrice) return;
+    if (!isWalletConnected) {
+      const address = await connectWallet();
+      if (!address) {
+        toast({ title: 'Please connect your wallet before listing', variant: 'destructive' });
+        return;
+      }
+    }
+
+    setListingSubmitting(true);
+    const cents = Math.round(parseFloat(listPrice) * 100);
+    if (cents <= 0) {
+      toast({ title: 'Invalid price', variant: 'destructive' });
+      setListingSubmitting(false);
+      return;
+    }
+
+    try {
+      await handleApproveAndList(listingCardId, cents);
+      toast({ title: 'Card listed!' });
+      setListingCardId(null);
+      setListPrice('');
+      loadData();
+    } catch (error: any) {
+      toast({ title: 'Listing failed', description: error?.message ?? 'Try reconnecting your wallet.', variant: 'destructive' });
+    } finally {
+      setListingSubmitting(false);
+    }
+  };
+  const handleAuth = async (e: FormEvent) => {
     e.preventDefault();
     setAuthSubmitting(true);
     try {
@@ -149,18 +315,18 @@ const Marketplace = () => {
     } finally { setAuthSubmitting(false); }
   };
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    setUser(null); setPlayerId(null); setPlayerData(null);
+    await signOut();
+    setPlayerId(null);
+    setPlayerData(null);
     navigate('/');
   };
 
-  /* ── Helper: find this card's on-chain listing (if any) by tokenId ── */
-  const findListingForToken = (tokenIdStr: string | number): OnChainListing | undefined => {
-    try {
-      const id = BigInt(tokenIdStr);
-      return myListings.find((l) => l.tokenId === id);
-    } catch { return undefined; }
-  };
+  /* ── Derived ── */
+  const filteredListings = divFilter === 'all' ? listings : listings.filter(l => l.cardDivision === divFilter);
+  const priceCents = Math.round((parseFloat(listPrice) || 0) * 100);
+  const feeAmount = priceCents * estimatedFee / 100;
+  const sellerReceives = priceCents - feeAmount;
+
   const navItems: { key: Section; label: string }[] = [
     { key: 'marketplace', label: 'MARKET' },
     { key: 'my-cards', label: 'MY CARDS' },
@@ -171,17 +337,12 @@ const Marketplace = () => {
   /* ── Shared classes ── */
   const panel = "rounded-xl border border-white/10 bg-black/40 backdrop-blur-xl";
   const btnPrimary = "min-h-[44px] px-5 rounded-lg border bg-black/40 glow-yellow glow-border-yellow text-sm tracking-[0.2em] font-bold hover:bg-yellow-400/10 hover:scale-[1.03] transition-all disabled:opacity-40";
+  const btnSecondary = "min-h-[44px] px-5 rounded-lg border bg-black/40 glow-blue glow-border-blue text-sm tracking-[0.2em] font-bold hover:bg-blue-400/10 hover:scale-[1.03] transition-all disabled:opacity-40";
 
   return (
     <div className="min-h-screen w-full font-mono relative overflow-visible" style={{ background: 'transparent' }}>
-      <SEO
-        title="Marketplace — Nebula Cascade"
-        description="Mint, list, and trade Nebula Cascade NFT cards on Base. Flat 3% fee, 24h anti-flip lock."
-        path="/marketplace"
-      />
       {/* Cosmic galaxy — same canvas as MainMenu for visual continuity */}
       <GalaxyBackground zIndex={0} />
-
 
       {/* ── Header ── */}
       <header className="relative z-10 flex items-center justify-between px-6 py-5">
@@ -247,9 +408,12 @@ const Marketplace = () => {
             <div className={`${marketTab === 'mint' ? 'w-full' : 'max-w-6xl mx-auto'} space-y-6 animate-fade-in`}>
               <div className="flex items-center justify-between flex-wrap gap-3">
                 <h2 className="text-3xl uppercase tracking-[0.3em] menu-neon-title-red font-bold">Nebula Cascade: Collection Cards</h2>
+                {marketTab === 'trade' && (
+                  <span className="text-sm glow-white tracking-widest">
+                    {filteredListings.length} LISTING{filteredListings.length !== 1 ? 'S' : ''}
+                  </span>
+                )}
               </div>
-
-              <OwnerControlsPanel />
 
               {/* Mint / Trade tab bar */}
               <div
@@ -289,13 +453,125 @@ const Marketplace = () => {
                 </div>
               )}
 
-              {/* TRADE — on-chain peer-to-peer marketplace */}
+              {/* TRADE — existing peer-to-peer listings */}
               {marketTab === 'trade' && (
                 <div className="space-y-5">
-                  <p className="text-xs text-white/40 font-mono tracking-widest uppercase">
-                    Secondary market · On-chain · Native ETH · 3% fee
-                  </p>
-                  <TradeGrid onBuy={setPendingBuy} onCancel={handleCancelOnChain} />
+                  {/* Division filter */}
+                  <div className="flex gap-3 flex-wrap">
+                    {DIVISIONS.map(d => {
+                      const active = divFilter === d;
+                      return (
+                        <button
+                          key={d}
+                          onClick={() => setDivFilter(d)}
+                          className={`min-h-[44px] px-5 py-2 text-sm tracking-[0.2em] font-bold rounded-lg border bg-black/40 transition-all hover:scale-105 ${
+                            active ? 'glow-yellow glow-border-yellow' : 'glow-white glow-border-blue opacity-70 hover:opacity-100'
+                          }`}
+                        >
+                          {DIV_FILTER_LABELS[d]}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="rounded-3xl border border-blue-500/20 bg-black/50 p-5 space-y-3">
+                    {isWalletConnected ? (
+                      <div className="flex items-center justify-between gap-3 text-sm text-white/80">
+                        <span className="font-bold tracking-[0.2em] uppercase glow-white">Wallet connected</span>
+                        <span className="font-mono text-yellow-300">{walletAddress?.slice(0, 6)}...{walletAddress?.slice(-4)}</span>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div>
+                          <div className="text-sm glow-white tracking-widest uppercase">Wallet not connected</div>
+                          <div className="text-xs text-white/60">Connect your Base wallet to purchase and list cards.</div>
+                        </div>
+                        <button
+                          onClick={connectWallet}
+                          className="min-h-[44px] px-5 py-2 rounded-lg border border-yellow-300 bg-yellow-400/10 text-yellow-300 font-bold tracking-[0.2em] hover:bg-yellow-400/20 transition-all"
+                        >
+                          {isConnecting ? 'CONNECTING…' : 'CONNECT WALLET'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {loading ? (
+                    <div className="text-center glow-blue text-lg tracking-widest py-20 animate-pulse">LOADING LISTINGS…</div>
+                  ) : filteredListings.length === 0 ? (
+                    <div className={`${panel} flex flex-col items-center py-20 space-y-4`}>
+                      <div
+                        className="w-20 h-20 rounded-full"
+                        style={{
+                          background: 'radial-gradient(circle at 40% 40%, rgba(85,153,255,0.5), rgba(255,221,0,0.2), transparent)',
+                          boxShadow: '0 0 40px rgba(85,153,255,0.3), 0 0 80px rgba(255,221,0,0.15)',
+                        }}
+                      />
+                      <span className="text-xl tracking-[0.3em] glow-blue font-bold">NO ACTIVE LISTINGS</span>
+                      <span className="text-sm glow-white tracking-widest">Cards listed for trade will appear here</span>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                      {filteredListings.map(listing => (
+                        <div
+                          key={listing.id}
+                          className={`${panel} p-5 transition-all group hover:scale-[1.03] hover:glow-border-yellow cursor-pointer`}
+                        >
+                          {/* Card orb */}
+                          <div className="flex items-center gap-4 mb-5">
+                            <div
+                              className="w-14 h-14 rounded-full flex-shrink-0 transition-transform group-hover:scale-110"
+                              style={{
+                                background: `radial-gradient(circle at 35% 35%, ${listing.cardColor}ee, ${listing.cardColor}50)`,
+                                boxShadow: `0 0 25px ${listing.cardColor}60, 0 0 50px ${listing.cardColor}30, inset 0 -2px 6px ${listing.cardColor}30`,
+                              }}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="text-base font-bold truncate glow-blue">{listing.cardName}</div>
+                              <div className="text-xs glow-white tracking-widest mt-1">
+                                {DIVISION_LABELS[listing.cardDivision!]}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Price + fee */}
+                          <div className="flex items-end justify-between mb-5">
+                            <div>
+                              <div className="text-xs glow-white uppercase tracking-widest mb-1">Price</div>
+                              <div className="text-sm font-bold glow-yellow">
+                                ${(listing.priceCents / 100).toFixed(2)} USD
+                              </div>
+                              <div className="text-xs glow-blue mt-1">
+                                {ethUsd && listing.priceWei ? (Number(listing.priceWei) / 1e18 / ethUsd * 1e18).toFixed(6) : '—'} ETH
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-xs glow-white tracking-widest">
+                                {listing.feePercent}% FEE
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Actions */}
+                          {playerId && listing.sellerPlayerId !== playerId && (
+                            <button onClick={() => handleBuy(listing)} className={`w-full ${btnPrimary}`}>
+                              BUY
+                            </button>
+                          )}
+                          {playerId && listing.sellerPlayerId === playerId && (
+                            <button onClick={() => handleCancel(listing)} className={`w-full ${btnSecondary}`}>
+                              CANCEL LISTING
+                            </button>
+                          )}
+                          {!playerId && (
+                            <button onClick={() => setSection('profile')} className={`w-full ${btnSecondary}`}>
+                              SIGN IN TO BUY
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -325,6 +601,58 @@ const Marketplace = () => {
                     <span className="text-sm glow-white tracking-widest border border-blue-500/30 glow-border-blue px-3 py-2 rounded">{cards.length} / 10</span>
                   </div>
 
+                  {/* Listing form */}
+                  {listingCardId && (
+                    <div className={`${panel} p-6 space-y-5 glow-border-yellow`}>
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-lg tracking-[0.25em] glow-yellow uppercase font-bold">List Card for Sale</h3>
+                        <button onClick={() => { setListingCardId(null); setListPrice(''); }} className="glow-white text-xl hover:glow-yellow transition-all w-10 h-10">✕</button>
+                      </div>
+                      <div className="flex gap-4 items-end">
+                        <div className="flex-1 space-y-2">
+                          <label className="text-xs glow-blue uppercase tracking-widest font-bold">Price (USD)</label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0.01"
+                            placeholder="0.00"
+                            value={listPrice}
+                            onChange={e => setListPrice(e.target.value)}
+                            className="bg-black/50 border-blue-500/30 text-yellow-300 placeholder:text-white/30 font-mono h-12 text-lg glow-yellow glow-border-blue"
+                          />
+                        </div>
+                        <button
+                          onClick={handleList}
+                          disabled={listingSubmitting || !listPrice || parseFloat(listPrice) <= 0 || !ethUsd}
+                          className={btnPrimary}
+                        >
+                          {listingSubmitting ? '...' : 'LIST'}
+                        </button>
+                      </div>
+                      {/* Fee converter */}
+                      {parseFloat(listPrice) > 0 && (
+                        <div className="text-sm space-y-2 border-t border-blue-500/20 pt-4">
+                          <div className="flex justify-between">
+                            <span className="glow-blue tracking-widest">Sale price (USD)</span>
+                            <span className="glow-white font-bold">${(priceCents / 100).toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="glow-blue tracking-widest">Sale price (ETH)</span>
+                            <span className="glow-white font-bold">{ethUsd ? (priceCents / 100 / ethUsd).toFixed(6) : '—'} ETH</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="glow-blue tracking-widest">Fee ({estimatedFee}%)</span>
+                            <span className="glow-white font-bold">−${(feeAmount / 100).toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between text-lg font-bold pt-2 border-t border-blue-500/20">
+                            <span className="glow-blue tracking-widest">You receive</span>
+                            <span className="glow-yellow">${(sellerReceives / 100).toFixed(2)}</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {cards.length === 0 ? (
                     <div className={`${panel} flex flex-col items-center py-16 space-y-4`}>
                       <div
@@ -339,37 +667,73 @@ const Marketplace = () => {
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                      {(() => {
-                        // Sort: listed last; among the rest, unlocked first, locked by ascending secondsLeft.
-                        const tokenIdsBig = cards.map((c) => { try { return BigInt(c.tokenId); } catch { return null; } });
-                        // eslint-disable-next-line react-hooks/rules-of-hooks
-                        const locks = useLocksMap(tokenIdsBig);
-                        const sorted = [...cards].sort((a, b) => {
-                          const la = !!findListingForToken(a.tokenId);
-                          const lb = !!findListingForToken(b.tokenId);
-                          if (la !== lb) return la ? 1 : -1;
-                          const sa = locks[String(a.tokenId)] ?? 0;
-                          const sb = locks[String(b.tokenId)] ?? 0;
-                          return sa - sb;
-                        });
-                        return sorted.map(card => {
-                          const energy = cardEnergies[card.id];
-                          const isActive = card.id === activeCardId;
-                          const onChainListing = findListingForToken(card.tokenId);
-                          return (
-                            <MyCardTile
-                              key={card.id}
-                              card={card}
-                              energy={energy}
-                              isActive={isActive}
-                              onChainListing={onChainListing}
-                              onSelectActive={() => handleSetActive(card.id)}
-                              onSell={() => setSellToken({ id: BigInt(card.tokenId), name: card.name })}
-                              onCancel={() => { if (onChainListing) handleCancelOnChain(onChainListing); }}
-                            />
-                          );
-                        });
-                      })()}
+                      {cards.map(card => {
+                        const energy = cardEnergies[card.id];
+                        const isActive = card.id === activeCardId;
+                        const isListed = listings.some(l => l.cardId === card.id && l.status === 'active');
+                        return (
+                          <div
+                            key={card.id}
+                            className={`${panel} p-5 transition-all cursor-pointer group hover:scale-[1.02] ${
+                              isActive ? 'glow-border-yellow' : 'hover:glow-border-yellow'
+                            }`}
+                            onClick={() => !isListed && handleSetActive(card.id)}
+                          >
+                            <div className="flex items-center gap-4">
+                              <div
+                                className={`w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold flex-shrink-0 transition-all glow-white ${
+                                  isActive ? 'animate-pulse' : 'group-hover:scale-110'
+                                }`}
+                                style={{
+                                  background: `radial-gradient(circle at 35% 35%, ${card.colorHex}ee, ${card.colorHex}50)`,
+                                  boxShadow: isActive
+                                    ? `0 0 30px ${card.colorHex}80, 0 0 60px ${card.colorHex}40`
+                                    : `0 0 18px ${card.colorHex}50`,
+                                }}
+                              >
+                                {card.tokenId}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="text-base font-bold truncate glow-blue">{card.name}</div>
+                                <div className="text-xs tracking-widest mt-1 flex items-center gap-2">
+                                  <span className="glow-white">{DIVISION_LABELS[card.division]}</span>
+                                  {isActive && <span className="glow-yellow">• ACTIVE</span>}
+                                  {isListed && <span className="glow-yellow">• LISTED</span>}
+                                </div>
+                              </div>
+                              {energy && (
+                                <div className="text-right flex-shrink-0">
+                                  <div className={`text-base font-bold ${energy.energy > 0 ? 'glow-yellow' : 'glow-white'}`}>
+                                    ⚡ {energy.energy}/{energy.maxEnergy}
+                                  </div>
+                                  <div className="flex gap-1 mt-2 justify-end">
+                                    {Array.from({ length: energy.maxEnergy }).map((_, i) => (
+                                      <div
+                                        key={i}
+                                        className="w-2.5 h-2.5 rounded-full"
+                                        style={{
+                                          background: i < energy.energy ? '#ffdd00' : '#ffffff15',
+                                          boxShadow: i < energy.energy ? '0 0 6px #ffdd00' : 'none',
+                                        }}
+                                      />
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                            {!isListed && (
+                              <div className="mt-4 pt-4 border-t border-blue-500/20 flex justify-end">
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); setListingCardId(card.id); setSection('my-cards'); }}
+                                  className="min-h-[40px] px-4 py-2 rounded-lg border bg-black/40 glow-yellow glow-border-yellow text-xs tracking-[0.2em] font-bold hover:scale-105 hover:bg-yellow-400/10 transition-all"
+                                >
+                                  LIST ON MARKETPLACE
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </>
@@ -510,77 +874,56 @@ const Marketplace = () => {
             <div className="max-w-md mx-auto space-y-8 animate-fade-in">
               <h2 className="text-3xl uppercase tracking-[0.3em] glow-yellow font-bold">Wallet</h2>
 
-              {/* Connection status */}
-              <div className={`${panel} p-7 text-center space-y-4`}>
-                <div
-                  className="w-20 h-20 rounded-full mx-auto"
-                  style={{
-                    background: activeAccount
-                      ? 'radial-gradient(circle at 40% 40%, rgba(0,255,170,0.45), rgba(85,153,255,0.2), transparent)'
-                      : 'radial-gradient(circle at 40% 40%, rgba(255,221,0,0.4), rgba(85,153,255,0.2), transparent)',
-                    boxShadow: activeAccount
-                      ? '0 0 40px rgba(0,255,170,0.3), 0 0 80px rgba(85,153,255,0.15)'
-                      : '0 0 40px rgba(255,221,0,0.25), 0 0 80px rgba(85,153,255,0.15)',
-                  }}
-                />
-                <h3 className="text-xl font-bold tracking-[0.25em] glow-yellow">
-                  {activeAccount ? 'WALLET CONNECTED' : 'CONNECT YOUR WALLET'}
-                </h3>
-                {activeAccount && (
-                  <div className="flex justify-center">
-                    <NetworkPill />
-                  </div>
-                )}
-                {activeAccount ? (
-                  <div className="flex flex-col items-center gap-2">
-                    <WalletMenu />
-                    <div className="text-[10px] tracking-widest font-mono break-all opacity-70">
-                      <AddressLink address={activeAccount.address} truncate={false} noResolve />
+              <div className={`${panel} p-7 space-y-6`}>
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <div className="text-sm glow-white tracking-widest uppercase">Wallet status</div>
+                    <div className="text-lg font-bold glow-yellow">
+                      {isWalletConnected ? 'Connected' : authLoading ? 'Checking connection…' : 'Disconnected'}
                     </div>
                   </div>
-                ) : (
-                  <p className="text-sm glow-white tracking-widest leading-relaxed">
-                    Connect via Thirdweb to mint, list, and trade Nebula cards on Base.
+                  <button
+                    onClick={isWalletConnected ? disconnectWallet : connectWallet}
+                    className="min-h-[44px] px-5 py-2 rounded-lg border border-yellow-300 bg-yellow-400/10 text-yellow-300 font-bold tracking-[0.2em] hover:bg-yellow-400/20 transition-all"
+                  >
+                    {isWalletConnected ? 'DISCONNECT' : isConnecting ? 'CONNECTING…' : 'CONNECT WALLET'}
+                  </button>
+                </div>
+
+                <div className="rounded-3xl border border-blue-500/20 bg-black/50 p-5">
+                  <div className="text-xs glow-blue uppercase tracking-widest mb-2">Current address</div>
+                  <div className="text-sm font-mono text-yellow-300">
+                    {isWalletConnected && walletAddress ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}` : 'No wallet connected.'}
+                  </div>
+                </div>
+
+                <div className="text-sm space-y-3 text-white/80">
+                  <p className="glow-white tracking-widest">
+                    Wallet access is now managed by the shared auth context. Connect once and the marketplace actions will use the same provider.
                   </p>
-                )}
+                  <p className="glow-white tracking-widest">
+                    If you want, logout from the profile tab, then reconnect to switch wallet accounts.
+                  </p>
+                </div>
               </div>
 
-              {/* Thirdweb connect button */}
-              <WalletConnect currentAddress={walletAddress} />
-
-              {/* Blockchain info */}
               <div className={`${panel} p-5 space-y-3`}>
                 <h3 className="text-lg font-bold glow-yellow tracking-widest">Blockchain Info</h3>
                 <div className="text-sm space-y-2">
                   <div className="flex justify-between">
                     <span className="glow-blue tracking-widest">Chain</span>
-                    <span className="glow-white font-bold">Base · 8453</span>
+                    <span className="glow-white font-bold">Base</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="glow-blue tracking-widest">Auth Provider</span>
-                    <span className="glow-white font-bold">Thirdweb v5</span>
+                    <span className="glow-blue tracking-widest">Wallet provider</span>
+                    <span className="glow-white font-bold">Ethers.js / MetaMask</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="glow-blue tracking-widest">Marketplace Fee</span>
-                    <span className="glow-yellow font-bold">Flat 3%</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="glow-blue tracking-widest">Anti-Flip Lock</span>
-                    <span className="glow-white font-bold">24h on-chain</span>
-                  </div>
-                  <div className="flex justify-between items-center gap-3">
-                    <span className="glow-blue tracking-widest">Marketplace</span>
-                    {MARKETPLACE_CONFIGURED ? (
-                      <AddressLink address={MARKETPLACE_ADDRESS} className="text-xs" />
-                    ) : (
-                      <span className="text-red-300 font-bold text-xs tracking-widest">NOT DEPLOYED</span>
-                    )}
+                    <span className="glow-blue tracking-widest">Auth provider</span>
+                    <span className="glow-white font-bold">Supabase + native wallet</span>
                   </div>
                 </div>
               </div>
-
-              {/* Owner-only treasury widget */}
-              <TreasuryWidget />
             </div>
           )}
         </main>
@@ -591,22 +934,6 @@ const Marketplace = () => {
         open={mismatchOpen}
         onOpenChange={setMismatchOpen}
         conflictingAddress={mismatchAddr}
-      />
-
-      {/* Buy confirmation modal (on-chain) */}
-      <BuyCardModal
-        open={!!pendingBuy}
-        onOpenChange={(v) => { if (!v) setPendingBuy(null); }}
-        listing={pendingBuy}
-        onBought={() => { setPendingBuy(null); refreshMyListings(); }}
-      />
-
-      {/* List card modal (on-chain) */}
-      <ListCardModal
-        open={!!sellToken}
-        onOpenChange={(v) => { if (!v) setSellToken(null); }}
-        tokenId={sellToken?.id ?? null}
-        tokenName={sellToken?.name}
       />
     </div>
   );
