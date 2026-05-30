@@ -12,20 +12,30 @@ import Options from "@/pages/Options";
 import Marketplace from "@/pages/Marketplace";
 import Rewards from "@/pages/Rewards";
 import Roadmap from "@/pages/Roadmap";
+import { ProtectedRoute } from "@/components/shared/ProtectedRoute";
+import { AuthProvider } from "@/context/AuthContext";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
-          <Route path="/admin/rewards" element={<AdminRewards />} />
+          <Route
+            path="/admin/rewards"
+            element={
+              <ProtectedRoute requireAdmin>
+                <AdminRewards />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/cards" element={<Navigate to="/marketplace" replace />} />
           <Route path="/wallet" element={<Navigate to="/marketplace" replace />} />
           <Route path="/options" element={<Options />} />
@@ -34,9 +44,10 @@ const App = () => (
           <Route path="/rewards" element={<Rewards />} />
           <Route path="/roadmap" element={<Roadmap />} />
           <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 
