@@ -18,7 +18,7 @@ export const ENERGY = {
   PER_CARD: 2,                       // max energy per card
   CONSUME_CHANCE: 0.4,               // 40% chance per match-start
   CONSUME_COST: 2,                   // energy units consumed when triggered
-  RESET_HOURS: 24,                   // rolling per-card reset window
+  RESET_HOURS: 24,                   // daily reset window at UTC midnight
 } as const;
 
 // ── Marketplace ───────────────────────────────────────────────────

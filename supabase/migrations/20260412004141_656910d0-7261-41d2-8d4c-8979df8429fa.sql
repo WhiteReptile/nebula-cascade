@@ -34,7 +34,7 @@ CREATE TABLE public.card_energy (
   card_id uuid NOT NULL UNIQUE REFERENCES public.cards(id) ON DELETE CASCADE,
   energy integer NOT NULL DEFAULT 2,
   max_energy integer NOT NULL DEFAULT 2,
-  last_reset_at date NOT NULL DEFAULT CURRENT_DATE
+  last_reset_at date NOT NULL DEFAULT (timezone('UTC', now())::date)
 );
 
 ALTER TABLE public.card_energy ENABLE ROW LEVEL SECURITY;

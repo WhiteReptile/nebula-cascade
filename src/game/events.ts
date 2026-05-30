@@ -10,6 +10,7 @@
  *   'nextPiece'        → PieceDef (preview for next piece display)
  *   'gameover'         → score (number)
  *   'matchEnd'         → MatchData (full stats for logging)
+ *   'guestSession'     → { nickname, highScore } (guest-only local state)
  *   'chainCombo'       → chainStep (number)
  *   'triColor'         → chainStep (number)
  *   'elementalCascade' → chainStep (number)
