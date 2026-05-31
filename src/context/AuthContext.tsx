@@ -88,3 +88,19 @@ import { ethers } from 'ethers';
       setIsWalletConnected(true);
       setWeb3Provider(new ethers.providers.Web3Provider(ethereum));
      };
+
+     ethereum.on('accountsChanged', handleAccountsChanged);
+     return () => {
+       ethereum.removeListener('accountsChanged', handleAccountsChanged);
+     };
+   }
+ }, [isAuthenticated]);
+
+ return (
+   <AuthContext.Provider value={{ walletAddress, isWalletConnected, isConnecting, connectWallet, disconnectWallet }}>
+     {children}
+   </AuthContext.Provider>
+ );
+};
+
+export const useAuthContext = () => useContext(AuthContext);
