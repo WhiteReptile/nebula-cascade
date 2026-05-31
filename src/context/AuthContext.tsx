@@ -1,105 +1,72 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { ethers } from 'ethers';
- import { useAuth } from '@/hooks/useAuth';
- import { supabase } from '@/integrations/supabase/client';
- import type { User } from '@supabase/supabase-js';
- 
- export interface GlobalAuthContextValue {
-   user: User | null;
-   isAuthenticated: boolean;
-   isAdmin: boolean;
-   isLoading: boolean;
-   walletAddress: string | null;
-   isWalletConnected: boolean;
-   isConnecting: boolean;
-  web3Provider: ethers.providers.Web3Provider | null;
-   connectWallet: () => Promise<string>;
-   disconnectWallet: () => void;
-   signOut: () => Promise<void>;
- }
- 
- const AuthContext = createContext<GlobalAuthContextValue | undefined>(undefined);
- 
- export function AuthProvider({ children }: { children: ReactNode }) {
-   const { user, isAuthenticated, isAdmin, isLoading } = useAuth();
-   const [walletAddress, setWalletAddress] = useState<string | null>(null);
-  const [web3Provider, setWeb3Provider] = useState<ethers.providers.Web3Provider | null>(null);
-   const [isWalletConnected, setIsWalletConnected] = useState(false);
-   const [isConnecting, setIsConnecting] = useState(false);
- 
-   const disconnectWallet = () => {
-     setWalletAddress(null);
-     setIsWalletConnected(false);
-     setWeb3Provider(null);
-     setIsConnecting(false);
-   };
- 
-   const connectWallet = async () => {
-     const ethereum = window.ethereum;
-     if (!ethereum) {
-       throw new Error('No Web3 wallet detected in the browser.');
-     }
- 
-     setIsConnecting(true);
-     try {
-      const provider = new ethers.providers.Web3Provider(ethereum);
-      const accounts = await provider.send('eth_requestAccounts', []);
-      if (!accounts || accounts.length === 0) {
-        throw new Error('No wallet accounts were returned.');
-      }
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useAuth } from '@openformat/react';
+import { BrowserProvider, getAddress } from 'ethers';
 
-      const address = ethers.utils.getAddress(accounts[0]);
+const AuthContext = createContext<any>(null);
+
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  const { user, isAuthenticated } = useAuth();
+  const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const [web3Provider, setWeb3Provider] = useState<BrowserProvider | null>(null);
+  const [isWalletConnected, setIsWalletConnected] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
+
+  const connectWallet = async () => {
+    const ethereum = (window as any).ethereum;
+    if (!ethereum) return;
+    try {
+      setIsConnecting(true);
+      const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+      const address = getAddress(accounts[0]);
       setWalletAddress(address);
       setIsWalletConnected(true);
-      setWeb3Provider(provider);
-      return address;
-     } finally {
-       setIsConnecting(false);
-     }
-   };
- 
-   useEffect(() => {
-     const ethereum = window.ethereum;
-     if (!ethereum) return;
- 
-     const setInitialWallet = async () => {
-       try {
-        const provider = new ethers.providers.Web3Provider(ethereum);
-        const accounts = await provider.listAccounts();
+      setWeb3Provider(new BrowserProvider(ethereum));
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
+  const disconnectWallet = () => {
+    setWalletAddress(null);
+    setIsWalletConnected(false);
+    setWeb3Provider(null);
+  };
+
+  useEffect(() => {
+    const ethereum = (window as any).ethereum;
+    if (ethereum && isAuthenticated) {
+      ethereum.request({ method: 'eth_accounts' }).then((accounts: string[]) => {
         if (accounts.length > 0) {
-          setWalletAddress(ethers.utils.getAddress(accounts[0]));
+          setWalletAddress(getAddress(accounts[0]));
           setIsWalletConnected(true);
-          setWeb3Provider(provider);
+          setWeb3Provider(new BrowserProvider(ethereum));
         }
-       } catch {
-         disconnectWallet();
-       }
-     };
- 
-     setInitialWallet();
- 
-     const handleAccountsChanged = (accounts: string[]) => {
-       if (accounts.length === 0) {
-         disconnectWallet();
-         return;
-       }
-      const address = ethers.utils.getAddress(accounts[0]);
-      setWalletAddress(address);
-      setIsWalletConnected(true);
-      setWeb3Provider(new ethers.providers.Web3Provider(ethereum));
-     };
+      });
 
-     ethereum.on('accountsChanged', handleAccountsChanged);
-     return () => {
-       ethereum.removeListener('accountsChanged', handleAccountsChanged);
-     };
- }, [isAuthenticated]);
+      const handleAccountsChanged = (accounts: string[]) => {
+        if (accounts.length === 0) {
+          disconnectWallet();
+        } else {
+          setWalletAddress(getAddress(accounts[0]));
+          setIsWalletConnected(true);
+          setWeb3Provider(new BrowserProvider(ethereum));
+        }
+      };
 
- return (
-   <AuthContext.Provider value={{ walletAddress, isWalletConnected, isConnecting, connectWallet, disconnectWallet }}>
-     {children}
-   </AuthContext.Provider>
- );
+      ethereum.on('accountsChanged', handleAccountsChanged);
+      return () => {
+        ethereum.removeListener('accountsChanged', handleAccountsChanged);
+      };
+    }
+  };
+
+  return (
+    <AuthContext.Provider value={{ walletAddress, isWalletConnected, isConnecting, connectWallet, disconnectWallet }}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
 export const useGlobalAuth = () => useContext(AuthContext);
