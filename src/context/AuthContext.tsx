@@ -88,4 +88,3 @@ import { ethers } from 'ethers';
       setIsWalletConnected(true);
       setWeb3Provider(new ethers.providers.Web3Provider(ethereum));
      };
-*** End Patch
