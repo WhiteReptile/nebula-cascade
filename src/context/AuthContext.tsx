@@ -60,7 +60,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         ethereum.removeListener('accountsChanged', handleAccountsChanged);
       };
     }
-  };
+  }, [isAuthenticated]);
 
   return (
     <AuthContext.Provider value={{ walletAddress, isWalletConnected, isConnecting, connectWallet, disconnectWallet }}>
