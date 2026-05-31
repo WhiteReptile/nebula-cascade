@@ -1,11 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useAuth } from '@openformat/react';
 import { BrowserProvider, getAddress } from 'ethers';
 
 const AuthContext = createContext<any>(null);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const { user, isAuthenticated } = useAuth();
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [web3Provider, setWeb3Provider] = useState<BrowserProvider | null>(null);
   const [isWalletConnected, setIsWalletConnected] = useState(false);
@@ -36,7 +34,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     const ethereum = (window as any).ethereum;
-    if (ethereum && isAuthenticated) {
+    if (ethereum) {
       ethereum.request({ method: 'eth_accounts' }).then((accounts: string[]) => {
         if (accounts.length > 0) {
           setWalletAddress(getAddress(accounts[0]));
@@ -60,7 +58,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         ethereum.removeListener('accountsChanged', handleAccountsChanged);
       };
     }
-  }, [isAuthenticated]);
+  }, []);
 
   return (
     <AuthContext.Provider value={{ walletAddress, isWalletConnected, isConnecting, connectWallet, disconnectWallet }}>
