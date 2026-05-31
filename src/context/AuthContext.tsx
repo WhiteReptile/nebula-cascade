@@ -12,7 +12,7 @@ import { ethers } from 'ethers';
    walletAddress: string | null;
    isWalletConnected: boolean;
    isConnecting: boolean;
--  web3Provider: ethers.providers.Web3Provider | null;
+  web3Provider: ethers.providers.Web3Provider | null;
    connectWallet: () => Promise<string>;
    disconnectWallet: () => void;
    signOut: () => Promise<void>;
@@ -23,7 +23,7 @@ import { ethers } from 'ethers';
  export function AuthProvider({ children }: { children: ReactNode }) {
    const { user, isAuthenticated, isAdmin, isLoading } = useAuth();
    const [walletAddress, setWalletAddress] = useState<string | null>(null);
--  const [web3Provider, setWeb3Provider] = useState<ethers.providers.Web3Provider | null>(null);
+  const [web3Provider, setWeb3Provider] = useState<ethers.providers.Web3Provider | null>(null);
    const [isWalletConnected, setIsWalletConnected] = useState(false);
    const [isConnecting, setIsConnecting] = useState(false);
  
@@ -42,17 +42,17 @@ import { ethers } from 'ethers';
  
      setIsConnecting(true);
      try {
--      const provider = new ethers.providers.Web3Provider(ethereum);
--      const accounts = await provider.send('eth_requestAccounts', []);
--      if (!accounts || accounts.length === 0) {
--        throw new Error('No wallet accounts were returned.');
--      }
--
--      const address = ethers.utils.getAddress(accounts[0]);
--      setWalletAddress(address);
--      setIsWalletConnected(true);
--      setWeb3Provider(provider);
--      return address;
+      const provider = new ethers.providers.Web3Provider(ethereum);
+      const accounts = await provider.send('eth_requestAccounts', []);
+      if (!accounts || accounts.length === 0) {
+        throw new Error('No wallet accounts were returned.');
+      }
+
+      const address = ethers.utils.getAddress(accounts[0]);
+      setWalletAddress(address);
+      setIsWalletConnected(true);
+      setWeb3Provider(provider);
+      return address;
      } finally {
        setIsConnecting(false);
      }
@@ -64,13 +64,13 @@ import { ethers } from 'ethers';
  
      const setInitialWallet = async () => {
        try {
--        const provider = new ethers.providers.Web3Provider(ethereum);
--        const accounts = await provider.listAccounts();
--        if (accounts.length > 0) {
--          setWalletAddress(ethers.utils.getAddress(accounts[0]));
--          setIsWalletConnected(true);
--          setWeb3Provider(provider);
--        }
+        const provider = new ethers.providers.Web3Provider(ethereum);
+        const accounts = await provider.listAccounts();
+        if (accounts.length > 0) {
+          setWalletAddress(ethers.utils.getAddress(accounts[0]));
+          setIsWalletConnected(true);
+          setWeb3Provider(provider);
+        }
        } catch {
          disconnectWallet();
        }
@@ -83,9 +83,9 @@ import { ethers } from 'ethers';
          disconnectWallet();
          return;
        }
--      const address = ethers.utils.getAddress(accounts[0]);
--      setWalletAddress(address);
--      setIsWalletConnected(true);
--      setWeb3Provider(new ethers.providers.Web3Provider(ethereum));
+      const address = ethers.utils.getAddress(accounts[0]);
+      setWalletAddress(address);
+      setIsWalletConnected(true);
+      setWeb3Provider(new ethers.providers.Web3Provider(ethereum));
      };
 *** End Patch
