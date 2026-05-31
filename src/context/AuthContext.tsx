@@ -102,4 +102,4 @@ import { ethers } from 'ethers';
  );
 };
 
-export const useAuthContext = () => useContext(AuthContext);
+export const useGlobalAuth = () => useContext(AuthContext);
