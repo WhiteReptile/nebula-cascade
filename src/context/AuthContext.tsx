@@ -1,7 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
--import { ethers } from 'ethers';
-+import { BrowserProvider, getAddress } from 'ethers';
-+// Note: if you need parseEther/formatEther elsewhere, import them directly from 'ethers'
+import { ethers } from 'ethers';
  import { useAuth } from '@/hooks/useAuth';
  import { supabase } from '@/integrations/supabase/client';
  import type { User } from '@supabase/supabase-js';
@@ -15,7 +13,6 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
    isWalletConnected: boolean;
    isConnecting: boolean;
 -  web3Provider: ethers.providers.Web3Provider | null;
-+  web3Provider: BrowserProvider | null;
    connectWallet: () => Promise<string>;
    disconnectWallet: () => void;
    signOut: () => Promise<void>;
@@ -27,7 +24,6 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
    const { user, isAuthenticated, isAdmin, isLoading } = useAuth();
    const [walletAddress, setWalletAddress] = useState<string | null>(null);
 -  const [web3Provider, setWeb3Provider] = useState<ethers.providers.Web3Provider | null>(null);
-+  const [web3Provider, setWeb3Provider] = useState<BrowserProvider | null>(null);
    const [isWalletConnected, setIsWalletConnected] = useState(false);
    const [isConnecting, setIsConnecting] = useState(false);
  
@@ -57,18 +53,6 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 -      setIsWalletConnected(true);
 -      setWeb3Provider(provider);
 -      return address;
-+      const provider = new BrowserProvider(ethereum as any);
-+      // Request accounts using the provider transport
-+      const accounts = await provider.send('eth_requestAccounts', []);
-+      if (!accounts || accounts.length === 0) {
-+        throw new Error('No wallet accounts were returned.');
-+      }
-+
-+      const address = getAddress(accounts[0]);
-+      setWalletAddress(address);
-+      setIsWalletConnected(true);
-+      setWeb3Provider(provider);
-+      return address;
      } finally {
        setIsConnecting(false);
      }
@@ -87,13 +71,6 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 -          setIsWalletConnected(true);
 -          setWeb3Provider(provider);
 -        }
-+        const provider = new BrowserProvider(ethereum as any);
-+        const accounts = await provider.listAccounts();
-+        if (accounts.length > 0) {
-+          setWalletAddress(getAddress(accounts[0]));
-+          setIsWalletConnected(true);
-+          setWeb3Provider(provider);
-+        }
        } catch {
          disconnectWallet();
        }
@@ -110,9 +87,5 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 -      setWalletAddress(address);
 -      setIsWalletConnected(true);
 -      setWeb3Provider(new ethers.providers.Web3Provider(ethereum));
-+      const address = getAddress(accounts[0]);
-+      setWalletAddress(address);
-+      setIsWalletConnected(true);
-+      setWeb3Provider(new BrowserProvider(ethereum as any));
      };
 *** End Patch
