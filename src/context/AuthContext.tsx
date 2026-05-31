@@ -93,7 +93,6 @@ import { ethers } from 'ethers';
      return () => {
        ethereum.removeListener('accountsChanged', handleAccountsChanged);
      };
-   }
  }, [isAuthenticated]);
 
  return (
