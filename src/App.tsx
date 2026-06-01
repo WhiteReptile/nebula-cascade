@@ -13,42 +13,65 @@ import Marketplace from "@/pages/Marketplace";
 import Rewards from "@/pages/Rewards";
 import Roadmap from "@/pages/Roadmap";
 import { ProtectedRoute } from "@/components/shared/ProtectedRoute";
+import { Footer } from "@/components/shared/Footer";
 import { AuthProvider } from "@/context/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
+import { useTermsAcceptance } from "@/hooks/useTermsAcceptance";
+import { TermsAcceptanceModal } from "@/components/legal/TermsAcceptanceModal";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/leaderboard" element={<Leaderboard />} />
-          <Route
-            path="/admin/rewards"
-            element={
-              <ProtectedRoute requireAdmin>
-                <AdminRewards />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/cards" element={<Navigate to="/marketplace" replace />} />
-          <Route path="/wallet" element={<Navigate to="/marketplace" replace />} />
-          <Route path="/options" element={<Options />} />
-          <Route path="/marketplace" element={<Marketplace />} />
-          <Route path="/rules" element={<Navigate to="/rewards" replace />} />
-          <Route path="/rewards" element={<Rewards />} />
-          <Route path="/roadmap" element={<Roadmap />} />
-          <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
+  const { hasAcceptedTerms } = useTermsAcceptance();
+  const showTermsModal = isAuthenticated && hasAcceptedTerms === false;
+  const isReady = !isAuthLoading && (!isAuthenticated || hasAcceptedTerms !== null);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+
+          {showTermsModal ? (
+            <TermsAcceptanceModal open={true} onOpenChange={() => {}} />
+          ) : isReady ? (
+            <>
+              <BrowserRouter>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/leaderboard" element={<Leaderboard />} />
+                  <Route
+                    path="/admin/rewards"
+                    element={
+                      <ProtectedRoute requireAdmin>
+                        <AdminRewards />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route path="/cards" element={<Navigate to="/marketplace" replace />} />
+                  <Route path="/wallet" element={<Navigate to="/marketplace" replace />} />
+                  <Route path="/options" element={<Options />} />
+                  <Route path="/marketplace" element={<Marketplace />} />
+                  <Route path="/rules" element={<Navigate to="/rewards" replace />} />
+                  <Route path="/rewards" element={<Rewards />} />
+                  <Route path="/roadmap" element={<Roadmap />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </BrowserRouter>
+              <Footer />
+            </>
+          ) : (
+            <div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-100">
+              Cargando...
+            </div>
+          )}
+        </TooltipProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
