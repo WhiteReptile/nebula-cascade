@@ -37,6 +37,8 @@ interface Row {
   division?: Division | null;
   isYou?: boolean;
   trend?: number[];
+  total_score?: number;
+  backendRank?: number | null;
 }
 
 const Leaderboard = () => {
@@ -310,28 +312,39 @@ async function fetchRows(
   }
 
   // Account boards (no_nft / nft / all) all read from `leaderboard` joined with `players`.
+  // Build server-side query: include backend `rank` + `total_score`, apply segment filter BEFORE limit
   let q = supabase
     .from('leaderboard')
-    .select('player_id, total_score, best_score, avg_top3_score, matches_played, division, players!inner(display_name, has_ever_owned_card)')
-    .eq('period', period)
-    .order(sortKey, { ascending: false })
-    .limit(100);
+    .select('player_id, total_score, best_score, avg_top3_score, matches_played, division, rank, players!inner(display_name, has_ever_owned_card)')
+    .eq('period', period);
 
-  if (tab === 'nft') q = q.eq('division', division);
+  // Segment filters executed server-side BEFORE limit
+  if (tab === 'nft') {
+    q = q.eq('players.has_ever_owned_card', true).eq('division', division);
+  } else if (tab === 'no_nft') {
+    q = q.eq('players.has_ever_owned_card', false);
+  }
+
+  // Order: prefer backend rank when present, fallback to total_score desc.
+  // Keep ability to sort by other keys if requested (avg_top3_score, best_score)
+  if (sortKey === 'avg_top3_score' || sortKey === 'best_score' || sortKey === 'matches_played') {
+    q = q.order(sortKey, { ascending: false }).order('rank', { ascending: true, nullsFirst: false });
+  } else {
+    q = q.order('rank', { ascending: true, nullsFirst: false }).order('total_score', { ascending: false });
+  }
+
+  q = q.limit(100);
 
   const { data } = await q;
-  let filtered = (data ?? []) as any[];
-
-  if (tab === 'no_nft') filtered = filtered.filter((r) => r.players?.has_ever_owned_card === false);
-  else if (tab === 'nft') filtered = filtered.filter((r) => r.players?.has_ever_owned_card === true);
-  // 'all' → no segment filter
+  const filtered = (data ?? []) as any[];
 
   // Trend: last 7 match_logs per player (only for top 25 to limit queries)
   const top = filtered.slice(0, 50);
   const trendMap = await fetchTrends(top.map((r) => r.player_id).slice(0, 25));
 
   return top.map((r: any, i: number) => ({
-    rank: i + 1,
+    // Prefer backend rank if available, otherwise fall back to positional index
+    rank: r.rank ?? (i + 1),
     name: r.players?.display_name ?? 'Anonymous',
     avg_top3_score: Number(r.avg_top3_score ?? 0),
     best_score: Number(r.best_score ?? 0),
@@ -339,6 +352,8 @@ async function fetchRows(
     division: r.division ?? null,
     isYou: mePlayerId === r.player_id,
     trend: trendMap.get(r.player_id),
+    total_score: Number(r.total_score ?? 0),
+    backendRank: r.rank ?? null,
   }));
 }
 
