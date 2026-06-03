@@ -54,6 +54,12 @@ export async function submitGuestScore(payload: {
 }): Promise<{ ok: boolean; reason?: string }> {
   const nickname = getGuestNickname();
   if (!nickname) return { ok: false, reason: 'no_nickname' };
+  if (!NICKNAME_REGEX.test(nickname)) return { ok: false, reason: 'invalid_nickname' };
+
+  const deviceId = getDeviceId();
+  if (!deviceId || deviceId.length < 8 || deviceId.length > 128) {
+    return { ok: false, reason: 'invalid_device' };
+  }
 
   const score = Number(payload.score);
   if (!Number.isFinite(score) || isNaN(score)) {
@@ -68,7 +74,7 @@ export async function submitGuestScore(payload: {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         nickname,
-        device_id: getDeviceId(),
+        device_id: deviceId,
         score: Math.floor(score),
         level_reached: payload.level_reached ?? 1,
         survival_seconds: payload.survival_seconds ?? 0,
