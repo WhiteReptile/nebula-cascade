@@ -54,7 +54,12 @@ export async function submitGuestScore(payload: {
 }): Promise<{ ok: boolean; reason?: string }> {
   const nickname = getGuestNickname();
   if (!nickname) return { ok: false, reason: 'no_nickname' };
-  if (payload.score < GUEST_MIN_SCORE) return { ok: false, reason: 'below_threshold' };
+
+  const score = Number(payload.score);
+  if (!Number.isFinite(score) || isNaN(score)) {
+    return { ok: false, reason: 'invalid_score' };
+  }
+  if (score < GUEST_MIN_SCORE) return { ok: false, reason: 'below_threshold' };
 
   const url = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/submit-guest-score`;
   try {
@@ -64,7 +69,7 @@ export async function submitGuestScore(payload: {
       body: JSON.stringify({
         nickname,
         device_id: getDeviceId(),
-        score: Math.floor(payload.score),
+        score: Math.floor(score),
         level_reached: payload.level_reached ?? 1,
         survival_seconds: payload.survival_seconds ?? 0,
       }),
