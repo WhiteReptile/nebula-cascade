@@ -95,12 +95,12 @@ const GameHUD = () => {
     const onMatchEnd = (data: any) => {
       // Guest path: if no nickname this no-ops. Logged-in path: matchLogger early-returns when no user.
       import('@/lib/guestSession').then(({ getGuestNickname, submitGuestScore }) => {
-        if (getGuestNickname()) {
+        if (true) {
           const survival = data.startedAt
             ? Math.floor((Date.now() - new Date(data.startedAt).getTime()) / 1000)
             : 0;
           submitGuestScore({
-            score: data.score,
+            nickname: getGuestNickname() || "GUEST_REPTILE", score: data.score,
             level_reached: data.level,
             survival_seconds: survival,
           }).catch(console.error);
