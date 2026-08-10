@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import GalaxyBackground from '@/components/shared/GalaxyBackground';
 import SEO from '@/components/SEO';
 import { film } from '@/content/film';
+import PosterModal from '@/components/PosterModal';
 
 const videoSources = [
   { type: 'video/webm', src: film.trailerWebm },
@@ -22,6 +23,7 @@ const Landing = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [authorized, setAuthorized] = useState(false);
+  const [posterOpen, setPosterOpen] = useState(false);
 
   useEffect(() => {
     setShowInfo(false);
@@ -150,6 +152,13 @@ const Landing = () => {
             >
               Skip Trailer
             </button>
+            <button
+              type="button"
+              onClick={() => setPosterOpen(true)}
+              className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-xs uppercase tracking-[0.3em] text-white transition hover:border-white/40 hover:bg-white/10"
+            >
+              View Poster
+            </button>
           </div>
 
           {autoplayBlocked && (
@@ -230,6 +239,7 @@ const Landing = () => {
           </div>
         </div>
       )}
+      <PosterModal src={film.poster} title={film.title} open={posterOpen} onClose={() => setPosterOpen(false)} />
     </div>
   );
 };
