@@ -1,54 +1,26 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import GalaxyBackground from '@/components/shared/GalaxyBackground';
 import SEO from '@/components/SEO';
 import { film } from '@/content/film';
-import PosterModal from '@/components/PosterModal';
-
-const videoSources = [
-  { type: 'video/webm', src: film.trailerWebm },
-  { type: 'video/mp4', src: film.trailerMp4 },
-];
 
 const GAME_ACCESS_KEY = 'nebula_cascade_game_access';
 const GAME_PASSWORD = import.meta.env.VITE_GAME_PASSWORD;
 
+type Section = 'home' | 'trailer' | 'synopsis' | 'credits';
+
 const Landing = () => {
   const navigate = useNavigate();
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [autoplayBlocked, setAutoplayBlocked] = useState(false);
-  const [showInfo, setShowInfo] = useState(false);
-  const [soundEnabled, setSoundEnabled] = useState(false);
   const [gateOpen, setGateOpen] = useState(false);
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [authorized, setAuthorized] = useState(false);
-  const [posterOpen, setPosterOpen] = useState(false);
+  const [section, setSection] = useState<Section>('home');
 
   useEffect(() => {
-    setShowInfo(false);
     if (typeof window !== 'undefined') {
       setAuthorized(sessionStorage.getItem(GAME_ACCESS_KEY) === 'true');
     }
   }, []);
-
-  const handleVideoReady = () => {
-    setIsPlaying(true);
-  };
-
-  const handleVideoBlocked = () => {
-    setAutoplayBlocked(true);
-  };
-
-  const handleEnableSound = () => {
-    setSoundEnabled(true);
-    setIsPlaying(true);
-  };
-
-  const handleSkip = () => {
-    setShowInfo(true);
-    setIsPlaying(false);
-  };
 
   const handleOpenGate = () => {
     setGateOpen(true);
@@ -86,118 +58,134 @@ const Landing = () => {
     setError('Incorrect passphrase.');
   };
 
-  const infoClassName = useMemo(
-    () =>
-      `relative z-20 max-w-3xl mx-auto px-6 py-10 text-white ${
-        showInfo ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-      } transition-opacity duration-700`,
-    [showInfo]
-  );
+  const navItems: { id: Section; label: string }[] = [
+    { id: 'home', label: 'Home' },
+    { id: 'trailer', label: 'Trailer' },
+    { id: 'synopsis', label: 'Synopsis' },
+    { id: 'credits', label: 'Credits' },
+  ];
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-black text-white">
       <SEO title={film.title} description={film.synopsis} path="/" />
-      <GalaxyBackground zIndex={0} />
-      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
-      <div className="relative z-10 min-h-screen flex flex-col justify-center">
-        <div className="absolute right-6 top-6 z-30">
-          <button
-            type="button"
-            onClick={handleOpenGate}
-            className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-xs uppercase tracking-[0.3em] text-white transition hover:border-white/40 hover:bg-white/10"
-          >
-            ACCESS ADMIN
-          </button>
-        </div>
 
-        <div className="absolute inset-0">
-          <video
-            className="absolute inset-0 w-full h-full object-cover"
-            playsInline
-            muted={!soundEnabled}
-            autoPlay
-            controls={false}
-            poster={film.poster}
-            onCanPlay={handleVideoReady}
-            onError={handleVideoBlocked}
-            onEnded={() => setShowInfo(true)}
-          >
-            {videoSources.map((source) => (
-              <source key={source.type} src={source.src} type={source.type} />
-            ))}
-            Your browser does not support embedded video.
-          </video>
-          <div className="absolute inset-0 bg-black/80" />
-        </div>
-
-        <div className="relative z-20 flex flex-col items-start gap-8 px-6 py-12 sm:px-10 lg:px-16">
-          <div className="max-w-2xl space-y-6">
-            <p className="text-[11px] tracking-[0.35em] uppercase text-red-400/80">A film by enrique catalan</p>
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black uppercase tracking-[-0.05em] text-white">{film.title}</h1>
-            <p className="max-w-xl text-base sm:text-lg text-slate-200/90 leading-relaxed">{film.tagline}</p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              onClick={handleEnableSound}
-              className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-xs uppercase tracking-[0.3em] text-white transition hover:border-white/40 hover:bg-white/10"
-            >
-              {soundEnabled ? 'Sound Enabled' : 'Enable Sound'}
-            </button>
-            <button
-              type="button"
-              onClick={handleSkip}
-              className="rounded-full border border-red-400/30 bg-red-500/5 px-4 py-2 text-xs uppercase tracking-[0.3em] text-red-300 transition hover:border-red-400/60 hover:bg-red-500/10"
-            >
-              Skip Trailer
-            </button>
-            <button
-              type="button"
-              onClick={() => setPosterOpen(true)}
-              className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-xs uppercase tracking-[0.3em] text-white transition hover:border-white/40 hover:bg-white/10"
-            >
-              View Poster
-            </button>
-          </div>
-
-          {autoplayBlocked && (
-            <p className="max-w-xl text-sm text-slate-400">
-              Autoplay was blocked by your browser. Use the button above to start audio and continue.
-            </p>
-          )}
-        </div>
-
-        <div className={infoClassName}>
-          <div className="rounded-3xl border border-white/10 bg-slate-950/75 p-8 backdrop-blur-xl shadow-2xl shadow-black/40">
-            <div className="space-y-6">
-              <p className="text-sm uppercase tracking-[0.35em] text-red-400/80">Now presenting</p>
-              <h2 className="text-4xl font-bold uppercase tracking-[-0.04em] text-white">{film.title}</h2>
-              <p className="text-base leading-8 text-slate-200/90">{film.synopsis}</p>
-              <div className="grid gap-4 sm:grid-cols-[1fr_auto]">
-                <div className="space-y-2 text-sm text-slate-300">
-                  <p>{film.filmmaker}</p>
-                  <p>Contact: {film.contact.email || 'email@example.com'}</p>
-                  <p>Website: {film.contact.website || 'example.com'}</p>
-                </div>
-                <div className="space-y-2 text-right text-sm text-slate-400">
-                  <p>Follow:</p>
-                  <p>{film.socials.twitter || 'twitter.com/placeholder'}</p>
-                  <p>{film.socials.instagram || 'instagram.com/placeholder'}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <footer className="relative z-20 mt-auto px-6 pb-8 text-xs uppercase tracking-[0.35em] text-slate-500 sm:px-10 lg:px-16">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <span>© {new Date().getFullYear()} Nebula Cascade</span>
-            <span>Designed for a minimal film presentation.</span>
-          </div>
-        </footer>
+      {/* Poster as the dominant background */}
+      <div className="absolute inset-0 z-0">
+        <img
+          src="/poster.png"
+          alt={`${film.title} movie poster`}
+          className="absolute inset-0 w-full h-full object-cover object-center"
+        />
+        {/* Cinematic dark vignette so text stays readable */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/40 to-black/80" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-transparent to-black/60" />
       </div>
 
+      {/* Top navigation */}
+      <nav className="relative z-20 flex items-center justify-between px-6 py-6 sm:px-10 lg:px-16">
+        <div className="flex items-center gap-8">
+          {navItems.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setSection(item.id)}
+              className={`text-[11px] uppercase tracking-[0.35em] transition ${
+                section === item.id
+                  ? 'text-red-400'
+                  : 'text-slate-300 hover:text-white'
+              }`}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={handleOpenGate}
+          className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-[11px] uppercase tracking-[0.3em] text-white transition hover:border-white/40 hover:bg-white/10"
+        >
+          Access Admin
+        </button>
+      </nav>
+
+      {/* Main content */}
+      <main className="relative z-10 flex min-h-[calc(100vh-80px)] flex-col justify-center px-6 sm:px-10 lg:px-16">
+        <div className="max-w-2xl space-y-6">
+          {section === 'home' && (
+            <>
+              <p className="text-[11px] tracking-[0.35em] uppercase text-red-400/80">
+                A film by enrique catalan
+              </p>
+              <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black uppercase tracking-[-0.05em] text-white drop-shadow-2xl">
+                {film.title}
+              </h1>
+              <p className="max-w-xl text-base sm:text-lg text-slate-200/90 leading-relaxed drop-shadow-lg">
+                {film.tagline}
+              </p>
+              <p className="text-sm tracking-[0.2em] uppercase text-slate-400">
+                Coming soon
+              </p>
+            </>
+          )}
+
+          {section === 'trailer' && (
+            <div className="space-y-4">
+              <p className="text-[11px] tracking-[0.35em] uppercase text-red-400/80">
+                Trailer
+              </p>
+              <h2 className="text-4xl font-bold uppercase tracking-[-0.04em] text-white">
+                Coming Soon
+              </h2>
+              <p className="max-w-xl text-base text-slate-300/90 leading-relaxed">
+                The official trailer for {film.title} will be presented here.
+                Check back shortly for the first look.
+              </p>
+            </div>
+          )}
+
+          {section === 'synopsis' && (
+            <div className="space-y-4">
+              <p className="text-[11px] tracking-[0.35em] uppercase text-red-400/80">
+                Synopsis
+              </p>
+              <h2 className="text-4xl font-bold uppercase tracking-[-0.04em] text-white">
+                {film.title}
+              </h2>
+              <p className="max-w-xl text-base text-slate-200/90 leading-relaxed">
+                {film.synopsis}
+              </p>
+            </div>
+          )}
+
+          {section === 'credits' && (
+            <div className="space-y-4">
+              <p className="text-[11px] tracking-[0.35em] uppercase text-red-400/80">
+                Credits
+              </p>
+              <h2 className="text-4xl font-bold uppercase tracking-[-0.04em] text-white">
+                {film.title}
+              </h2>
+              <div className="space-y-2 text-sm text-slate-300">
+                <p>{film.filmmaker}</p>
+                <p>Contact: {film.contact.email || 'email@example.com'}</p>
+                <p>Website: {film.contact.website || 'example.com'}</p>
+                <p>{film.socials.twitter || 'twitter.com/placeholder'}</p>
+                <p>{film.socials.instagram || 'instagram.com/placeholder'}</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="relative z-20 mt-auto px-6 pb-8 text-xs uppercase tracking-[0.35em] text-slate-500 sm:px-10 lg:px-16">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <span>© {new Date().getFullYear()} Nebula Cascade</span>
+          <span>Designed for a minimal film presentation.</span>
+        </div>
+      </footer>
+
+      {/* Private access gate — unchanged */}
       {gateOpen && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/75 px-4 py-6">
           <div className="w-full max-w-md rounded-3xl border border-white/10 bg-slate-950/95 p-8 shadow-2xl shadow-black/70 backdrop-blur-xl">
@@ -239,7 +227,6 @@ const Landing = () => {
           </div>
         </div>
       )}
-      <PosterModal src={film.poster} title={film.title} open={posterOpen} onClose={() => setPosterOpen(false)} />
     </div>
   );
 };

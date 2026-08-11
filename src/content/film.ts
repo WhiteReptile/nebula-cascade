@@ -5,7 +5,7 @@ export const film = {
   synopsis: 'A concise synopsis will appear here. Replace with final copy when available.',
   trailerWebm: '/trailer.webm',
   trailerMp4: '/trailer.mp4',
-  poster: '/trailer-poster.jpg',
+  poster: '/poster.png',
   contact: {
     email: '',
     website: '',
