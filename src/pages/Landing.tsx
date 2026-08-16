@@ -123,17 +123,26 @@ const Landing = () => {
           )}
 
           {section === 'trailer' && (
-            <div className="space-y-4">
-              <p className="text-[11px] tracking-[0.35em] uppercase text-red-400/80">
-                Trailer
-              </p>
-              <h2 className="text-4xl font-bold uppercase tracking-[-0.04em] text-white">
-                Coming Soon
-              </h2>
-              <p className="max-w-xl text-base text-slate-300/90 leading-relaxed">
-                The official trailer for {film.title} will be presented here.
-                Check back shortly for the first look.
-              </p>
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <p className="text-[11px] tracking-[0.35em] uppercase text-red-400/80">
+                  Trailer
+                </p>
+                <h2 className="text-4xl font-bold uppercase tracking-[-0.04em] text-white">
+                  {film.title}
+                </h2>
+              </div>
+              <div className="relative w-full max-w-3xl overflow-hidden rounded-2xl border border-white/10 shadow-2xl shadow-black/50">
+                <div className="relative aspect-video w-full">
+                  <iframe
+                    className="absolute inset-0 h-full w-full"
+                    src={`https://www.youtube.com/embed/${film.trailerYouTubeId}?rel=0&modestbranding=1`}
+                    title={`${film.title} — Official Trailer`}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                  />
+                </div>
+              </div>
             </div>
           )}
 

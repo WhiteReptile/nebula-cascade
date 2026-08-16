@@ -4,11 +4,12 @@ export const film = {
   tagline: 'A quiet collision of memory, light, and the endless sky.',
   synopsis:
     'A concise synopsis will appear here. Replace with final copy when available.',
-  poster: '/poster.svg',
+  poster: '/poster.png',
   contact: {
     email: '',
     website: '',
   },
+  trailerYouTubeId: 'axZPpBFk_qI',
   socials: {
     twitter: '',
     instagram: '',
