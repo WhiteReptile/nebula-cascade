@@ -1,12 +1,18 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import SEO from '@/components/SEO';
 import { film } from '@/content/film';
 
 const GAME_ACCESS_KEY = 'nebula_cascade_game_access';
 const GAME_PASSWORD = import.meta.env.VITE_GAME_PASSWORD;
 
 type Section = 'home' | 'trailer' | 'synopsis' | 'credits';
+
+const navItems: { id: Section; label: string }[] = [
+  { id: 'home', label: 'Home' },
+  { id: 'trailer', label: 'Trailer' },
+  { id: 'synopsis', label: 'Synopsis' },
+  { id: 'credits', label: 'Credits' },
+];
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -37,7 +43,6 @@ const Landing = () => {
     event.preventDefault();
 
     if (!GAME_PASSWORD) {
-      console.warn('VITE_GAME_PASSWORD is not set — game gate locked in development.');
       setError('Game access is not configured.');
       return;
     }
@@ -48,9 +53,7 @@ const Landing = () => {
     }
 
     if (password === GAME_PASSWORD) {
-      if (typeof window !== 'undefined') {
-        sessionStorage.setItem(GAME_ACCESS_KEY, 'true');
-      }
+      sessionStorage.setItem(GAME_ACCESS_KEY, 'true');
       navigate('/game');
       return;
     }
@@ -58,38 +61,29 @@ const Landing = () => {
     setError('Incorrect passphrase.');
   };
 
-  const navItems: { id: Section; label: string }[] = [
-    { id: 'home', label: 'Home' },
-    { id: 'trailer', label: 'Trailer' },
-    { id: 'synopsis', label: 'Synopsis' },
-    { id: 'credits', label: 'Credits' },
-  ];
-
   return (
     <div className="relative min-h-screen overflow-hidden bg-black text-white">
-      <SEO title={film.title} description={film.synopsis} path="/" />
-
-      {/* Poster as the dominant background */}
+      {/* Poster fills the screen */}
       <div className="absolute inset-0 z-0">
         <img
-          src="/poster.png"
+          src={film.poster}
           alt={`${film.title} movie poster`}
           className="absolute inset-0 w-full h-full object-cover object-center"
         />
-        {/* Cinematic dark vignette so text stays readable */}
+        {/* Cinematic vignette for readability */}
         <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/40 to-black/80" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-transparent to-black/60" />
       </div>
 
       {/* Top navigation */}
       <nav className="relative z-20 flex items-center justify-between px-6 py-6 sm:px-10 lg:px-16">
-        <div className="flex items-center gap-8">
+        <div className="flex items-center gap-6 sm:gap-8">
           {navItems.map((item) => (
             <button
               key={item.id}
               type="button"
               onClick={() => setSection(item.id)}
-              className={`text-[11px] uppercase tracking-[0.35em] transition ${
+              className={`text-[10px] sm:text-[11px] uppercase tracking-[0.35em] transition-colors duration-300 ${
                 section === item.id
                   ? 'text-red-400'
                   : 'text-slate-300 hover:text-white'
@@ -102,14 +96,14 @@ const Landing = () => {
         <button
           type="button"
           onClick={handleOpenGate}
-          className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-[11px] uppercase tracking-[0.3em] text-white transition hover:border-white/40 hover:bg-white/10"
+          className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-[10px] sm:text-[11px] uppercase tracking-[0.3em] text-white transition hover:border-white/40 hover:bg-white/10"
         >
           Access Admin
         </button>
       </nav>
 
       {/* Main content */}
-      <main className="relative z-10 flex min-h-[calc(100vh-80px)] flex-col justify-center px-6 sm:px-10 lg:px-16">
+      <main className="relative z-10 flex min-h-[calc(100vh-180px)] flex-col justify-center px-6 sm:px-10 lg:px-16">
         <div className="max-w-2xl space-y-6">
           {section === 'home' && (
             <>
@@ -185,13 +179,15 @@ const Landing = () => {
         </div>
       </footer>
 
-      {/* Private access gate — unchanged */}
+      {/* Private access gate */}
       {gateOpen && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/75 px-4 py-6">
           <div className="w-full max-w-md rounded-3xl border border-white/10 bg-slate-950/95 p-8 shadow-2xl shadow-black/70 backdrop-blur-xl">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-sm uppercase tracking-[0.35em] text-red-400/80">Private access</p>
+                <p className="text-sm uppercase tracking-[0.35em] text-red-400/80">
+                  Private access
+                </p>
                 <h2 className="mt-3 text-2xl font-semibold text-white">Game Gate</h2>
               </div>
               <button
@@ -204,7 +200,10 @@ const Landing = () => {
             </div>
 
             <form className="mt-8 space-y-4" onSubmit={handleAuthorize}>
-              <label className="block text-sm uppercase tracking-[0.3em] text-slate-400" htmlFor="game-password">
+              <label
+                className="block text-sm uppercase tracking-[0.3em] text-slate-400"
+                htmlFor="game-password"
+              >
                 Passphrase
               </label>
               <input

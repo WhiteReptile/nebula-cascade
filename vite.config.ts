@@ -1,25 +1,16 @@
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react-swc";
-import path from "path";
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import path from 'path';
 
-export default defineConfig(({ mode }) => ({
-  server: {
-    host: "0.0.0.0",
-    port: 5000,
-    strictPort: true,
-    allowedHosts: true,
-    hmr: {
-      overlay: false,
-    },
-    watch: {
-      ignored: ["**/.cache/**", "**/node_modules/**", "**/.git/**"],
-    },
-  },
+export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      '@': path.resolve(__dirname, './src'),
     },
-    dedupe: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime", "@tanstack/react-query", "@tanstack/query-core"],
   },
-}));
+  server: {
+    port: 5173,
+    host: true,
+  },
+});
