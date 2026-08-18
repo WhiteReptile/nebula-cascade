@@ -10,6 +10,7 @@ const HUD_SLOTS: { id: CategoryId; label: string; fileAccept?: string }[] = [
   { id: "music", label: "Music", fileAccept: "audio/*,.mp3,.wav,.m4a,.flac" },
   { id: "documents", label: "Documents", fileAccept: ".pdf,.doc,.docx" },
   { id: "video", label: "Video", fileAccept: "video/*" },
+  { id: "text", label: "Text" },
 ];
 
 const PAID: CategoryId[] = ["music", "documents", "video"];
@@ -26,7 +27,7 @@ export function SubmitForm() {
   const searchParams = useSearchParams();
   const revisionOf = searchParams.get("revision") ?? undefined;
 
-  const [category, setCategory] = useState<CategoryId | null>(null);
+  const [category, setCategory] = useState<CategoryId>("text");
   const [content, setContent] = useState("");
   const [fileName, setFileName] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -35,7 +36,7 @@ export function SubmitForm() {
   const dailyLimit = getDailyLimit();
   const used = getDailyUsage();
   const slot = HUD_SLOTS.find((s) => s.id === category);
-  const paidSelected = category !== null && PAID.includes(category);
+  const paidSelected = PAID.includes(category);
   const canSubmit =
     Boolean(content.trim()) && !paidSelected && !fileName && !loading;
 
@@ -95,7 +96,7 @@ export function SubmitForm() {
               role="option"
               aria-selected={on}
               onClick={() => {
-                setCategory(on ? null : s.id);
+                setCategory(s.id);
                 setFileName(null);
               }}
               className={`hud-slot ${on ? "hud-slot-on" : ""}`}
@@ -117,12 +118,12 @@ export function SubmitForm() {
         </div>
       </div>
 
-      {(!category || slot?.fileAccept) && (
+      {slot?.fileAccept && (
         <div className="file-pick">
           <input
             id="submit-file"
             type="file"
-            accept={slot?.fileAccept ?? ".pdf,.doc,.docx,audio/*,video/*"}
+            accept={slot.fileAccept}
             className="sr-only"
             disabled={loading}
             onChange={(e) => setFileName(e.target.files?.[0]?.name ?? null)}
@@ -138,7 +139,11 @@ export function SubmitForm() {
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          placeholder="Paste your business idea, landing page copy, or pitch content…"
+          placeholder={
+            category === "text"
+              ? "Paste your business idea, landing page copy, or pitch content…"
+              : "Context for the AI and human…"
+          }
           rows={14}
           className="w-full bg-transparent px-5 py-4 text-sm text-white placeholder:text-white/40 focus:outline-none resize-y"
           disabled={loading}
