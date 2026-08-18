@@ -6,13 +6,16 @@ import { getDailyLimit } from "@/lib/constants";
 import { getDailyUsage, incrementDailyUsage, saveVerdict } from "@/lib/storage";
 import type { CategoryId } from "@/lib/types";
 
-const HUD_SLOTS: { id: CategoryId; label: string }[] = [
-  { id: "music", label: "Music" },
-  { id: "video", label: "Video" },
+const HUD_SLOTS: { id: CategoryId; label: string; fileAccept?: string }[] = [
+  { id: "music", label: "Music", fileAccept: "audio/*,.mp3,.wav,.m4a,.flac" },
+  { id: "documents", label: "Documents", fileAccept: ".pdf,.doc,.docx" },
+  { id: "video", label: "Video", fileAccept: "video/*" },
 ];
 
+const PAID: CategoryId[] = ["music", "documents", "video"];
+
 const PRICING_COPY = [
-  "Music and video are $2.99.",
+  "Music, documents, and video are $2.99.",
   "A human will watch or read your work.",
   "You get a five-sentence opinion.",
   "It is anonymous. They will not know who you are.",
@@ -31,12 +34,17 @@ export function SubmitForm() {
 
   const dailyLimit = getDailyLimit();
   const used = getDailyUsage();
-  const paidView = category === "music" || category === "video";
-  const canSubmit = Boolean(content.trim()) && !paidView && !fileName && !loading;
+  const slot = HUD_SLOTS.find((s) => s.id === category);
+  const paidSelected = category !== null && PAID.includes(category);
+  const canSubmit =
+    Boolean(content.trim()) && !paidSelected && !fileName && !loading;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (paidView) return;
+    if (paidSelected || fileName) {
+      setError("Music, documents, and video are paid. See Pricing.");
+      return;
+    }
     if (!content.trim()) return;
     if (used >= dailyLimit) {
       setError(`Free limit reached (${dailyLimit}/day). Try again tomorrow.`);
@@ -77,7 +85,7 @@ export function SubmitForm() {
         <p className="text-dynamic text-sm mb-4">Revising a previous submission.</p>
       )}
 
-      <div className="hud-row mb-4" role="listbox" aria-label="Category">
+      <div className="hud-row mb-3" role="listbox" aria-label="Category">
         {HUD_SLOTS.map((s) => {
           const on = category === s.id;
           return (
@@ -98,49 +106,53 @@ export function SubmitForm() {
         })}
       </div>
 
-      {paidView ? (
-        <div className="cosmic-glass p-5 text-sm text-white space-y-3">
+      <div className="how-wrap relative inline-block mb-4">
+        <button type="button" className="pricing-btn">
+          Pricing
+        </button>
+        <div className="how-popout" role="tooltip">
           {PRICING_COPY.map((line) => (
             <p key={line}>{line}</p>
           ))}
         </div>
-      ) : (
-        <>
-          <div className="file-pick">
-            <input
-              id="submit-file"
-              type="file"
-              className="sr-only"
-              disabled={loading}
-              onChange={(e) => setFileName(e.target.files?.[0]?.name ?? null)}
-            />
-            <label htmlFor="submit-file" className="file-pick-btn">
-              Choose file
-            </label>
-            <span className="file-pick-name">{fileName ?? "No file chosen"}</span>
-          </div>
+      </div>
 
-          <div className="cosmic-glass p-1">
-            <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Paste your business idea, landing page copy, or pitch content…"
-              rows={14}
-              className="w-full bg-transparent px-5 py-4 text-sm text-white placeholder:text-white/40 focus:outline-none resize-y"
-              disabled={loading}
-            />
-          </div>
-
-          <div className="mt-6 flex items-center justify-between">
-            <span className="text-dynamic text-xs tracking-wide">
-              {used}/{dailyLimit} free today
-            </span>
-            <button type="submit" disabled={!canSubmit} className="cosmic-cta text-sm px-8 py-2.5">
-              {loading ? "Evaluating…" : "Evaluate"}
-            </button>
-          </div>
-        </>
+      {(!category || slot?.fileAccept) && (
+        <div className="file-pick">
+          <input
+            id="submit-file"
+            type="file"
+            accept={slot?.fileAccept ?? ".pdf,.doc,.docx,audio/*,video/*"}
+            className="sr-only"
+            disabled={loading}
+            onChange={(e) => setFileName(e.target.files?.[0]?.name ?? null)}
+          />
+          <label htmlFor="submit-file" className="file-pick-btn">
+            Choose file
+          </label>
+          <span className="file-pick-name">{fileName ?? "No file chosen"}</span>
+        </div>
       )}
+
+      <div className="cosmic-glass p-1">
+        <textarea
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          placeholder="Paste your business idea, landing page copy, or pitch content…"
+          rows={14}
+          className="w-full bg-transparent px-5 py-4 text-sm text-white placeholder:text-white/40 focus:outline-none resize-y"
+          disabled={loading}
+        />
+      </div>
+
+      <div className="mt-6 flex items-center justify-between">
+        <span className="text-dynamic text-xs tracking-wide">
+          {used}/{dailyLimit} free today
+        </span>
+        <button type="submit" disabled={!canSubmit} className="cosmic-cta text-sm px-8 py-2.5">
+          {loading ? "Evaluating…" : "Evaluate"}
+        </button>
+      </div>
 
       {error && <p className="mt-4 text-sm text-white">{error}</p>}
     </form>
