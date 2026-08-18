@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getDailyLimit } from "@/lib/constants";
 import { getDailyUsage, incrementDailyUsage, saveVerdict } from "@/lib/storage";
@@ -60,9 +60,13 @@ export function SubmitForm() {
   const [fileName, setFileName] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [used, setUsed] = useState(0);
+
+  useEffect(() => {
+    setUsed(getDailyUsage());
+  }, []);
 
   const dailyLimit = getDailyLimit();
-  const used = getDailyUsage();
   const slot = HUD_SLOTS.find((s) => s.id === category);
   const paidSelected = PAID.includes(category);
   const canSubmit =
@@ -99,6 +103,7 @@ export function SubmitForm() {
       }
       const { verdict } = await res.json();
       incrementDailyUsage();
+      setUsed(getDailyUsage());
       saveVerdict(verdict);
       router.push(`/result/${verdict.id}`);
     } catch (err) {
