@@ -173,7 +173,7 @@ async function llmJson<T>(system: string, user: string): Promise<T | null> {
       model: config.model,
       response_format: { type: "json_object" },
       messages: [{ role: "system", content: system }, { role: "user", content: user }],
-      temperature: 0.4,
+      temperature: 0.7 + Math.random() * 0.5,
     }),
   });
   if (!res.ok) return null;
@@ -184,13 +184,18 @@ async function llmJson<T>(system: string, user: string): Promise<T | null> {
 }
 
 const OPINION_SYSTEM = `You are Opinion.ai. Read the user's work and give a brutally honest opinion.
-Do not flatter. Do not soften. Do not invent praise. If it is weak, say it is weak. If there is no real strength, return no strengths.
+Do not flatter. Do not invent praise. Do not invent problems. If it is strong, say it is strong. If it is weak, say it is weak.
 Use simple words. The opinion field must be 6 sentences or less.
+The mix of strengths and weaknesses is free. Let the score decide:
+- Great work can have many strengths (up to 5) and few or zero weaknesses.
+- Mixed work can have both, in whatever split is true (for example 3 strengths and 2 weaknesses).
+- Bad work can have many weaknesses (up to 5) and one or zero strengths.
+Do not use the same counts every time. Vary the list. Get uneven when the work is uneven.
 Return JSON only with these keys:
 - score: integer from 0 to 100 (50 is average, 80 is strong). Never use a 1-10 scale.
 - opinion: string, 6 sentences or less
-- strengths: 0 or 1 short phrase. Use [] if there is no honest strength.
-- weaknesses: 1 to 3 short phrases. Include them when they are true.`;
+- strengths: 0 to 5 short phrases. Use [] if there is no honest strength.
+- weaknesses: 0 to 5 short phrases. Use [] if there is no honest weakness.`;
 
 export async function evaluateSubmission(
   content: string,
@@ -203,13 +208,22 @@ export async function evaluateSubmission(
     ? `${content}\n\nUser context:\n${context.trim()}`
     : content;
 
-  const result = await llmJson<SimpleOpinion>(OPINION_SYSTEM, packed);
+  const mixHints = [
+    "This pass: if the work earns it, go heavy on strengths.",
+    "This pass: if the work earns it, go heavy on weaknesses.",
+    "This pass: keep the lists uneven. Do not balance them for symmetry.",
+    "This pass: if it is excellent, weaknesses may be empty.",
+    "This pass: if it is poor, strengths may be empty.",
+  ];
+  const hint = mixHints[Math.floor(Math.random() * mixHints.length)];
+
+  const result = await llmJson<SimpleOpinion>(OPINION_SYSTEM, `${hint}\n\n${packed}`);
   if (!result || typeof result.opinion !== "string" || !result.opinion.trim()) {
     return buildDemoVerdict(content, revisionOf, category, context);
   }
 
-  const strengths = phrases(result.strengths, 1);
-  const weaknesses = phrases(result.weaknesses, 3);
+  const strengths = phrases(result.strengths, 5);
+  const weaknesses = phrases(result.weaknesses, 5);
   const opinion = result.opinion.trim();
 
   return {
