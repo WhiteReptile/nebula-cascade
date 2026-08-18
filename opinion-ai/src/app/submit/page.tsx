@@ -8,7 +8,7 @@ export default function SubmitPage() {
         <h1 className="cosmic-title font-light text-[1.5625rem]">Submit</h1>
       </div>
       <Suspense fallback={<p className="text-dynamic text-sm text-center">Loading…</p>}>
-        <SubmitForm />
+        <SubmitForm longVideoAllowed={process.env.PRO_LONG_VIDEO === "1"} />
       </Suspense>
     </div>
   );

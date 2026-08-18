@@ -163,7 +163,7 @@ function parseJsonContent<T>(raw: string): T | null {
   }
 }
 
-async function llmJson<T>(system: string, user: string): Promise<T | null> {
+async function llmJson<T>(system: string, user: string, temperature: number): Promise<T | null> {
   const config = getLlmConfig();
   if (!config) return null;
 
@@ -174,7 +174,7 @@ async function llmJson<T>(system: string, user: string): Promise<T | null> {
       model: config.model,
       response_format: { type: "json_object" },
       messages: [{ role: "system", content: system }, { role: "user", content: user }],
-      temperature: 0.7 + Math.random() * 0.5,
+      temperature,
     }),
   });
   if (!res.ok) return null;
@@ -225,7 +225,7 @@ export async function evaluateSubmission(
   ];
   const hint = mixHints[Math.floor(Math.random() * mixHints.length)];
 
-  const result = await llmJson<SimpleOpinion>(OPINION_SYSTEM, `${hint}\n\n${packed}`);
+  const result = await llmJson<SimpleOpinion>(OPINION_SYSTEM, `${hint}\n\n${packed}`, 0.7 + Math.random() * 0.5);
   if (!result || typeof result.opinion !== "string" || !result.opinion.trim()) {
     return buildDemoVerdict(content, revisionOf, category, context);
   }
@@ -264,5 +264,72 @@ export async function evaluateSubmission(
     createdAt: new Date().toISOString(),
     revisionOf,
     context: context?.trim() || undefined,
+  };
+}
+
+const HUMAN_OPINION_SYSTEM = `You are Opinion.ai. A human reviewer already formed an opinion of this work. Their notes are the source. You only rewrite that opinion in simple words.
+
+Do not invent a different take. Do not add praise or criticism that is not in the notes. Do not flatten or reverse their judgment.
+The opinion field must be 6 sentences or less.
+Write in the same language as the notes. Handle English, Spanish, and Mandarin Chinese well.
+
+You MUST score with the Opinion.ai ranking system below. If the reviewer already gave a score, keep that exact score. If they did not, pick an integer that matches their notes — not a different opinion.
+
+${rankingGuide()}
+
+Return JSON only with these keys:
+- score: integer from 0 to 100 that matches the ranking system
+- opinion: string, 6 sentences or less
+- strengths: 0 to 5 short phrases taken from the notes. Use [] if none.
+- weaknesses: 0 to 5 short phrases taken from the notes. Use [] if none.`;
+
+export type HumanOpinion = {
+  score: number;
+  opinion: string;
+  strengths: string[];
+  weaknesses: string[];
+};
+
+export async function opinionFromHumanNotes(input: {
+  notes: string;
+  score?: number;
+  category: CategoryId;
+  context: string;
+  filename: string;
+}): Promise<HumanOpinion> {
+  const notes = input.notes.trim();
+  const fallback: HumanOpinion = {
+    score: input.score ?? 50,
+    opinion: notes,
+    strengths: [],
+    weaknesses: [],
+  };
+
+  const scoreLine =
+    typeof input.score === "number"
+      ? `Human score (keep this number): ${input.score}`
+      : "Human did not give a score. Pick one that matches the notes.";
+
+  const user = [
+    `Category: ${input.category}`,
+    `Filename: ${input.filename}`,
+    input.context.trim() ? `Submitter context:\n${input.context.trim()}` : "Submitter context: (none)",
+    "",
+    "Human reviewer notes:",
+    notes,
+    "",
+    scoreLine,
+  ].join("\n");
+
+  const result = await llmJson<SimpleOpinion>(HUMAN_OPINION_SYSTEM, user, 0.2);
+  if (!result || typeof result.opinion !== "string" || !result.opinion.trim()) {
+    return fallback;
+  }
+
+  return {
+    score: typeof input.score === "number" ? input.score : clampScore(result.score, fallback.score),
+    opinion: result.opinion.trim(),
+    strengths: phrases(result.strengths, 5),
+    weaknesses: phrases(result.weaknesses, 5),
   };
 }

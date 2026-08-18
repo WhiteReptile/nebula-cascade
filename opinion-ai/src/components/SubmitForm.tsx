@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getDailyLimit } from "@/lib/constants";
 import { getDailyUsage, incrementDailyUsage, saveVerdict } from "@/lib/storage";
+import { VIDEO_CAP_SECONDS } from "@/lib/queue-shared";
 import type { CategoryId } from "@/lib/types";
 
 const HUD_SLOTS: { id: CategoryId; label: string; fileAccept?: string; note: string }[] = [
@@ -11,7 +12,7 @@ const HUD_SLOTS: { id: CategoryId; label: string; fileAccept?: string; note: str
     id: "music",
     label: "Music",
     fileAccept: "audio/*,.mp3,.wav,.m4a,.flac",
-    note: "A person listens to the actual track — the sound, not a write-up. Music stays locked until you have credits. Then you send the file, and a little context.",
+    note: "A person listens to the actual track — the sound, not a write-up. Send the file, and a little context.",
   },
   {
     id: "documents",
@@ -23,7 +24,7 @@ const HUD_SLOTS: { id: CategoryId; label: string; fileAccept?: string; note: str
     id: "video",
     label: "Video",
     fileAccept: "video/*",
-    note: "A person watches it move. Film, clips, anything that lives in time. Same lock as Music: credits first, then the file, then a little context.",
+    note: "A person watches it move. Film, clips, anything that lives in time. Send the file, then a little context. Over 2 minutes needs HUMAN + AI PRO.",
   },
   {
     id: "text",
@@ -32,19 +33,43 @@ const HUD_SLOTS: { id: CategoryId; label: string; fileAccept?: string; note: str
   },
 ];
 
-const PAID: CategoryId[] = ["music", "documents", "video"];
+const QUEUE: CategoryId[] = ["music", "documents", "video"];
 
-export function SubmitForm() {
+function videoDuration(file: File): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const el = document.createElement("video");
+    el.preload = "metadata";
+    const finish = (fn: () => void) => {
+      URL.revokeObjectURL(url);
+      fn();
+    };
+    el.onloadedmetadata = () => {
+      const duration = el.duration;
+      if (!Number.isFinite(duration) || duration <= 0) {
+        finish(() => reject(new Error("Could not read video length.")));
+        return;
+      }
+      finish(() => resolve(duration));
+    };
+    el.onerror = () => finish(() => reject(new Error("Could not read video length.")));
+    el.src = url;
+  });
+}
+
+export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: boolean }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const revisionOf = searchParams.get("revision") ?? undefined;
+  const fileInput = useRef<HTMLInputElement>(null);
 
   const [category, setCategory] = useState<CategoryId>("text");
   const [content, setContent] = useState("");
-  const [fileName, setFileName] = useState<string | null>(null);
+  const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [used, setUsed] = useState(0);
+  const [queued, setQueued] = useState(false);
 
   useEffect(() => {
     setUsed(getDailyUsage());
@@ -52,16 +77,48 @@ export function SubmitForm() {
 
   const dailyLimit = getDailyLimit();
   const slot = HUD_SLOTS.find((s) => s.id === category);
-  const paidSelected = PAID.includes(category);
-  const canSubmit =
-    Boolean(content.trim()) && !paidSelected && !fileName && !loading;
+  const queueSelected = QUEUE.includes(category);
+  const canSubmit = queueSelected
+    ? Boolean(file) && Boolean(content.trim()) && !loading
+    : Boolean(content.trim()) && !file && !loading;
+
+  function resetFile() {
+    setFile(null);
+    if (fileInput.current) fileInput.current.value = "";
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (paidSelected || fileName) {
-      setError("Music, documents, and video are paid. See credits.");
+    if (queueSelected) {
+      if (!file || !content.trim()) return;
+      setLoading(true);
+      setError(null);
+      try {
+        const body = new FormData();
+        body.append("category", category);
+        body.append("context", content.trim());
+        body.append("file", file);
+        if (category === "video") {
+          const duration = await videoDuration(file);
+          if (duration > VIDEO_CAP_SECONDS && !longVideoAllowed) {
+            throw new Error("Video over 2 minutes needs HUMAN + AI PRO.");
+          }
+          body.append("durationSeconds", String(duration));
+        }
+        const res = await fetch("/api/queue", { method: "POST", body });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "Upload failed");
+        setQueued(true);
+        setContent("");
+        resetFile();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Something went wrong");
+      } finally {
+        setLoading(false);
+      }
       return;
     }
+
     if (!content.trim()) return;
     if (used >= dailyLimit) {
       setError(`Free limit reached (${dailyLimit}/day). Try again tomorrow.`);
@@ -97,6 +154,16 @@ export function SubmitForm() {
     }
   }
 
+  if (queued) {
+    return (
+      <div className="max-w-xl mx-auto w-full text-center">
+        <div className="cosmic-glass p-8">
+          <p className="text-white text-base leading-relaxed">A human will look at this.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <form onSubmit={handleSubmit} className="max-w-xl mx-auto w-full">
       {revisionOf && (
@@ -114,7 +181,7 @@ export function SubmitForm() {
               aria-selected={on}
               onClick={() => {
                 setCategory(s.id);
-                setFileName(null);
+                resetFile();
               }}
               className={`hud-slot ${on ? "hud-slot-on" : ""}`}
             >
@@ -134,16 +201,17 @@ export function SubmitForm() {
         <div className="file-pick">
           <input
             id="submit-file"
+            ref={fileInput}
             type="file"
             accept={slot.fileAccept}
             className="sr-only"
             disabled={loading}
-            onChange={(e) => setFileName(e.target.files?.[0]?.name ?? null)}
+            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
           />
           <label htmlFor="submit-file" className="file-pick-btn">
             Choose file
           </label>
-          <span className="file-pick-name">{fileName ?? "No file chosen"}</span>
+          <span className="file-pick-name">{file?.name ?? "No file chosen"}</span>
         </div>
       )}
 
