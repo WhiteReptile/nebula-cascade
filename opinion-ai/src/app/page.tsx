@@ -14,14 +14,9 @@ export default function Home() {
         </h1>
         <p className="text-dynamic text-sm mb-3">No yes-men. Just opinions.</p>
         <div className="cosmic-divider w-32 mx-auto my-8" />
-        <div className="flex flex-wrap items-center justify-center gap-3">
-          <Link href="/submit" className="cosmic-cta inline-block text-sm px-10 py-3">
-            Evaluate
-          </Link>
-          <Link href="/how" className="cosmic-cta-ghost inline-block text-sm px-8 py-3">
-            How does it work
-          </Link>
-        </div>
+        <Link href="/submit" className="cosmic-cta inline-block text-sm px-10 py-3">
+          Evaluate
+        </Link>
         <p className="warning-red text-xs sm:text-sm mt-10 mb-0">
           Humans will look at your work too
         </p>
