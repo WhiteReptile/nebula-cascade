@@ -1,0 +1,147 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-display: var(--font-space), var(--font-inter), system-ui, sans-serif;
+  --color-void: #020510;
+  --color-nebula-violet: #8866cc;
+  --color-nebula-cyan: #66ffee;
+  --color-nebula-indigo: #220066;
+  --color-glass: rgba(8, 12, 28, 0.72);
+  --color-glass-border: rgba(136, 102, 204, 0.22);
+  --color-glow-cyan: rgba(102, 255, 238, 0.55);
+  --color-glow-violet: rgba(136, 102, 204, 0.45);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--color-void);
+  color: #e8eaf6;
+}
+
+::selection {
+  background: rgba(136, 102, 204, 0.45);
+  color: #fff;
+}
+
+/* Cosmic glass panel */
+.cosmic-glass {
+  background: linear-gradient(
+    145deg,
+    rgba(12, 16, 36, 0.85) 0%,
+    rgba(6, 8, 22, 0.65) 100%
+  );
+  border: 1px solid var(--color-glass-border);
+  backdrop-filter: blur(16px);
+  box-shadow:
+    0 0 0 1px rgba(102, 255, 238, 0.04) inset,
+    0 8px 32px rgba(0, 0, 0, 0.45),
+    0 0 48px rgba(34, 0, 102, 0.15);
+}
+
+.cosmic-glass:hover {
+  border-color: rgba(136, 102, 204, 0.38);
+  box-shadow:
+    0 0 0 1px rgba(102, 255, 238, 0.08) inset,
+    0 12px 40px rgba(0, 0, 0, 0.5),
+    0 0 64px rgba(102, 255, 238, 0.08);
+}
+
+/* Score glow tiers */
+.score-glow-high {
+  color: #66ffee;
+  text-shadow:
+    0 0 20px rgba(102, 255, 238, 0.7),
+    0 0 60px rgba(102, 255, 238, 0.25),
+    0 0 100px rgba(136, 102, 204, 0.15);
+}
+
+.score-glow-mid {
+  color: #c4b5fd;
+  text-shadow:
+    0 0 16px rgba(196, 181, 253, 0.5),
+    0 0 48px rgba(136, 102, 204, 0.2);
+}
+
+.score-glow-low {
+  color: #f472b6;
+  text-shadow:
+    0 0 16px rgba(244, 114, 182, 0.45),
+    0 0 48px rgba(102, 0, 51, 0.2);
+}
+
+/* Primary CTA */
+.cosmic-cta {
+  background: linear-gradient(135deg, rgba(102, 255, 238, 0.15), rgba(136, 102, 204, 0.25));
+  border: 1px solid rgba(102, 255, 238, 0.35);
+  color: #e0f8ff;
+  box-shadow:
+    0 0 20px rgba(102, 255, 238, 0.15),
+    0 0 40px rgba(136, 102, 204, 0.1);
+  transition: all 0.3s ease;
+}
+
+.cosmic-cta:hover {
+  background: linear-gradient(135deg, rgba(102, 255, 238, 0.25), rgba(136, 102, 204, 0.35));
+  border-color: rgba(102, 255, 238, 0.55);
+  box-shadow:
+    0 0 28px rgba(102, 255, 238, 0.3),
+    0 0 56px rgba(136, 102, 204, 0.2);
+  transform: translateY(-1px);
+}
+
+.cosmic-cta:disabled {
+  opacity: 0.4;
+  transform: none;
+  cursor: not-allowed;
+}
+
+/* Title glow */
+.cosmic-title {
+  font-family: var(--font-display);
+  color: #e0f8ff;
+  text-shadow:
+    0 0 12px rgba(102, 255, 238, 0.5),
+    0 0 32px rgba(136, 102, 204, 0.25);
+}
+
+.cosmic-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(102, 255, 238, 0.35), transparent);
+  box-shadow: 0 0 8px rgba(102, 255, 238, 0.2);
+}
+
+@keyframes nebulaDrift {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.55; }
+  33% { transform: translate(30px, -20px) scale(1.05); opacity: 0.7; }
+  66% { transform: translate(-20px, 15px) scale(0.98); opacity: 0.5; }
+}
+
+@keyframes starTwinkle {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+@keyframes floatSoft {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.nebula-blob {
+  animation: nebulaDrift 18s ease-in-out infinite;
+}
+
+.nebula-blob-delayed {
+  animation: nebulaDrift 22s ease-in-out infinite reverse;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nebula-blob,
+  .nebula-blob-delayed {
+    animation: none;
+  }
+}
