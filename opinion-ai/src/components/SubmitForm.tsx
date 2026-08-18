@@ -27,13 +27,19 @@ const HUD_SLOTS: { id: CategoryId; label: string; fileAccept?: string; note: str
     note: "A person watches it move. Film, clips, anything that lives in time. Send the file, then a little context. Over 2 minutes needs HUMAN + AI PRO.",
   },
   {
+    id: "physical_appearance",
+    label: "Physical appearance",
+    fileAccept: "image/*,video/*,.png,.jpg,.jpeg,.webp,.gif,.mp4,.webm,.mov",
+    note: "A person looks at the photo or video. Hair loss, residual baldness, plastic surgery — we say how it actually reads. Send the file, and a little context.",
+  },
+  {
     id: "text",
     label: "Text",
     note: "Words only. Poems, lyrics, homework, a marketing plan, a screenplay scene — paste it and we tell you what we think. Five times a day, no credits.",
   },
 ];
 
-const QUEUE: CategoryId[] = ["music", "documents", "video"];
+const QUEUE: CategoryId[] = ["music", "documents", "video", "physical_appearance"];
 
 function videoDuration(file: File): Promise<number> {
   return new Promise((resolve, reject) => {
@@ -98,7 +104,7 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
         body.append("category", category);
         body.append("context", content.trim());
         body.append("file", file);
-        if (category === "video") {
+        if (file.type.startsWith("video/")) {
           const duration = await videoDuration(file);
           if (duration > VIDEO_CAP_SECONDS && !longVideoAllowed) {
             throw new Error("Video over 2 minutes needs HUMAN + AI PRO.");
@@ -193,7 +199,7 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
 
       {queueSelected && (
         <p className="warning-red sentence text-xs sm:text-sm mb-4">
-          Music, documents, and video need a human, so a review can take 5 to 10 minutes.
+          Music, documents, video, and physical appearance need a human, so a review can take 5 to 10 minutes.
         </p>
       )}
 
@@ -228,7 +234,9 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
           placeholder={
             category === "text"
               ? "Paste a poem, lyrics, homework, a marketing plan, a screenplay scene…"
-              : "Context for the AI and human…"
+              : category === "physical_appearance"
+                ? "Hair loss, a procedure, what you want judged…"
+                : "Context for the AI and human…"
           }
           rows={14}
           className="w-full bg-transparent px-5 py-4 text-sm text-white placeholder:text-white/40 focus:outline-none resize-y"

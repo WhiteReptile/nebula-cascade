@@ -203,15 +203,16 @@ body {
 
 .hud-row {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 0;
   border: 1px solid rgba(255, 255, 255, 0.28);
 }
 
 .hud-slot {
-  padding: 0.7rem 0.25rem;
-  font-size: 0.7rem;
-  letter-spacing: 0.14em;
+  padding: 0.55rem 0.15rem;
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.55);
   background: transparent;

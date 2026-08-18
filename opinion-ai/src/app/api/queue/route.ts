@@ -25,7 +25,7 @@ export async function POST(request: Request) {
     const fileRaw = form.get("file");
 
     if (!isQueueCategory(categoryRaw)) {
-      return NextResponse.json({ error: "Choose Music, Documents, or Video." }, { status: 400 });
+      return NextResponse.json({ error: "Choose a slot that takes a file." }, { status: 400 });
     }
     const context = typeof contextRaw === "string" ? contextRaw.trim() : "";
     if (!context) {
@@ -42,7 +42,8 @@ export async function POST(request: Request) {
     }
 
     const durationSeconds = parseDuration(form.get("durationSeconds"));
-    if (categoryRaw === "video") {
+    const isVideo = categoryRaw === "video" || (fileRaw.type || "").startsWith("video/");
+    if (isVideo) {
       if (durationSeconds == null) {
         return NextResponse.json({ error: "Could not read video length." }, { status: 400 });
       }

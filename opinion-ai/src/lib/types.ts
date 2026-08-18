@@ -5,6 +5,7 @@ export type CategoryId =
   | "audio"
   | "music"
   | "video"
+  | "physical_appearance"
   | "business_idea"
   | "landing_page"
   | "pitch_pdf";

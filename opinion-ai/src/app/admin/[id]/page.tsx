@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { isAdmin } from "@/lib/admin-auth";
+import { getCategory } from "@/lib/categories";
 import { getJob, isJobId } from "@/lib/queue";
 import { AdminReviewForm } from "@/components/AdminReviewForm";
 
@@ -42,7 +43,7 @@ export default async function AdminJobPage({ params }: { params: Promise<{ id: s
         </Link>
         <h1 className="cosmic-title font-light text-[1.5625rem] mt-4">{job.filename}</h1>
         <p className="text-dynamic text-xs mt-2">
-          {job.status} · {job.category} · {new Date(job.createdAt).toLocaleString()}
+          {job.status} · {getCategory(job.category).label} · {new Date(job.createdAt).toLocaleString()}
         </p>
       </div>
 

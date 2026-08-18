@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getDailyLimit } from "@/lib/constants";
 import { evaluateSubmission, getLlmConfig } from "@/lib/evaluate/pipeline";
 import { isCategoryId } from "@/lib/categories";
+import { isQueueCategory } from "@/lib/queue-shared";
 
 export async function POST(request: Request) {
   try {
@@ -11,8 +12,8 @@ export async function POST(request: Request) {
     const revisionOf = typeof body.revisionOf === "string" ? body.revisionOf : undefined;
     const category = isCategoryId(body.category) ? body.category : undefined;
 
-    if (category === "music" || category === "documents" || category === "video") {
-      return NextResponse.json({ error: "Music, documents, and video are paid. See Pricing." }, { status: 400 });
+    if (isQueueCategory(category)) {
+      return NextResponse.json({ error: "That slot needs a file and a human." }, { status: 400 });
     }
 
     const resolved = category ?? "text";

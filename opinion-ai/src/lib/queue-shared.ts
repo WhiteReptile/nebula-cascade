@@ -1,4 +1,4 @@
-export const QUEUE_CATEGORIES = ["music", "documents", "video"] as const;
+export const QUEUE_CATEGORIES = ["music", "documents", "video", "physical_appearance"] as const;
 export type QueueCategory = (typeof QUEUE_CATEGORIES)[number];
 
 export const MAX_QUEUE_FILE_BYTES = 80 * 1024 * 1024;
