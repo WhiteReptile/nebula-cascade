@@ -1,5 +1,6 @@
 import type { AnalystOutput, CategoryId, SteelmanOutput, Verdict } from "../types";
 import { getCategory } from "../categories";
+import { rankingGuide } from "../ranking";
 
 const GROQ_BASE = "https://api.groq.com/openai/v1";
 const GROQ_MODEL = "openai/gpt-oss-20b";
@@ -191,8 +192,13 @@ The mix of strengths and weaknesses is free. Let the score decide:
 - Mixed work can have both, in whatever split is true (for example 3 strengths and 2 weaknesses).
 - Bad work can have many weaknesses (up to 5) and one or zero strengths.
 Do not use the same counts every time. Vary the list. Get uneven when the work is uneven.
+
+You MUST score with the Opinion.ai ranking system below. Choose the rank that is true, then pick an integer inside that band. This is how every real review is scored, not a display legend. Never use a 1-10 scale.
+
+${rankingGuide()}
+
 Return JSON only with these keys:
-- score: integer from 0 to 100 using this scale: 0-19 Catastrophic, 20-29 Terrible, 30-39 Very Weak, 40-49 Weak, 50-57 Below Average, 58-64 Mediocre, 65-69 Mediocre+, 70-74 Good, 75-79 Very Good, 80-84 Excellent, 85-89 Outstanding, 90-94 Exceptional, 95-99 Extraordinary, 100 Near-Perfect. Never use a 1-10 scale.
+- score: integer from 0 to 100 that matches the ranking system
 - opinion: string, 6 sentences or less
 - strengths: 0 to 5 short phrases. Use [] if there is no honest strength.
 - weaknesses: 0 to 5 short phrases. Use [] if there is no honest weakness.`;

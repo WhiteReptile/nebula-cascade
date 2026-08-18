@@ -31,3 +31,10 @@ export function getRank(score: number): RankBand {
 export function scoreClass(score: number): string {
   return `score-tone-${getRank(score).tone}`;
 }
+
+export function rankingGuide(): string {
+  return RANK_BANDS.map((band) => {
+    const range = band.min === band.max ? `${band.max}` : `${band.min}–${band.max}`;
+    return `${range} ${band.rank} — ${band.meaning}`;
+  }).join("\n");
+}

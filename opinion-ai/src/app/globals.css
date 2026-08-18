@@ -55,43 +55,27 @@ body {
 }
 
 /* Score ranks */
-.score-tone-catastrophic {
-  color: #ff2a2a;
-  text-shadow: 0 0 14px rgba(255, 42, 42, 0.7), 0 0 36px rgba(140, 0, 0, 0.35);
-}
-
+.score-tone-catastrophic,
 .score-tone-terrible,
-.score-tone-bad {
-  color: #f472b6;
-  text-shadow: 0 0 16px rgba(244, 114, 182, 0.5), 0 0 40px rgba(102, 0, 51, 0.25);
-}
-
+.score-tone-bad,
 .score-tone-weak {
-  color: #ff9f5a;
-  text-shadow: 0 0 16px rgba(255, 159, 90, 0.5), 0 0 40px rgba(160, 70, 0, 0.25);
+  color: #ff2a2a;
+  text-shadow: 0 0 14px rgba(255, 42, 42, 0.75), 0 0 36px rgba(140, 0, 0, 0.35);
 }
 
-.score-tone-low {
-  color: #f5d76e;
-  text-shadow: 0 0 16px rgba(245, 215, 110, 0.45), 0 0 36px rgba(140, 110, 0, 0.2);
+.score-tone-low,
+.score-tone-mid,
+.score-tone-midplus {
+  color: #f472b6;
+  text-shadow: 0 0 16px rgba(244, 114, 182, 0.6), 0 0 40px rgba(102, 0, 51, 0.3);
 }
 
-.score-tone-mid {
-  color: #ffffff;
-  text-shadow: 0 0 16px rgba(255, 255, 255, 0.45), 0 0 40px rgba(78, 196, 255, 0.2);
-}
-
-.score-tone-midplus,
-.score-tone-good {
-  color: #66ffee;
-  text-shadow: 0 0 16px rgba(102, 255, 238, 0.55), 0 0 40px rgba(0, 140, 130, 0.25);
-}
-
+.score-tone-good,
 .score-tone-high {
   color: #4ec4ff;
   text-shadow:
-    0 0 20px rgba(78, 196, 255, 0.8),
-    0 0 60px rgba(30, 144, 255, 0.35);
+    0 0 20px rgba(78, 196, 255, 0.85),
+    0 0 60px rgba(30, 144, 255, 0.4);
 }
 
 .score-tone-violet {
