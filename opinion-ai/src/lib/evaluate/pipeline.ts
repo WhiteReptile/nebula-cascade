@@ -27,14 +27,13 @@ function hashContent(content: string): number {
   return Math.abs(h);
 }
 
-function phrases(value: unknown, fallback: string[]): string[] {
-  if (!Array.isArray(value)) return fallback;
-  const cleaned = value
+function phrases(value: unknown, max: number): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
     .filter((item): item is string => typeof item === "string")
     .map((item) => item.trim())
     .filter(Boolean)
-    .slice(0, 3);
-  return cleaned.length ? cleaned : fallback;
+    .slice(0, max);
 }
 
 function clampScore(value: unknown, fallback: number): number {
@@ -184,14 +183,14 @@ async function llmJson<T>(system: string, user: string): Promise<T | null> {
   return parseJsonContent<T>(raw);
 }
 
-const OPINION_SYSTEM = `You are Opinion.ai. Read the user's work and give an independent opinion.
-Do not flatter. Do not tell them what they want to hear. If it is weak, say so. If it is strong, say so.
+const OPINION_SYSTEM = `You are Opinion.ai. Read the user's work and give a brutally honest opinion.
+Do not flatter. Do not soften. Do not invent praise. If it is weak, say it is weak. If there is no real strength, return no strengths.
 Use simple words. The opinion field must be 6 sentences or less.
 Return JSON only with these keys:
 - score: integer from 0 to 100 (50 is average, 80 is strong). Never use a 1-10 scale.
 - opinion: string, 6 sentences or less
-- strengths: 1 to 3 short phrases
-- weaknesses: 1 to 3 short phrases`;
+- strengths: 0 or 1 short phrase. Use [] if there is no honest strength.
+- weaknesses: 1 to 3 short phrases. Include them when they are true.`;
 
 export async function evaluateSubmission(
   content: string,
@@ -209,8 +208,8 @@ export async function evaluateSubmission(
     return buildDemoVerdict(content, revisionOf, category, context);
   }
 
-  const strengths = phrases(result.strengths, ["See the opinion."]);
-  const weaknesses = phrases(result.weaknesses, ["See the opinion."]);
+  const strengths = phrases(result.strengths, 1);
+  const weaknesses = phrases(result.weaknesses, 3);
   const opinion = result.opinion.trim();
 
   return {
@@ -221,13 +220,13 @@ export async function evaluateSubmission(
     score: clampScore(result.score, scoreFromContent(packed, category)),
     strengths,
     weaknesses,
-    originality: "See the opinion.",
-    execution: "See the opinion.",
-    appeal: "See the opinion.",
-    competition: "See the opinion.",
-    potential: "See the opinion.",
-    biggestProblem: weaknesses[0],
-    biggestOpportunity: strengths[0],
+    originality: "",
+    execution: "",
+    appeal: "",
+    competition: "",
+    potential: "",
+    biggestProblem: weaknesses[0] ?? "",
+    biggestOpportunity: strengths[0] ?? "",
     verdict: opinion,
     confidence: 70,
     analyst: {
