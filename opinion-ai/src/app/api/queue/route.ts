@@ -69,7 +69,8 @@ export async function POST(request: Request) {
 
     await addJob(job, buffer);
     return NextResponse.json({ id: job.id });
-  } catch {
+  } catch (err) {
+    console.error("queue POST", err);
     return NextResponse.json({ error: "Upload failed." }, { status: 500 });
   }
 }
