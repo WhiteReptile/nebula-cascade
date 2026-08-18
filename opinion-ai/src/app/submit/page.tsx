@@ -5,7 +5,7 @@ export default function SubmitPage() {
   return (
     <div className="px-6 py-16 sm:py-20">
       <div className="max-w-xl mx-auto mb-12 text-center">
-        <h1 className="cosmic-title font-light text-[1.5625rem]">Submit</h1>
+        <h1 className="cosmic-title font-light text-[1.796875rem]">Submit</h1>
       </div>
       <Suspense fallback={<p className="text-dynamic text-sm text-center">Loading…</p>}>
         <SubmitForm longVideoAllowed={process.env.PRO_LONG_VIDEO === "1"} />
