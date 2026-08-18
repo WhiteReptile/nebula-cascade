@@ -43,7 +43,7 @@ export function SubmitForm() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (paidSelected || fileName) {
-      setError("Music, documents, and video are paid. See Pricing.");
+      setError("Music, documents, and video are paid. See credits.");
       return;
     }
     if (!content.trim()) return;
@@ -107,17 +107,6 @@ export function SubmitForm() {
         })}
       </div>
 
-      <div className="how-wrap relative inline-block mb-4">
-        <button type="button" className="pricing-btn">
-          Pricing
-        </button>
-        <div className="how-popout" role="tooltip">
-          {PRICING_COPY.map((line) => (
-            <p key={line}>{line}</p>
-          ))}
-        </div>
-      </div>
-
       {slot?.fileAccept && (
         <div className="file-pick">
           <input
@@ -150,10 +139,22 @@ export function SubmitForm() {
         />
       </div>
 
-      <div className="mt-6 flex items-center justify-between">
-        <span className="text-dynamic text-xs tracking-wide">
-          {used}/{dailyLimit} free today
-        </span>
+      <div className="mt-6 flex items-start justify-between">
+        <div className="flex flex-col items-start gap-2">
+          <span className="text-dynamic text-xs tracking-wide">
+            {used}/{dailyLimit} free today
+          </span>
+          <div className="how-wrap relative inline-block">
+            <button type="button" className="pricing-btn">
+              credits
+            </button>
+            <div className="how-popout" role="tooltip">
+              {PRICING_COPY.map((line) => (
+                <p key={line}>{line}</p>
+              ))}
+            </div>
+          </div>
+        </div>
         <button type="submit" disabled={!canSubmit} className="cosmic-cta text-sm px-8 py-2.5">
           {loading ? "Evaluating…" : "Evaluate"}
         </button>
