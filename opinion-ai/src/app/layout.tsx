@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Orbitron, Space_Grotesk } from "next/font/google";
 import { CosmicBackground } from "@/components/CosmicBackground";
 import { Header } from "@/components/Header";
+import { HowButton } from "@/components/HowButton";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
@@ -19,6 +20,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col antialiased">
         <CosmicBackground />
         <Header />
+        <HowButton />
         <main className="relative z-10 flex-1">{children}</main>
       </body>
     </html>

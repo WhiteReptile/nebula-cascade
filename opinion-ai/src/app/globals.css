@@ -129,22 +129,16 @@ body {
 
 .how-btn-red {
   display: inline-block;
-  background: linear-gradient(135deg, #ff1f1f, #b00000);
-  border: 1px solid #ff4d4d;
+  background: #ff0000;
+  border: 1px solid #ff0000;
   color: #ffffff;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.45);
-  box-shadow:
-    0 0 16px rgba(255, 40, 40, 0.55),
-    0 0 36px rgba(180, 0, 0, 0.35);
 }
 
 .how-btn-red:hover {
-  background: linear-gradient(135deg, #ff3b3b, #d40000);
-  box-shadow:
-    0 0 24px rgba(255, 60, 60, 0.8),
-    0 0 48px rgba(255, 0, 0, 0.4);
+  background: #e00000;
+  border-color: #e00000;
 }
 
 /* Blade Runner electric-blue titles */

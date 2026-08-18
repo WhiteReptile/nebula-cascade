@@ -8,8 +8,10 @@ export function HowButton() {
   if (pathname === "/how") return null;
 
   return (
-    <Link href="/how" className="how-btn-red text-[10px] sm:text-xs px-3 py-1.5">
-      How does it work
-    </Link>
+    <div className="relative z-10 px-6 pt-8 pb-2">
+      <Link href="/how" className="how-btn-red inline-block text-[10px] sm:text-xs px-3 py-1.5">
+        How does it work
+      </Link>
+    </div>
   );
 }
