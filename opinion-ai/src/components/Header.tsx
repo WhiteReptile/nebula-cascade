@@ -13,6 +13,9 @@ export function Header() {
         <Link href="/history" className="nav-white">
           History
         </Link>
+        <Link href="/pricing" className="nav-white">
+          Pricing
+        </Link>
       </nav>
     </header>
   );
