@@ -197,6 +197,8 @@ You MUST score with the Opinion.ai ranking system below. Choose the rank that is
 
 ${rankingGuide()}
 
+Write the opinion, strengths, and weaknesses in the same language as the submission. Handle English, Spanish, and Mandarin Chinese well. If the work is in Spanish, answer in Spanish. If it is in Mandarin, answer in Mandarin. If it is in English, answer in English.
+
 Return JSON only with these keys:
 - score: integer from 0 to 100 that matches the ranking system
 - opinion: string, 6 sentences or less
