@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getDailyLimit } from "@/lib/constants";
-import { evaluateSubmission } from "@/lib/evaluate/pipeline";
+import { evaluateSubmission, getLlmConfig } from "@/lib/evaluate/pipeline";
 import { isCategoryId } from "@/lib/categories";
 
 export async function POST(request: Request) {
@@ -33,7 +33,7 @@ export async function POST(request: Request) {
     const verdict = await evaluateSubmission(content, revisionOf, resolved, context);
     return NextResponse.json({
       verdict,
-      meta: { dailyLimit: getDailyLimit(), demoMode: !process.env.OPENAI_API_KEY },
+      meta: { dailyLimit: getDailyLimit(), demoMode: !getLlmConfig() },
     });
   } catch {
     return NextResponse.json({ error: "Evaluation failed." }, { status: 500 });

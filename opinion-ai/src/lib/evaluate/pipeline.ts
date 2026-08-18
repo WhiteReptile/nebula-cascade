@@ -1,6 +1,18 @@
 import type { AnalystOutput, CategoryId, SteelmanOutput, Verdict } from "../types";
 import { getCategory } from "../categories";
 
+const GROQ_BASE = "https://api.groq.com/openai/v1";
+const GROQ_MODEL = "openai/gpt-oss-20b";
+
+type LlmConfig = { apiKey: string; baseUrl: string; model: string };
+
+type SimpleOpinion = {
+  score?: unknown;
+  opinion?: unknown;
+  strengths?: unknown;
+  weaknesses?: unknown;
+};
+
 function preview(content: string, max = 120): string {
   const trimmed = content.trim().replace(/\s+/g, " ");
   return trimmed.length <= max ? trimmed : `${trimmed.slice(0, max)}…`;
@@ -13,6 +25,45 @@ function hashContent(content: string): number {
     h |= 0;
   }
   return Math.abs(h);
+}
+
+function phrases(value: unknown, fallback: string[]): string[] {
+  if (!Array.isArray(value)) return fallback;
+  const cleaned = value
+    .filter((item): item is string => typeof item === "string")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .slice(0, 3);
+  return cleaned.length ? cleaned : fallback;
+}
+
+function clampScore(value: unknown, fallback: number): number {
+  const n = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(n)) return fallback;
+  const scaled = n > 0 && n <= 10 ? n * 10 : n;
+  return Math.min(100, Math.max(0, Math.round(scaled)));
+}
+
+export function getLlmConfig(): LlmConfig | null {
+  const llmKey = process.env.LLM_API_KEY?.trim();
+  if (llmKey) {
+    return {
+      apiKey: llmKey,
+      baseUrl: (process.env.LLM_BASE_URL?.trim() || GROQ_BASE).replace(/\/$/, ""),
+      model: process.env.LLM_MODEL?.trim() || GROQ_MODEL,
+    };
+  }
+
+  const openaiKey = process.env.OPENAI_API_KEY?.trim();
+  if (openaiKey) {
+    return {
+      apiKey: openaiKey,
+      baseUrl: "https://api.openai.com/v1",
+      model: process.env.OPENAI_MODEL?.trim() || "gpt-4o-mini",
+    };
+  }
+
+  return null;
 }
 
 function buildDemoAnalyst(content: string, category: CategoryId): AnalystOutput {
@@ -94,14 +145,33 @@ export function buildDemoVerdict(
   };
 }
 
+function parseJsonContent<T>(raw: string): T | null {
+  const trimmed = raw.trim().replace(/^```(?:json)?\s*/i, "").replace(/```$/i, "").trim();
+  try {
+    return JSON.parse(trimmed) as T;
+  } catch {
+    const start = raw.indexOf("{");
+    const end = raw.lastIndexOf("}");
+    if (start >= 0 && end > start) {
+      try {
+        return JSON.parse(raw.slice(start, end + 1)) as T;
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  }
+}
+
 async function llmJson<T>(system: string, user: string): Promise<T | null> {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) return null;
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+  const config = getLlmConfig();
+  if (!config) return null;
+
+  const res = await fetch(`${config.baseUrl}/chat/completions`, {
     method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    headers: { Authorization: `Bearer ${config.apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
+      model: config.model,
       response_format: { type: "json_object" },
       messages: [{ role: "system", content: system }, { role: "user", content: user }],
       temperature: 0.4,
@@ -109,8 +179,19 @@ async function llmJson<T>(system: string, user: string): Promise<T | null> {
   });
   if (!res.ok) return null;
   const data = await res.json();
-  return JSON.parse(data.choices[0].message.content) as T;
+  const raw = data?.choices?.[0]?.message?.content;
+  if (typeof raw !== "string") return null;
+  return parseJsonContent<T>(raw);
 }
+
+const OPINION_SYSTEM = `You are Opinion.ai. Read the user's work and give an independent opinion.
+Do not flatter. Do not tell them what they want to hear. If it is weak, say so. If it is strong, say so.
+Use simple words. The opinion field must be 6 sentences or less.
+Return JSON only with these keys:
+- score: integer from 0 to 100 (50 is average, 80 is strong). Never use a 1-10 scale.
+- opinion: string, 6 sentences or less
+- strengths: 1 to 3 short phrases
+- weaknesses: 1 to 3 short phrases`;
 
 export async function evaluateSubmission(
   content: string,
@@ -123,40 +204,41 @@ export async function evaluateSubmission(
     ? `${content}\n\nUser context:\n${context.trim()}`
     : content;
 
-  const analyst =
-    (await llmJson<AnalystOutput>(
-      `${framework.analystPrompt} Return JSON: { "observations": string[], "contradictions": string[], "comparableReferences": string[] }`,
-      packed,
-    )) ?? buildDemoAnalyst(packed, category);
+  const result = await llmJson<SimpleOpinion>(OPINION_SYSTEM, packed);
+  if (!result || typeof result.opinion !== "string" || !result.opinion.trim()) {
+    return buildDemoVerdict(content, revisionOf, category, context);
+  }
 
-  const steelman =
-    (await llmJson<SteelmanOutput>(
-      'Construct the strongest case FOR and AGAINST. Return JSON: { "caseFor": string[], "caseAgainst": string[] }',
-      `Submission:\n${packed}\n\nAnalyst:\n${JSON.stringify(analyst)}`,
-    )) ?? buildDemoSteelman(category);
-
-  const opinion =
-    (await llmJson<Omit<Verdict, "id" | "submissionPreview" | "createdAt" | "revisionOf" | "analyst" | "steelman" | "context">>(
-      `${framework.opinionPrompt}
-
-Anti-yes-man: search for weaknesses AND strengths. If genuinely excellent, say so.
-Remind yourself the verdict is an opinion, not a fact.
-Return JSON: categoryLabel, scoreContext, score, strengths, weaknesses, originality, execution, appeal, competition, potential, biggestProblem, biggestOpportunity, verdict, confidence.`,
-      `Submission:\n${packed}\n\nAnalyst:\n${JSON.stringify(analyst)}\n\nSteelman:\n${JSON.stringify(steelman)}`,
-    )) ?? (() => {
-      const demo = buildDemoVerdict(content, revisionOf, category, context);
-      const { id, submissionPreview, createdAt, revisionOf: _r, ...rest } = demo;
-      return rest;
-    })();
+  const strengths = phrases(result.strengths, ["See the opinion."]);
+  const weaknesses = phrases(result.weaknesses, ["See the opinion."]);
+  const opinion = result.opinion.trim();
 
   return {
-    ...opinion,
+    id: crypto.randomUUID(),
     category,
     categoryLabel: framework.label,
     scoreContext: framework.scoreContext,
-    analyst,
-    steelman,
-    id: crypto.randomUUID(),
+    score: clampScore(result.score, scoreFromContent(packed, category)),
+    strengths,
+    weaknesses,
+    originality: "See the opinion.",
+    execution: "See the opinion.",
+    appeal: "See the opinion.",
+    competition: "See the opinion.",
+    potential: "See the opinion.",
+    biggestProblem: weaknesses[0],
+    biggestOpportunity: strengths[0],
+    verdict: opinion,
+    confidence: 70,
+    analyst: {
+      observations: ["One-pass opinion from the submission."],
+      contradictions: [],
+      comparableReferences: [],
+    },
+    steelman: {
+      caseFor: strengths,
+      caseAgainst: weaknesses,
+    },
     submissionPreview: preview(content),
     createdAt: new Date().toISOString(),
     revisionOf,
