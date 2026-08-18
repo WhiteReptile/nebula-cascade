@@ -10,7 +10,6 @@ const HUD_SLOTS: { id: CategoryId; label: string; fileAccept?: string }[] = [
   { id: "music", label: "Music", fileAccept: "audio/*,.mp3,.wav,.m4a,.flac" },
   { id: "documents", label: "Documents", fileAccept: ".pdf,.doc,.docx" },
   { id: "video", label: "Video", fileAccept: "video/*" },
-  { id: "text", label: "Text" },
 ];
 
 export function SubmitForm() {
@@ -93,7 +92,7 @@ export function SubmitForm() {
               }}
               className={`hud-slot ${on ? "hud-slot-on" : ""}`}
             >
-              {on ? `[ ${s.label} ]` : s.label}
+              {s.label}
             </button>
           );
         })}
