@@ -1,10 +1,11 @@
 import type { Verdict } from "@/lib/types";
-import { scoreClass } from "@/lib/score-style";
+import { getRank, scoreClass } from "@/lib/ranking";
 import { VerdictActions } from "./VerdictActions";
 
 export function VerdictView({ verdict, showActions = true }: { verdict: Verdict; showActions?: boolean }) {
   const hasStrengths = verdict.strengths.length > 0;
   const hasWeaknesses = verdict.weaknesses.length > 0;
+  const rank = getRank(verdict.score);
 
   return (
     <article className="max-w-xl mx-auto w-full">
@@ -13,8 +14,8 @@ export function VerdictView({ verdict, showActions = true }: { verdict: Verdict;
         <div className={`text-8xl font-extralight tabular-nums ${scoreClass(verdict.score)}`}>
           {verdict.score}
         </div>
-        <p className="text-dynamic mt-3 text-sm">{verdict.scoreContext}</p>
-        <p className="text-dynamic mt-2 text-xs">Confidence {verdict.confidence}%</p>
+        <p className={`label-white text-[10px] mt-4 ${scoreClass(verdict.score)}`}>{rank.rank}</p>
+        <p className="text-dynamic mt-2 text-sm">{rank.meaning}</p>
       </div>
 
       <p className="text-dynamic text-base leading-relaxed mb-10 px-1">{verdict.verdict}</p>

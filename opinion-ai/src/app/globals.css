@@ -54,27 +54,54 @@ body {
     0 0 64px rgba(78, 196, 255, 0.14);
 }
 
-/* Score glow tiers */
-.score-glow-high {
+/* Score ranks */
+.score-tone-catastrophic {
+  color: #ff2a2a;
+  text-shadow: 0 0 14px rgba(255, 42, 42, 0.7), 0 0 36px rgba(140, 0, 0, 0.35);
+}
+
+.score-tone-terrible,
+.score-tone-bad {
+  color: #f472b6;
+  text-shadow: 0 0 16px rgba(244, 114, 182, 0.5), 0 0 40px rgba(102, 0, 51, 0.25);
+}
+
+.score-tone-weak {
+  color: #ff9f5a;
+  text-shadow: 0 0 16px rgba(255, 159, 90, 0.5), 0 0 40px rgba(160, 70, 0, 0.25);
+}
+
+.score-tone-low {
+  color: #f5d76e;
+  text-shadow: 0 0 16px rgba(245, 215, 110, 0.45), 0 0 36px rgba(140, 110, 0, 0.2);
+}
+
+.score-tone-mid {
+  color: #ffffff;
+  text-shadow: 0 0 16px rgba(255, 255, 255, 0.45), 0 0 40px rgba(78, 196, 255, 0.2);
+}
+
+.score-tone-midplus,
+.score-tone-good {
+  color: #66ffee;
+  text-shadow: 0 0 16px rgba(102, 255, 238, 0.55), 0 0 40px rgba(0, 140, 130, 0.25);
+}
+
+.score-tone-high {
   color: #4ec4ff;
   text-shadow:
     0 0 20px rgba(78, 196, 255, 0.8),
-    0 0 60px rgba(30, 144, 255, 0.35),
-    0 0 100px rgba(0, 80, 200, 0.2);
+    0 0 60px rgba(30, 144, 255, 0.35);
 }
 
-.score-glow-mid {
-  color: #ffffff;
-  text-shadow:
-    0 0 16px rgba(255, 255, 255, 0.55),
-    0 0 48px rgba(78, 196, 255, 0.25);
+.score-tone-violet {
+  color: #c9a6ff;
+  text-shadow: 0 0 18px rgba(201, 166, 255, 0.65), 0 0 48px rgba(136, 102, 204, 0.35);
 }
 
-.score-glow-low {
-  color: #f472b6;
-  text-shadow:
-    0 0 16px rgba(244, 114, 182, 0.45),
-    0 0 48px rgba(102, 0, 51, 0.2);
+.score-tone-gold {
+  color: #ffd56a;
+  text-shadow: 0 0 18px rgba(255, 213, 106, 0.7), 0 0 48px rgba(180, 130, 0, 0.3);
 }
 
 /* Primary CTA */

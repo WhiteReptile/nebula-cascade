@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ExampleCard } from "@/components/ExampleCard";
+import { ScoreScale } from "@/components/ScoreScale";
 import { MOCK_VERDICTS } from "@/lib/mock-verdicts";
 
 export default function Home() {
@@ -29,6 +30,7 @@ export default function Home() {
             <ExampleCard key={v.id} verdict={v} />
           ))}
         </div>
+        <ScoreScale />
       </div>
     </div>
   );

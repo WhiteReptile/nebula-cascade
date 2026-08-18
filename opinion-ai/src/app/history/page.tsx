@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getHistory } from "@/lib/storage";
-import { scoreClass } from "@/lib/score-style";
+import { getRank, scoreClass } from "@/lib/ranking";
 import type { HistoryEntry } from "@/lib/types";
 
 export default function HistoryPage() {
@@ -36,6 +36,9 @@ export default function HistoryPage() {
                   <span className={`text-3xl font-light tabular-nums ${scoreClass(entry.score)}`}>
                     {entry.score}
                   </span>
+                  <p className={`label-white text-[10px] mt-2 ${scoreClass(entry.score)}`}>
+                    {getRank(entry.score).rank}
+                  </p>
                   <p className="text-dynamic text-sm mt-1 line-clamp-1">{entry.verdictPreview}</p>
                   <p className="label-white text-[10px] mt-2">{entry.categoryLabel}</p>
                 </div>
