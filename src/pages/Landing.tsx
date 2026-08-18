@@ -5,14 +5,15 @@ import { film } from '@/content/film';
 const GAME_ACCESS_KEY = 'nebula_cascade_game_access';
 const GAME_PASSWORD = import.meta.env.VITE_GAME_PASSWORD;
 
-type Section = 'home' | 'trailer' | 'synopsis' | 'credits';
+type Section = 'home' | 'synopsis' | 'credits';
 
 const navItems: { id: Section; label: string }[] = [
   { id: 'home', label: 'Home' },
-  { id: 'trailer', label: 'Trailer' },
   { id: 'synopsis', label: 'Synopsis' },
   { id: 'credits', label: 'Credits' },
 ];
+
+const trailerEmbedSrc = `https://www.youtube.com/embed/${film.trailerYouTubeId}?autoplay=1&mute=1&rel=0&modestbranding=1&playsinline=1`;
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -104,41 +105,28 @@ const Landing = () => {
 
       {/* Main content */}
       <main className="relative z-10 flex min-h-[calc(100vh-180px)] flex-col justify-center px-6 sm:px-10 lg:px-16">
-        <div className="max-w-2xl space-y-6">
+        <div className={`space-y-6 ${section === 'home' ? 'w-full max-w-5xl' : 'max-w-2xl'}`}>
           {section === 'home' && (
-            <>
-              <p className="text-[11px] tracking-[0.35em] uppercase text-red-400/80">
-                A film by enrique catalan
-              </p>
-              <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black uppercase tracking-[-0.05em] text-white drop-shadow-2xl">
-                {film.title}
-              </h1>
-              <p className="max-w-xl text-base sm:text-lg text-slate-200/90 leading-relaxed drop-shadow-lg">
-                {film.tagline}
-              </p>
-              <p className="text-sm tracking-[0.2em] uppercase text-slate-400">
-                Coming soon
-              </p>
-            </>
-          )}
-
-          {section === 'trailer' && (
             <div className="space-y-6">
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <p className="text-[11px] tracking-[0.35em] uppercase text-red-400/80">
-                  Trailer
+                  A film by enrique catalan
                 </p>
-                <h2 className="text-4xl font-bold uppercase tracking-[-0.04em] text-white">
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black uppercase tracking-[-0.05em] text-white drop-shadow-2xl">
                   {film.title}
-                </h2>
+                </h1>
+                <p className="max-w-xl text-base sm:text-lg text-slate-200/90 leading-relaxed drop-shadow-lg">
+                  {film.tagline}
+                </p>
               </div>
-              <div className="relative w-full max-w-3xl overflow-hidden rounded-2xl border border-white/10 shadow-2xl shadow-black/50">
-                <div className="relative aspect-video w-full">
+              <div className="relative w-full overflow-hidden rounded-2xl border border-white/10 shadow-2xl shadow-black/50">
+                <div className="relative aspect-video w-full bg-black">
                   <iframe
                     className="absolute inset-0 h-full w-full"
-                    src={`https://www.youtube.com/embed/${film.trailerYouTubeId}?rel=0&modestbranding=1`}
+                    src={trailerEmbedSrc}
                     title={`${film.title} — Official Trailer`}
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    referrerPolicy="strict-origin-when-cross-origin"
                     allowFullScreen
                   />
                 </div>
