@@ -1,9 +1,22 @@
-export type CategoryId = "business_idea" | "landing_page" | "pitch_pdf";
+export type CategoryId =
+  | "text"
+  | "homework"
+  | "documents"
+  | "audio"
+  | "music"
+  | "business_idea"
+  | "landing_page"
+  | "pitch_pdf";
 
 export interface CategoryFramework {
   id: CategoryId;
   label: string;
+  blurb: string;
+  placeholder: string;
+  contextHint: string;
   scoreContext: string;
+  acceptsFile?: boolean;
+  fileAccept?: string;
   dimensions: { name: string; weight: number }[];
   analystPrompt: string;
   opinionPrompt: string;
@@ -42,6 +55,7 @@ export interface Verdict {
   submissionPreview: string;
   createdAt: string;
   revisionOf?: string;
+  context?: string;
 }
 
 export interface HistoryEntry {

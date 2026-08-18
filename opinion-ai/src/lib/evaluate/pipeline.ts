@@ -49,10 +49,15 @@ function scoreFromContent(content: string, category: CategoryId): number {
   return Math.min(94, Math.max(32, base));
 }
 
-export function buildDemoVerdict(content: string, revisionOf?: string): Verdict {
-  const category = classifyCategory(content);
+export function buildDemoVerdict(
+  content: string,
+  revisionOf?: string,
+  categoryOverride?: CategoryId,
+  context?: string,
+): Verdict {
+  const category = categoryOverride ?? classifyCategory(content);
   const framework = getCategory(category);
-  const score = scoreFromContent(content, category);
+  const score = scoreFromContent(content + (context ?? ""), category);
   const isStrong = score >= 75;
   const isWeak = score < 55;
 
@@ -86,6 +91,7 @@ export function buildDemoVerdict(content: string, revisionOf?: string): Verdict 
     submissionPreview: preview(content),
     createdAt: new Date().toISOString(),
     revisionOf,
+    context,
   };
 }
 
@@ -107,31 +113,40 @@ async function llmJson<T>(system: string, user: string): Promise<T | null> {
   return JSON.parse(data.choices[0].message.content) as T;
 }
 
-export async function evaluateSubmission(content: string, revisionOf?: string): Promise<Verdict> {
-  const category = classifyCategory(content);
+export async function evaluateSubmission(
+  content: string,
+  revisionOf?: string,
+  categoryOverride?: CategoryId,
+  context?: string,
+): Promise<Verdict> {
+  const category = categoryOverride ?? classifyCategory(content);
   const framework = getCategory(category);
+  const packed = context?.trim()
+    ? `${content}\n\nUser context:\n${context.trim()}`
+    : content;
 
   const analyst =
     (await llmJson<AnalystOutput>(
       `${framework.analystPrompt} Return JSON: { "observations": string[], "contradictions": string[], "comparableReferences": string[] }`,
-      content,
-    )) ?? buildDemoAnalyst(content, category);
+      packed,
+    )) ?? buildDemoAnalyst(packed, category);
 
   const steelman =
     (await llmJson<SteelmanOutput>(
       'Construct the strongest case FOR and AGAINST. Return JSON: { "caseFor": string[], "caseAgainst": string[] }',
-      `Submission:\n${content}\n\nAnalyst:\n${JSON.stringify(analyst)}`,
+      `Submission:\n${packed}\n\nAnalyst:\n${JSON.stringify(analyst)}`,
     )) ?? buildDemoSteelman(category);
 
   const opinion =
-    (await llmJson<Omit<Verdict, "id" | "submissionPreview" | "createdAt" | "revisionOf" | "analyst" | "steelman">>(
+    (await llmJson<Omit<Verdict, "id" | "submissionPreview" | "createdAt" | "revisionOf" | "analyst" | "steelman" | "context">>(
       `${framework.opinionPrompt}
 
 Anti-yes-man: search for weaknesses AND strengths. If genuinely excellent, say so.
+Remind yourself the verdict is an opinion, not a fact.
 Return JSON: categoryLabel, scoreContext, score, strengths, weaknesses, originality, execution, appeal, competition, potential, biggestProblem, biggestOpportunity, verdict, confidence.`,
-      `Submission:\n${content}\n\nAnalyst:\n${JSON.stringify(analyst)}\n\nSteelman:\n${JSON.stringify(steelman)}`,
+      `Submission:\n${packed}\n\nAnalyst:\n${JSON.stringify(analyst)}\n\nSteelman:\n${JSON.stringify(steelman)}`,
     )) ?? (() => {
-      const demo = buildDemoVerdict(content);
+      const demo = buildDemoVerdict(content, revisionOf, category, context);
       const { id, submissionPreview, createdAt, revisionOf: _r, ...rest } = demo;
       return rest;
     })();
@@ -147,5 +162,6 @@ Return JSON: categoryLabel, scoreContext, score, strengths, weaknesses, original
     submissionPreview: preview(content),
     createdAt: new Date().toISOString(),
     revisionOf,
+    context: context?.trim() || undefined,
   };
 }
