@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { PRICING_SECTIONS } from "@/lib/pricing";
+import { PRICING_NAV_COPY } from "@/lib/pricing";
 
 export function PricingNav() {
   const pathname = usePathname();
@@ -14,8 +14,8 @@ export function PricingNav() {
       </Link>
       {pathname !== "/pricing" && (
         <div className="how-popout how-popout-end" role="tooltip">
-          {PRICING_SECTIONS.map((section) => (
-            <p key={section.n}>{section.body}</p>
+          {PRICING_NAV_COPY.map((line) => (
+            <p key={line}>{line}</p>
           ))}
         </div>
       )}
