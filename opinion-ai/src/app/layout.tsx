@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Orbitron, Space_Grotesk } from "next/font/google";
-import { CosmicBackground } from "@/components/CosmicBackground";
-import { Header } from "@/components/Header";
-import { HowButton } from "@/components/HowButton";
+import { PublicShell } from "@/components/PublicShell";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
@@ -18,9 +16,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${inter.variable} ${space.variable} ${orbitron.variable} h-full`}>
       <body className="min-h-full flex flex-col antialiased">
-        <CosmicBackground />
-        <Header />
-        <HowButton />
+        <PublicShell />
         <main className="relative z-10 flex-1">{children}</main>
       </body>
     </html>
