@@ -2,10 +2,18 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { LAUNCH_CATEGORIES, getCategory } from "@/lib/categories";
+import { getCategory } from "@/lib/categories";
 import { getDailyLimit } from "@/lib/constants";
 import { getDailyUsage, incrementDailyUsage, saveVerdict } from "@/lib/storage";
 import type { CategoryId } from "@/lib/types";
+
+const PAGE_CATEGORIES: { id: CategoryId; label: string }[] = [
+  { id: "homework", label: "Homework" },
+  { id: "documents", label: "Documents" },
+  { id: "text", label: "Text" },
+  { id: "audio", label: "Audio" },
+  { id: "music", label: "Music" },
+];
 
 export function SubmitForm() {
   const router = useRouter();
@@ -15,7 +23,6 @@ export function SubmitForm() {
   const [category, setCategory] = useState<CategoryId>("text");
   const [content, setContent] = useState("");
   const [context, setContext] = useState("");
-  const [fileName, setFileName] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,11 +32,8 @@ export function SubmitForm() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const payload = [fileName ? `Attached file: ${fileName}` : "", content.trim()]
-      .filter(Boolean)
-      .join("\n\n");
-    if (!payload || payload.replace(/\s/g, "").length < 20) {
-      setError("Add more of the work itself — a short paste, transcript, or description.");
+    if (!content.trim() || content.trim().length < 20) {
+      setError("Paste at least 20 characters.");
       return;
     }
     if (used >= dailyLimit) {
@@ -45,7 +49,7 @@ export function SubmitForm() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          content: payload,
+          content: content.trim(),
           context: context.trim(),
           category,
           revisionOf,
@@ -67,33 +71,35 @@ export function SubmitForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-2xl mx-auto w-full">
+    <form onSubmit={handleSubmit} className="max-w-xl mx-auto w-full">
       {revisionOf && (
         <p className="text-dynamic text-sm mb-4">Revising a previous submission.</p>
       )}
 
-      <fieldset className="mb-8">
-        <legend className="label-white text-[10px] mb-3">What are you submitting?</legend>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          {LAUNCH_CATEGORIES.map((cat) => (
-            <button
-              key={cat.id}
-              type="button"
-              onClick={() => {
-                setCategory(cat.id);
-                setFileName(null);
-              }}
-              className={`category-chip ${category === cat.id ? "category-chip-on" : ""}`}
-            >
-              {cat.label}
-            </button>
-          ))}
+      <div className="mb-8">
+        <p className="text-white text-sm mb-3">Categories</p>
+        <div className="flex flex-col gap-2">
+          {PAGE_CATEGORIES.map((cat) => {
+            const on = category === cat.id;
+            return (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => setCategory(cat.id)}
+                className={`w-full text-left px-4 py-3 text-white text-sm border ${
+                  on ? "border-[#4ec4ff] bg-[#4ec4ff]/20" : "border-white/40 bg-transparent"
+                }`}
+              >
+                {cat.label}
+              </button>
+            );
+          })}
         </div>
-        <p className="text-dynamic text-sm mt-4 leading-relaxed">{selected.blurb}</p>
-      </fieldset>
+        <p className="text-white text-sm mt-3">{selected.blurb}</p>
+      </div>
 
       <label className="block mb-6">
-        <span className="label-white text-[10px] mb-2 block">Your work</span>
+        <span className="text-white text-sm mb-2 block">Paste text</span>
         <div className="cosmic-glass p-1">
           <textarea
             value={content}
@@ -104,27 +110,12 @@ export function SubmitForm() {
             disabled={loading}
           />
         </div>
-        {selected.acceptsFile && (
-          <label className="mt-3 flex items-center gap-3 text-sm text-white/80 cursor-pointer">
-            <span className="cosmic-cta-ghost inline-block px-3 py-1.5 text-xs">Attach file</span>
-            <input
-              type="file"
-              accept={selected.fileAccept}
-              className="sr-only"
-              disabled={loading}
-              onChange={(e) => setFileName(e.target.files?.[0]?.name ?? null)}
-            />
-            <span>{fileName ?? "Optional — we still need a paste, transcript, or description."}</span>
-          </label>
-        )}
       </label>
 
       <label className="block mb-8">
-        <span className="label-white text-[10px] mb-2 block">Add context</span>
-        <p className="text-dynamic text-sm mb-3 leading-relaxed">
-          Context is extra information that changes the opinion: the assignment prompt, the audience,
-          the genre, what “good” means here. Without it, we guess. With it, the judgment is fairer —
-          still subjective, still an opinion.
+        <span className="text-white text-sm mb-2 block">Add context</span>
+        <p className="text-white text-sm mb-3">
+          Explain more so we know what to judge.
         </p>
         <div className="cosmic-glass p-1">
           <textarea
@@ -139,7 +130,7 @@ export function SubmitForm() {
       </label>
 
       <div className="flex items-center justify-between">
-        <span className="text-dynamic text-xs tracking-wide">
+        <span className="text-white text-xs tracking-wide">
           {used}/{dailyLimit} free today
         </span>
         <button type="submit" disabled={loading} className="cosmic-cta text-sm px-8 py-2.5">
