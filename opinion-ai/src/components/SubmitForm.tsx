@@ -136,12 +136,15 @@ export function SubmitForm() {
       </div>
 
       {slot && (
-        <div className="mb-4 space-y-1">
-          {slot.explain.map((line) => (
-            <p key={line} className="text-dynamic text-xs leading-relaxed">
-              {line}
-            </p>
-          ))}
+        <div className="cosmic-glass p-5 mb-4">
+          <p className="label-white text-[10px] mb-3">{slot.label}</p>
+          <div className="space-y-2">
+            {slot.explain.map((line) => (
+              <p key={line} className="text-dynamic text-sm leading-relaxed pl-3 border-l border-[#4ec4ff]/30">
+                {line}
+              </p>
+            ))}
+          </div>
         </div>
       )}
 
