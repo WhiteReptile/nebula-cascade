@@ -27,6 +27,14 @@ export const PRICING_PACKAGES = [
       "Every submission goes through two filters: our premium AI opinion system and a real, trained human reviewer.",
       "Your human reviewer actually watches, listens to, or reads your work and gives their genuine opinion. Our AI then organizes and compacts the evaluation into a clear final response.",
     ],
+    features: [
+      "5 AI + human evaluations",
+      "Human review included",
+      "Anonymous reviewers",
+      "Objective evaluation",
+      "Opinion.ai score + ranking",
+      "6 sentences or less",
+    ],
     cta: { label: "Get 5 Premium Opinions", href: "/submit" },
   },
   {
@@ -36,6 +44,15 @@ export const PRICING_PACKAGES = [
     headline: "10 Premium Opinions",
     description: [
       "For users who need more evaluations or are working with larger and longer creative projects, including music and video over 2 minutes.",
+    ],
+    features: [
+      "10 AI + human evaluations",
+      "Real human reviewers",
+      "Premium AI evaluation",
+      "Longer submissions supported",
+      "Anonymous human feedback",
+      "Opinion.ai score + ranking",
+      "6 sentences or less",
     ],
     cta: { label: "Get 10 Premium Opinions", href: "/submit" },
   },

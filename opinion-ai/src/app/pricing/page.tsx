@@ -24,7 +24,8 @@ function Paloma() {
   );
 }
 
-function FeatureList({ features }: { features: readonly string[] }) {
+function FeatureList({ features }: { features?: readonly string[] }) {
+  if (!features?.length) return null;
   return (
     <ul className="mt-5 space-y-2.5 flex-1">
       {features.map((feature) => (
