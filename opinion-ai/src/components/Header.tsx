@@ -7,6 +7,9 @@ export function Header() {
         Opinion.ai
       </Link>
       <nav className="flex items-center gap-8 text-sm">
+        <Link href="/how" className="nav-white">
+          How
+        </Link>
         <Link href="/submit" className="nav-white">
           Evaluate
         </Link>
