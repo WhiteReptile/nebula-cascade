@@ -11,8 +11,12 @@ export async function POST(request: Request) {
     const revisionOf = typeof body.revisionOf === "string" ? body.revisionOf : undefined;
     const category = isCategoryId(body.category) ? body.category : undefined;
 
-    if (!content || content.length < 20) {
-      return NextResponse.json({ error: "Submission must be at least 20 characters." }, { status: 400 });
+    if (!category) {
+      return NextResponse.json({ error: "Choose a category." }, { status: 400 });
+    }
+
+    if (!content) {
+      return NextResponse.json({ error: "Add the work or a file." }, { status: 400 });
     }
     if (content.length > 50000) {
       return NextResponse.json({ error: "Submission too long (max 50,000 characters)." }, { status: 400 });

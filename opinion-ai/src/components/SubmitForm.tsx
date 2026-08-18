@@ -4,22 +4,41 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getDailyLimit } from "@/lib/constants";
 import { getDailyUsage, incrementDailyUsage, saveVerdict } from "@/lib/storage";
+import type { CategoryId } from "@/lib/types";
+
+const HUD_SLOTS: { id: CategoryId; label: string; fileAccept?: string }[] = [
+  { id: "music", label: "Music", fileAccept: "audio/*,.mp3,.wav,.m4a,.flac" },
+  { id: "documents", label: "Documents", fileAccept: ".pdf,.doc,.docx" },
+  { id: "video", label: "Video", fileAccept: "video/*" },
+  { id: "text", label: "Text" },
+];
 
 export function SubmitForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const revisionOf = searchParams.get("revision") ?? undefined;
 
+  const [category, setCategory] = useState<CategoryId | null>(null);
   const [content, setContent] = useState("");
+  const [fileName, setFileName] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const dailyLimit = getDailyLimit();
   const used = getDailyUsage();
+  const slot = HUD_SLOTS.find((s) => s.id === category);
+  const canSubmit = Boolean(category) && Boolean(content.trim() || fileName) && !loading;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!content.trim()) return;
+    if (!category) {
+      setError("Choose a category.");
+      return;
+    }
+    const payload = [fileName ? `Attached file: ${fileName}` : "", content.trim()]
+      .filter(Boolean)
+      .join("\n\n");
+    if (!payload) return;
     if (used >= dailyLimit) {
       setError(`Free limit reached (${dailyLimit}/day). Try again tomorrow.`);
       return;
@@ -32,7 +51,11 @@ export function SubmitForm() {
       const res = await fetch("/api/evaluate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: content.trim(), revisionOf }),
+        body: JSON.stringify({
+          content: payload,
+          category,
+          revisionOf,
+        }),
       });
       if (!res.ok) {
         const data = await res.json();
@@ -55,6 +78,39 @@ export function SubmitForm() {
         <p className="text-dynamic text-sm mb-4">Revising a previous submission.</p>
       )}
 
+      <div className="hud-row mb-4" role="listbox" aria-label="Category">
+        {HUD_SLOTS.map((s) => {
+          const on = category === s.id;
+          return (
+            <button
+              key={s.id}
+              type="button"
+              role="option"
+              aria-selected={on}
+              onClick={() => {
+                setCategory(s.id);
+                setFileName(null);
+              }}
+              className={`hud-slot ${on ? "hud-slot-on" : ""}`}
+            >
+              {on ? `[ ${s.label} ]` : s.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {slot?.fileAccept && (
+        <label className="mb-3 flex items-center gap-2 text-xs text-white/70">
+          <input
+            type="file"
+            accept={slot.fileAccept}
+            className="text-xs text-white"
+            disabled={loading}
+            onChange={(e) => setFileName(e.target.files?.[0]?.name ?? null)}
+          />
+        </label>
+      )}
+
       <div className="cosmic-glass p-1">
         <textarea
           value={content}
@@ -70,7 +126,7 @@ export function SubmitForm() {
         <span className="text-dynamic text-xs tracking-wide">
           {used}/{dailyLimit} free today
         </span>
-        <button type="submit" disabled={loading || !content.trim()} className="cosmic-cta text-sm px-8 py-2.5">
+        <button type="submit" disabled={!canSubmit} className="cosmic-cta text-sm px-8 py-2.5">
           {loading ? "Evaluating…" : "Evaluate"}
         </button>
       </div>

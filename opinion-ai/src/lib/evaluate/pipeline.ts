@@ -1,5 +1,5 @@
 import type { AnalystOutput, CategoryId, SteelmanOutput, Verdict } from "../types";
-import { classifyCategory, getCategory } from "../categories";
+import { getCategory } from "../categories";
 
 function preview(content: string, max = 120): string {
   const trimmed = content.trim().replace(/\s+/g, " ");
@@ -51,11 +51,10 @@ function scoreFromContent(content: string, category: CategoryId): number {
 
 export function buildDemoVerdict(
   content: string,
-  revisionOf?: string,
-  categoryOverride?: CategoryId,
+  revisionOf: string | undefined,
+  category: CategoryId,
   context?: string,
 ): Verdict {
-  const category = categoryOverride ?? classifyCategory(content);
   const framework = getCategory(category);
   const score = scoreFromContent(content + (context ?? ""), category);
   const isStrong = score >= 75;
@@ -115,11 +114,10 @@ async function llmJson<T>(system: string, user: string): Promise<T | null> {
 
 export async function evaluateSubmission(
   content: string,
-  revisionOf?: string,
-  categoryOverride?: CategoryId,
+  revisionOf: string | undefined,
+  category: CategoryId,
   context?: string,
 ): Promise<Verdict> {
-  const category = categoryOverride ?? classifyCategory(content);
   const framework = getCategory(category);
   const packed = context?.trim()
     ? `${content}\n\nUser context:\n${context.trim()}`
