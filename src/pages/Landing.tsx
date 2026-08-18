@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import TrailerPlayer from '@/components/TrailerPlayer';
 import { film } from '@/content/film';
 
 const GAME_ACCESS_KEY = 'nebula_cascade_game_access';
@@ -12,8 +13,6 @@ const navItems: { id: Section; label: string }[] = [
   { id: 'synopsis', label: 'Synopsis' },
   { id: 'credits', label: 'Credits' },
 ];
-
-const trailerEmbedSrc = `https://www.youtube.com/embed/${film.trailerYouTubeId}?autoplay=1&mute=1&rel=0&modestbranding=1&playsinline=1`;
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -63,17 +62,18 @@ const Landing = () => {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-black text-white">
+    <div className="relative flex min-h-screen flex-col overflow-hidden bg-black text-white">
       {/* Poster fills the screen */}
       <div className="absolute inset-0 z-0">
         <img
           src={film.poster}
           alt={`${film.title} movie poster`}
-          className="absolute inset-0 w-full h-full object-cover object-center"
+          className="absolute inset-0 h-full w-full object-cover object-center"
         />
         {/* Cinematic vignette for readability */}
         <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/40 to-black/80" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-transparent to-black/60" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-black/50" />
+        <div className="absolute inset-x-0 bottom-0 h-[42vh] bg-gradient-to-t from-black via-black/90 to-transparent" />
       </div>
 
       {/* Top navigation */}
@@ -104,36 +104,23 @@ const Landing = () => {
       </nav>
 
       {/* Main content */}
-      <main className="relative z-10 flex min-h-[calc(100vh-180px)] flex-col justify-center px-6 sm:px-10 lg:px-16">
-        <div className={`space-y-6 ${section === 'home' ? 'w-full max-w-5xl' : 'max-w-2xl'}`}>
-          {section === 'home' && (
-            <div className="space-y-6">
-              <div className="space-y-3">
-                <p className="text-[11px] tracking-[0.35em] uppercase text-red-400/80">
-                  A film by enrique catalan
-                </p>
-                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black uppercase tracking-[-0.05em] text-white drop-shadow-2xl">
-                  {film.title}
-                </h1>
-                <p className="max-w-xl text-base sm:text-lg text-slate-200/90 leading-relaxed drop-shadow-lg">
-                  {film.tagline}
-                </p>
-              </div>
-              <div className="relative w-full overflow-hidden rounded-2xl border border-white/10 shadow-2xl shadow-black/50">
-                <div className="relative aspect-video w-full bg-black">
-                  <iframe
-                    className="absolute inset-0 h-full w-full"
-                    src={trailerEmbedSrc}
-                    title={`${film.title} — Official Trailer`}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                    referrerPolicy="strict-origin-when-cross-origin"
-                    allowFullScreen
-                  />
-                </div>
-              </div>
-            </div>
-          )}
+      <main className="relative z-10 flex flex-1 flex-col px-6 sm:px-10 lg:px-16">
+        {section === 'home' && (
+          <div className="max-w-2xl space-y-3 pt-2 sm:pt-4">
+            <p className="text-[11px] tracking-[0.35em] uppercase text-red-400/80">
+              A film by enrique catalan
+            </p>
+            <h1 className="text-4xl font-black uppercase tracking-[-0.05em] text-white drop-shadow-2xl sm:text-5xl lg:text-6xl">
+              {film.title}
+            </h1>
+            <p className="max-w-xl text-base leading-relaxed text-slate-200/90 drop-shadow-lg sm:text-lg">
+              {film.tagline}
+            </p>
+          </div>
+        )}
 
+        {section !== 'home' && (
+          <div className="flex flex-1 flex-col justify-center max-w-2xl">
           {section === 'synopsis' && (
             <div className="space-y-4">
               <p className="text-[11px] tracking-[0.35em] uppercase text-red-400/80">
@@ -165,11 +152,24 @@ const Landing = () => {
               </div>
             </div>
           )}
-        </div>
+          </div>
+        )}
       </main>
 
+      {section === 'home' && (
+        <div className="pointer-events-none fixed inset-x-0 bottom-14 z-10 px-6 sm:bottom-16 sm:px-10 lg:px-16">
+          <div className="mx-auto w-full max-w-md sm:max-w-lg lg:mx-0">
+            <TrailerPlayer
+              key="trailer"
+              videoId={film.trailerYouTubeId}
+              title={`${film.title} — Official Trailer`}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Footer */}
-      <footer className="relative z-20 mt-auto px-6 pb-8 text-xs uppercase tracking-[0.35em] text-slate-500 sm:px-10 lg:px-16">
+      <footer className="relative z-20 px-6 pb-6 pt-2 text-xs uppercase tracking-[0.35em] text-slate-500 sm:px-10 lg:px-16">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <span>© {new Date().getFullYear()} Nebula Cascade</span>
           <span>Designed for a minimal film presentation.</span>
