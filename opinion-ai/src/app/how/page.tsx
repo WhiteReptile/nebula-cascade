@@ -47,7 +47,7 @@ export default function HowPage() {
         ))}
       </ol>
 
-      <p className="warning-red text-xs sm:text-sm text-center mt-10">
+      <p className="warning-red text-xs sm:text-sm text-center mt-10 font-bold">
         Humans will look at your work too
       </p>
 
