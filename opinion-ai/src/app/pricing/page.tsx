@@ -1,22 +1,5 @@
 import Link from "next/link";
-
-const SECTIONS = [
-  {
-    n: "01",
-    title: "Text",
-    body: "Text is free. You get five evaluations a day. Paste your work and submit. No credits.",
-  },
-  {
-    n: "02",
-    title: "Credits",
-    body: "Music, documents, and video take credits. Each one is $2.99. Credits on your account start at zero.",
-  },
-  {
-    n: "03",
-    title: "What you get",
-    body: "You get a five-sentence opinion. A human will watch or read your work too. It is anonymous. They will not know who you are.",
-  },
-];
+import { PRICING_SECTIONS } from "@/lib/pricing";
 
 export default function PricingPage() {
   return (
@@ -27,7 +10,7 @@ export default function PricingPage() {
       </p>
 
       <ol className="space-y-4">
-        {SECTIONS.map((section) => (
+        {PRICING_SECTIONS.map((section) => (
           <li key={section.n} className="cosmic-glass p-5">
             <p className="label-white text-[10px] mb-2">
               {section.n} · {section.title}

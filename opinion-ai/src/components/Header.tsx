@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PricingNav } from "@/components/PricingNav";
 
 export function Header() {
   return (
@@ -13,9 +14,7 @@ export function Header() {
         <Link href="/history" className="nav-white">
           History
         </Link>
-        <Link href="/pricing" className="nav-white">
-          Pricing
-        </Link>
+        <PricingNav />
       </nav>
     </header>
   );

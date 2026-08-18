@@ -149,6 +149,11 @@ body {
   transform: translateY(0);
 }
 
+.how-popout-end {
+  left: auto;
+  right: 0;
+}
+
 .how-popout {
   position: absolute;
   left: 0;

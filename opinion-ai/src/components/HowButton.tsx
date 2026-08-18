@@ -12,7 +12,7 @@ const HOW_COPY = [
 
 export function HowButton() {
   const pathname = usePathname();
-  if (pathname === "/how") return null;
+  if (pathname === "/how" || pathname === "/pricing") return null;
 
   return (
     <div className="relative z-20 px-6 pt-10 pb-3">
