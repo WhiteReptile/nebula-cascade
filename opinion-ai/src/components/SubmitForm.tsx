@@ -28,7 +28,7 @@ const HUD_SLOTS: { id: CategoryId; label: string; fileAccept?: string; note: str
   {
     id: "text",
     label: "Text",
-    note: "Words only. A poem, a verse, a scene, a page of prose — paste it and we tell you what we think. Five times a day, no credits.",
+    note: "Words only. Poems, lyrics, homework, a marketing plan, a screenplay scene — paste it and we tell you what we think. Five times a day, no credits.",
   },
 ];
 
@@ -153,7 +153,7 @@ export function SubmitForm() {
           onChange={(e) => setContent(e.target.value)}
           placeholder={
             category === "text"
-              ? "Paste a poem, lyrics, a screenplay scene, or other writing…"
+              ? "Paste a poem, lyrics, homework, a marketing plan, a screenplay scene…"
               : "Context for the AI and human…"
           }
           rows={14}
