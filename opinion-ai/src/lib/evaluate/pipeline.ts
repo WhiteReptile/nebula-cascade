@@ -277,11 +277,11 @@ You MUST score with the Opinion.ai ranking system below. If the reviewer already
 
 ${rankingGuide()}
 
+The reviewer already chose the strengths and weaknesses lists. Do not invent different ones. Rewrite the opinion only.
+
 Return JSON only with these keys:
 - score: integer from 0 to 100 that matches the ranking system
-- opinion: string, 6 sentences or less
-- strengths: 0 to 5 short phrases taken from the notes. Use [] if none.
-- weaknesses: 0 to 5 short phrases taken from the notes. Use [] if none.`;
+- opinion: string, 6 sentences or less`;
 
 export type HumanOpinion = {
   score: number;
@@ -296,13 +296,17 @@ export async function opinionFromHumanNotes(input: {
   category: CategoryId;
   context: string;
   filename: string;
+  strengths?: string[];
+  weaknesses?: string[];
 }): Promise<HumanOpinion> {
   const notes = input.notes.trim();
+  const strengths = phrases(input.strengths, 30);
+  const weaknesses = phrases(input.weaknesses, 30);
   const fallback: HumanOpinion = {
     score: input.score ?? 50,
     opinion: notes,
-    strengths: [],
-    weaknesses: [],
+    strengths,
+    weaknesses,
   };
 
   const scoreLine =
@@ -318,6 +322,9 @@ export async function opinionFromHumanNotes(input: {
     "Human reviewer notes:",
     notes,
     "",
+    `Human strengths: ${strengths.length ? strengths.join("; ") : "(none)"}`,
+    `Human weaknesses: ${weaknesses.length ? weaknesses.join("; ") : "(none)"}`,
+    "",
     scoreLine,
   ].join("\n");
 
@@ -329,7 +336,7 @@ export async function opinionFromHumanNotes(input: {
   return {
     score: typeof input.score === "number" ? input.score : clampScore(result.score, fallback.score),
     opinion: result.opinion.trim(),
-    strengths: phrases(result.strengths, 5),
-    weaknesses: phrases(result.weaknesses, 5),
+    strengths,
+    weaknesses,
   };
 }

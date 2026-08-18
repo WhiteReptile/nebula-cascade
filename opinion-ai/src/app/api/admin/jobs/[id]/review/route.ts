@@ -3,6 +3,15 @@ import { isAdmin } from "@/lib/admin-auth";
 import { opinionFromHumanNotes } from "@/lib/evaluate/pipeline";
 import { getJob, isJobId, updateJob } from "@/lib/queue";
 
+function parseTags(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((item): item is string => typeof item === "string")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .slice(0, 30);
+}
+
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -40,12 +49,17 @@ export async function POST(
       score = Math.min(100, Math.max(0, Math.round(n)));
     }
 
+    const strengths = parseTags(body.strengths);
+    const weaknesses = parseTags(body.weaknesses);
+
     const written = await opinionFromHumanNotes({
       notes,
       score,
       category: job.category,
       context: job.context,
       filename: job.filename,
+      strengths,
+      weaknesses,
     });
 
     const next = await updateJob(id, {
