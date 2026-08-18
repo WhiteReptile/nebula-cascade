@@ -6,11 +6,46 @@ import { getDailyLimit } from "@/lib/constants";
 import { getDailyUsage, incrementDailyUsage, saveVerdict } from "@/lib/storage";
 import type { CategoryId } from "@/lib/types";
 
-const HUD_SLOTS: { id: CategoryId; label: string; fileAccept?: string }[] = [
-  { id: "music", label: "Music", fileAccept: "audio/*,.mp3,.wav,.m4a,.flac" },
-  { id: "documents", label: "Documents", fileAccept: ".pdf,.doc,.docx" },
-  { id: "video", label: "Video", fileAccept: "video/*" },
-  { id: "text", label: "Text" },
+const HUD_SLOTS: { id: CategoryId; label: string; fileAccept?: string; explain: string[] }[] = [
+  {
+    id: "music",
+    label: "Music",
+    fileAccept: "audio/*,.mp3,.wav,.m4a,.flac",
+    explain: [
+      "A human listens to your music.",
+      "That is why this slot is locked unless you have premium credits.",
+      "Upload the track when you can pay for that review.",
+    ],
+  },
+  {
+    id: "documents",
+    label: "Documents",
+    fileAccept: "image/*,.png,.jpg,.jpeg,.webp,.gif,.pdf",
+    explain: [
+      "Documents here means visual work: photographs, imagery, and marketing pieces.",
+      "We look at how it looks and how it sells, not the written words as literature.",
+      "Paste poems, lyrics, and scripts in Text instead.",
+    ],
+  },
+  {
+    id: "video",
+    label: "Video",
+    fileAccept: "video/*",
+    explain: [
+      "A human watches your video.",
+      "This slot is locked unless you have premium credits.",
+      "Use it for film, clips, and moving picture work.",
+    ],
+  },
+  {
+    id: "text",
+    label: "Text",
+    explain: [
+      "Text is for the words themselves: poems, lyrics, screenplay scenes, and other writing.",
+      "Paste the work you want judged.",
+      "The free AI opinion is for this slot.",
+    ],
+  },
 ];
 
 const PAID: CategoryId[] = ["music", "documents", "video"];
@@ -100,6 +135,16 @@ export function SubmitForm() {
         })}
       </div>
 
+      {slot && (
+        <div className="mb-4 space-y-1">
+          {slot.explain.map((line) => (
+            <p key={line} className="text-dynamic text-xs leading-relaxed">
+              {line}
+            </p>
+          ))}
+        </div>
+      )}
+
       {slot?.fileAccept && (
         <div className="file-pick">
           <input
@@ -123,7 +168,7 @@ export function SubmitForm() {
           onChange={(e) => setContent(e.target.value)}
           placeholder={
             category === "text"
-              ? "Paste your business idea, landing page copy, or pitch content…"
+              ? "Paste a poem, lyrics, a screenplay scene, or other writing…"
               : "Context for the AI and human…"
           }
           rows={14}
