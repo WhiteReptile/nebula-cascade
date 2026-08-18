@@ -196,7 +196,32 @@ body {
 }
 
 .hud-slot:hover {
-  color: #ffffff;
+  color: #111111;
+  background: #ffffff;
+  box-shadow:
+    0 0 8px #ffffff,
+    0 0 22px rgba(255, 255, 255, 0.95),
+    0 0 48px rgba(255, 255, 255, 0.65);
+}
+
+.hud-slot-on:hover {
+  color: #111111;
+  background: #ffffff;
+}
+
+.file-native {
+  display: block;
+  width: 100%;
+  margin-bottom: 0.75rem;
+  padding: 0.35rem 0.4rem;
+  background: #ffffff;
+  color: #111111;
+  color-scheme: light;
+}
+
+.file-native input[type="file"] {
+  color: #111111;
+  width: 100%;
 }
 
 .hud-slot-on {

@@ -99,16 +99,15 @@ export function SubmitForm() {
         })}
       </div>
 
-      {slot?.fileAccept && (
-        <label className="mb-3 flex items-center gap-2 text-xs text-white/70">
+      {(!category || slot?.fileAccept) && (
+        <div className="file-native">
           <input
             type="file"
-            accept={slot.fileAccept}
-            className="text-xs text-white"
+            accept={slot?.fileAccept ?? ".pdf,.doc,.docx,audio/*,video/*"}
             disabled={loading}
             onChange={(e) => setFileName(e.target.files?.[0]?.name ?? null)}
           />
-        </label>
+        </div>
       )}
 
       <div className="cosmic-glass p-1">
