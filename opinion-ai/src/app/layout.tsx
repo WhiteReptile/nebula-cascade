@@ -10,7 +10,7 @@ const orbitron = Orbitron({ subsets: ["latin"], variable: "--font-orbitron" });
 
 export const metadata: Metadata = {
   title: "Opinion.ai",
-  description: "Ask what we really think. No yes-men. Just opinions.",
+  description: "An AI designed to give unbiased, real opinions of your work.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

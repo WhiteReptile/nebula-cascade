@@ -6,7 +6,9 @@ export default function Home() {
   return (
     <div className="flex flex-col items-center px-6 py-20 sm:py-28">
       <div className="max-w-2xl w-full text-center mb-20">
-        <p className="label-white text-[10px] mb-6">Independent evaluation</p>
+        <p className="label-white text-[10px] sm:text-xs mb-6 max-w-md mx-auto leading-relaxed">
+          An AI designed to give unbiased, real opinions of your work
+        </p>
         <h1 className="cosmic-title text-3xl sm:text-4xl font-light mb-4">
           Ask what we really think.
         </h1>
