@@ -12,6 +12,15 @@ const HUD_SLOTS: { id: CategoryId; label: string; fileAccept?: string }[] = [
   { id: "video", label: "Video", fileAccept: "video/*" },
 ];
 
+const PAID: CategoryId[] = ["music", "documents", "video"];
+
+const PRICING_COPY = [
+  "Music, documents, and video are $2.99.",
+  "A human will watch or read your work.",
+  "You get a five-sentence opinion.",
+  "It is anonymous. They will not know who you are.",
+];
+
 export function SubmitForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -26,18 +35,17 @@ export function SubmitForm() {
   const dailyLimit = getDailyLimit();
   const used = getDailyUsage();
   const slot = HUD_SLOTS.find((s) => s.id === category);
-  const canSubmit = Boolean(category) && Boolean(content.trim() || fileName) && !loading;
+  const paidSelected = category !== null && PAID.includes(category);
+  const canSubmit =
+    Boolean(content.trim()) && !paidSelected && !fileName && !loading;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!category) {
-      setError("Choose a category.");
+    if (paidSelected || fileName) {
+      setError("Music, documents, and video are paid. See Pricing.");
       return;
     }
-    const payload = [fileName ? `Attached file: ${fileName}` : "", content.trim()]
-      .filter(Boolean)
-      .join("\n\n");
-    if (!payload) return;
+    if (!content.trim()) return;
     if (used >= dailyLimit) {
       setError(`Free limit reached (${dailyLimit}/day). Try again tomorrow.`);
       return;
@@ -51,8 +59,8 @@ export function SubmitForm() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          content: payload,
-          category,
+          content: content.trim(),
+          category: "text",
           revisionOf,
         }),
       });
@@ -77,7 +85,7 @@ export function SubmitForm() {
         <p className="text-dynamic text-sm mb-4">Revising a previous submission.</p>
       )}
 
-      <div className="hud-row mb-4" role="listbox" aria-label="Category">
+      <div className="hud-row mb-3" role="listbox" aria-label="Category">
         {HUD_SLOTS.map((s) => {
           const on = category === s.id;
           return (
@@ -87,7 +95,7 @@ export function SubmitForm() {
               role="option"
               aria-selected={on}
               onClick={() => {
-                setCategory(s.id);
+                setCategory(on ? null : s.id);
                 setFileName(null);
               }}
               className={`hud-slot ${on ? "hud-slot-on" : ""}`}
@@ -96,6 +104,17 @@ export function SubmitForm() {
             </button>
           );
         })}
+      </div>
+
+      <div className="how-wrap relative inline-block mb-4">
+        <button type="button" className="pricing-btn">
+          Pricing
+        </button>
+        <div className="how-popout" role="tooltip">
+          {PRICING_COPY.map((line) => (
+            <p key={line}>{line}</p>
+          ))}
+        </div>
       </div>
 
       {(!category || slot?.fileAccept) && (

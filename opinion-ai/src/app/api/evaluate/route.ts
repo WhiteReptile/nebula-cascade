@@ -11,7 +11,12 @@ export async function POST(request: Request) {
     const revisionOf = typeof body.revisionOf === "string" ? body.revisionOf : undefined;
     const category = isCategoryId(body.category) ? body.category : undefined;
 
-    if (!category) {
+    if (category === "music" || category === "documents" || category === "video") {
+      return NextResponse.json({ error: "Music, documents, and video are paid. See Pricing." }, { status: 400 });
+    }
+
+    const resolved = category ?? "text";
+    if (!isCategoryId(resolved)) {
       return NextResponse.json({ error: "Choose a category." }, { status: 400 });
     }
 
@@ -25,7 +30,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Context is too long." }, { status: 400 });
     }
 
-    const verdict = await evaluateSubmission(content, revisionOf, category, context);
+    const verdict = await evaluateSubmission(content, revisionOf, resolved, context);
     return NextResponse.json({
       verdict,
       meta: { dailyLimit: getDailyLimit(), demoMode: !process.env.OPENAI_API_KEY },
