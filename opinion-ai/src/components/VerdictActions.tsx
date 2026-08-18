@@ -11,14 +11,11 @@ export function VerdictActions({ verdictId, shareText }: VerdictActionsProps) {
       <button
         type="button"
         onClick={() => navigator.clipboard?.writeText(shareText)}
-        className="text-[#66ffee]/60 hover:text-[#66ffee] transition-colors"
+        className="nav-white"
       >
         Share
       </button>
-      <a
-        href={`/submit?revision=${verdictId}`}
-        className="text-violet-300/60 hover:text-violet-200 transition-colors"
-      >
+      <a href={`/submit?revision=${verdictId}`} className="nav-white">
         Submit revision
       </a>
     </div>

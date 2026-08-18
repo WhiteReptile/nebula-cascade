@@ -16,14 +16,14 @@ export function ResultClient({ id }: { id: string }) {
   }, [id]);
 
   if (!loaded) {
-    return <p className="text-sm text-violet-300/40 text-center py-24">Scanning…</p>;
+    return <p className="text-dynamic text-sm text-center py-24">Scanning…</p>;
   }
 
   if (!verdict) {
     return (
       <div className="text-center py-24 px-6">
-        <p className="text-sm text-violet-200/50 mb-4">Verdict not found in local history.</p>
-        <Link href="/submit" className="text-sm text-[#66ffee]/70 hover:text-[#66ffee]">
+        <p className="text-dynamic text-sm mb-4">Verdict not found in local history.</p>
+        <Link href="/submit" className="nav-white text-sm">
           Submit something new
         </Link>
       </div>

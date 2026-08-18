@@ -7,17 +7,17 @@ export function WhyPanel({ analyst, steelman }: { analyst: AnalystOutput; steelm
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="border-t border-white/[0.06] pt-8">
+    <div className="border-t border-white/15 pt-8">
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="text-sm text-[#66ffee]/70 hover:text-[#66ffee] transition-colors tracking-wide"
+        className="nav-white text-sm tracking-wide"
       >
         {open ? "▾ Hide why" : "▸ Why?"}
       </button>
 
       {open && (
-        <div className="mt-8 space-y-8 text-sm text-violet-100/65">
+        <div className="mt-8 space-y-8 text-sm">
           <Section title="Analyst observations" items={analyst.observations} />
           {analyst.contradictions.length > 0 && (
             <Section title="Contradictions" items={analyst.contradictions} />
@@ -33,10 +33,10 @@ export function WhyPanel({ analyst, steelman }: { analyst: AnalystOutput; steelm
 function Section({ title, items }: { title: string; items: string[] }) {
   return (
     <section>
-      <h3 className="text-[10px] uppercase tracking-[0.25em] text-violet-300/45 mb-3">{title}</h3>
+      <h3 className="label-white text-[10px] mb-3">{title}</h3>
       <ul className="space-y-2.5">
         {items.map((item, i) => (
-          <li key={i} className="leading-relaxed pl-3 border-l border-[#66ffee]/15">
+          <li key={i} className="text-dynamic leading-relaxed pl-3 border-l border-[#4ec4ff]/30">
             {item}
           </li>
         ))}

@@ -15,12 +15,12 @@ export default function HistoryPage() {
 
   return (
     <div className="px-6 py-16 sm:py-20 max-w-xl mx-auto w-full">
-      <h1 className="cosmic-title text-xl font-light tracking-wide mb-10">History</h1>
+      <h1 className="cosmic-title text-xl font-light mb-10">History</h1>
 
       {entries.length === 0 ? (
-        <p className="text-sm text-violet-200/45">
+        <p className="text-dynamic text-sm">
           No evaluations yet.{" "}
-          <Link href="/submit" className="text-[#66ffee]/70 hover:text-[#66ffee]">
+          <Link href="/submit" className="nav-white">
             Submit something
           </Link>
         </p>
@@ -36,12 +36,10 @@ export default function HistoryPage() {
                   <span className={`text-3xl font-light tabular-nums ${scoreClass(entry.score)}`}>
                     {entry.score}
                   </span>
-                  <p className="text-sm text-violet-100/55 mt-1 line-clamp-1">{entry.verdictPreview}</p>
-                  <p className="text-[10px] uppercase tracking-[0.2em] text-violet-300/35 mt-2">
-                    {entry.categoryLabel}
-                  </p>
+                  <p className="text-dynamic text-sm mt-1 line-clamp-1">{entry.verdictPreview}</p>
+                  <p className="label-white text-[10px] mt-2">{entry.categoryLabel}</p>
                 </div>
-                <time className="text-xs text-violet-300/30 shrink-0">
+                <time className="text-dynamic text-xs shrink-0">
                   {new Date(entry.createdAt).toLocaleDateString()}
                 </time>
               </Link>

@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
-import { Inter, Space_Grotesk } from "next/font/google";
+import { Inter, Orbitron, Space_Grotesk } from "next/font/google";
 import { CosmicBackground } from "@/components/CosmicBackground";
 import { Header } from "@/components/Header";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const space = Space_Grotesk({ subsets: ["latin"], variable: "--font-space" });
+const orbitron = Orbitron({ subsets: ["latin"], variable: "--font-orbitron" });
 
 export const metadata: Metadata = {
   title: "Opinion.ai",
@@ -14,7 +15,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${inter.variable} ${space.variable} h-full`}>
+    <html lang="en" className={`${inter.variable} ${space.variable} ${orbitron.variable} h-full`}>
       <body className="min-h-full flex flex-col antialiased">
         <CosmicBackground />
         <Header />

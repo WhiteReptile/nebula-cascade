@@ -28,19 +28,19 @@ export function CosmicBackground() {
       {/* Nebula clouds */}
       <div
         className="nebula-blob absolute -left-[10%] top-[15%] h-[520px] w-[520px] rounded-full blur-[100px]"
-        style={{ background: "radial-gradient(circle, rgba(34,0,102,0.55) 0%, transparent 70%)" }}
+        style={{ background: "radial-gradient(circle, rgba(10,40,140,0.55) 0%, transparent 70%)" }}
       />
       <div
         className="nebula-blob-delayed absolute -right-[5%] top-[40%] h-[480px] w-[480px] rounded-full blur-[90px]"
-        style={{ background: "radial-gradient(circle, rgba(0,51,102,0.45) 0%, transparent 70%)" }}
+        style={{ background: "radial-gradient(circle, rgba(0,90,160,0.45) 0%, transparent 70%)" }}
       />
       <div
         className="nebula-blob absolute left-[35%] -top-[8%] h-[400px] w-[400px] rounded-full blur-[80px]"
-        style={{ background: "radial-gradient(circle, rgba(102,0,51,0.35) 0%, transparent 70%)" }}
+        style={{ background: "radial-gradient(circle, rgba(30,80,180,0.35) 0%, transparent 70%)" }}
       />
       <div
         className="nebula-blob-delayed absolute bottom-[5%] left-[20%] h-[360px] w-[360px] rounded-full blur-[85px]"
-        style={{ background: "radial-gradient(circle, rgba(136,102,204,0.3) 0%, transparent 70%)" }}
+        style={{ background: "radial-gradient(circle, rgba(78,196,255,0.22) 0%, transparent 70%)" }}
       />
 
       {/* Vignette */}

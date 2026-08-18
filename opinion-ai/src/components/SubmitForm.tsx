@@ -52,7 +52,7 @@ export function SubmitForm() {
   return (
     <form onSubmit={handleSubmit} className="max-w-xl mx-auto w-full">
       {revisionOf && (
-        <p className="text-sm text-violet-300/50 mb-4">Revising a previous submission.</p>
+        <p className="text-dynamic text-sm mb-4">Revising a previous submission.</p>
       )}
 
       <div className="cosmic-glass p-1">
@@ -61,13 +61,13 @@ export function SubmitForm() {
           onChange={(e) => setContent(e.target.value)}
           placeholder="Paste your business idea, landing page copy, or pitch content…"
           rows={14}
-          className="w-full bg-transparent px-5 py-4 text-sm text-violet-50/90 placeholder:text-violet-300/30 focus:outline-none resize-y"
+          className="w-full bg-transparent px-5 py-4 text-sm text-white placeholder:text-white/40 focus:outline-none resize-y"
           disabled={loading}
         />
       </div>
 
       <div className="mt-6 flex items-center justify-between">
-        <span className="text-xs text-violet-300/40 tracking-wide">
+        <span className="text-dynamic text-xs tracking-wide">
           {used}/{dailyLimit} free today
         </span>
         <button type="submit" disabled={loading || !content.trim()} className="cosmic-cta text-sm px-8 py-2.5">
@@ -75,7 +75,7 @@ export function SubmitForm() {
         </button>
       </div>
 
-      {error && <p className="mt-4 text-sm text-fuchsia-400/80">{error}</p>}
+      {error && <p className="mt-4 text-sm text-white">{error}</p>}
     </form>
   );
 }

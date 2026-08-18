@@ -2,14 +2,16 @@
 
 @theme inline {
   --font-sans: var(--font-inter), system-ui, sans-serif;
-  --font-display: var(--font-space), var(--font-inter), system-ui, sans-serif;
+  --font-display: var(--font-orbitron), var(--font-space), system-ui, sans-serif;
   --color-void: #020510;
+  --color-blade: #4ec4ff;
+  --color-blade-deep: #1e90ff;
   --color-nebula-violet: #8866cc;
   --color-nebula-cyan: #66ffee;
   --color-nebula-indigo: #220066;
   --color-glass: rgba(8, 12, 28, 0.72);
-  --color-glass-border: rgba(136, 102, 204, 0.22);
-  --color-glow-cyan: rgba(102, 255, 238, 0.55);
+  --color-glass-border: rgba(78, 196, 255, 0.22);
+  --color-glow-cyan: rgba(78, 196, 255, 0.55);
   --color-glow-violet: rgba(136, 102, 204, 0.45);
 }
 
@@ -20,11 +22,12 @@ html {
 body {
   font-family: var(--font-sans);
   background: var(--color-void);
-  color: #e8eaf6;
+  color: #ffffff;
+  text-shadow: 0 0 18px rgba(255, 255, 255, 0.18);
 }
 
 ::selection {
-  background: rgba(136, 102, 204, 0.45);
+  background: rgba(78, 196, 255, 0.4);
   color: #fff;
 }
 
@@ -38,33 +41,33 @@ body {
   border: 1px solid var(--color-glass-border);
   backdrop-filter: blur(16px);
   box-shadow:
-    0 0 0 1px rgba(102, 255, 238, 0.04) inset,
+    0 0 0 1px rgba(78, 196, 255, 0.05) inset,
     0 8px 32px rgba(0, 0, 0, 0.45),
-    0 0 48px rgba(34, 0, 102, 0.15);
+    0 0 48px rgba(30, 144, 255, 0.12);
 }
 
 .cosmic-glass:hover {
-  border-color: rgba(136, 102, 204, 0.38);
+  border-color: rgba(78, 196, 255, 0.45);
   box-shadow:
-    0 0 0 1px rgba(102, 255, 238, 0.08) inset,
+    0 0 0 1px rgba(78, 196, 255, 0.1) inset,
     0 12px 40px rgba(0, 0, 0, 0.5),
-    0 0 64px rgba(102, 255, 238, 0.08);
+    0 0 64px rgba(78, 196, 255, 0.14);
 }
 
 /* Score glow tiers */
 .score-glow-high {
-  color: #66ffee;
+  color: #4ec4ff;
   text-shadow:
-    0 0 20px rgba(102, 255, 238, 0.7),
-    0 0 60px rgba(102, 255, 238, 0.25),
-    0 0 100px rgba(136, 102, 204, 0.15);
+    0 0 20px rgba(78, 196, 255, 0.8),
+    0 0 60px rgba(30, 144, 255, 0.35),
+    0 0 100px rgba(0, 80, 200, 0.2);
 }
 
 .score-glow-mid {
-  color: #c4b5fd;
+  color: #ffffff;
   text-shadow:
-    0 0 16px rgba(196, 181, 253, 0.5),
-    0 0 48px rgba(136, 102, 204, 0.2);
+    0 0 16px rgba(255, 255, 255, 0.55),
+    0 0 48px rgba(78, 196, 255, 0.25);
 }
 
 .score-glow-low {
@@ -76,21 +79,22 @@ body {
 
 /* Primary CTA */
 .cosmic-cta {
-  background: linear-gradient(135deg, rgba(102, 255, 238, 0.15), rgba(136, 102, 204, 0.25));
-  border: 1px solid rgba(102, 255, 238, 0.35);
-  color: #e0f8ff;
+  background: linear-gradient(135deg, rgba(78, 196, 255, 0.18), rgba(30, 90, 180, 0.28));
+  border: 1px solid rgba(78, 196, 255, 0.45);
+  color: #ffffff;
+  text-shadow: 0 0 12px rgba(255, 255, 255, 0.35);
   box-shadow:
-    0 0 20px rgba(102, 255, 238, 0.15),
-    0 0 40px rgba(136, 102, 204, 0.1);
+    0 0 20px rgba(78, 196, 255, 0.2),
+    0 0 40px rgba(30, 144, 255, 0.12);
   transition: all 0.3s ease;
 }
 
 .cosmic-cta:hover {
-  background: linear-gradient(135deg, rgba(102, 255, 238, 0.25), rgba(136, 102, 204, 0.35));
-  border-color: rgba(102, 255, 238, 0.55);
+  background: linear-gradient(135deg, rgba(78, 196, 255, 0.32), rgba(30, 90, 180, 0.4));
+  border-color: rgba(78, 196, 255, 0.7);
   box-shadow:
-    0 0 28px rgba(102, 255, 238, 0.3),
-    0 0 56px rgba(136, 102, 204, 0.2);
+    0 0 28px rgba(78, 196, 255, 0.4),
+    0 0 56px rgba(30, 144, 255, 0.22);
   transform: translateY(-1px);
 }
 
@@ -100,19 +104,51 @@ body {
   cursor: not-allowed;
 }
 
-/* Title glow */
+/* Blade Runner electric-blue titles */
 .cosmic-title {
   font-family: var(--font-display);
-  color: #e0f8ff;
+  color: #4ec4ff;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   text-shadow:
-    0 0 12px rgba(102, 255, 238, 0.5),
-    0 0 32px rgba(136, 102, 204, 0.25);
+    0 0 6px rgba(78, 196, 255, 0.95),
+    0 0 18px rgba(30, 144, 255, 0.75),
+    0 0 42px rgba(0, 90, 220, 0.45),
+    0 0 72px rgba(0, 40, 160, 0.25);
+  animation: bladePulse 4.5s ease-in-out infinite;
+}
+
+.nav-white {
+  color: #ffffff;
+  text-shadow: 0 0 14px rgba(255, 255, 255, 0.45);
+  transition: color 0.3s ease, text-shadow 0.3s ease;
+}
+
+.nav-white:hover {
+  color: #4ec4ff;
+  text-shadow:
+    0 0 8px rgba(78, 196, 255, 0.9),
+    0 0 20px rgba(30, 144, 255, 0.5);
+}
+
+.text-dynamic {
+  color: #ffffff;
+  text-shadow: 0 0 16px rgba(255, 255, 255, 0.28);
+  animation: whitePulse 6s ease-in-out infinite;
+}
+
+.label-white {
+  color: #ffffff;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  opacity: 0.92;
+  text-shadow: 0 0 12px rgba(255, 255, 255, 0.25);
 }
 
 .cosmic-divider {
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(102, 255, 238, 0.35), transparent);
-  box-shadow: 0 0 8px rgba(102, 255, 238, 0.2);
+  background: linear-gradient(90deg, transparent, rgba(78, 196, 255, 0.55), transparent);
+  box-shadow: 0 0 10px rgba(78, 196, 255, 0.35);
 }
 
 @keyframes nebulaDrift {
@@ -131,6 +167,27 @@ body {
   50% { transform: translateY(-6px); }
 }
 
+@keyframes bladePulse {
+  0%, 100% {
+    text-shadow:
+      0 0 6px rgba(78, 196, 255, 0.85),
+      0 0 18px rgba(30, 144, 255, 0.55),
+      0 0 42px rgba(0, 90, 220, 0.3);
+  }
+  50% {
+    text-shadow:
+      0 0 10px rgba(150, 230, 255, 1),
+      0 0 28px rgba(78, 196, 255, 0.85),
+      0 0 60px rgba(30, 144, 255, 0.5),
+      0 0 90px rgba(0, 90, 220, 0.35);
+  }
+}
+
+@keyframes whitePulse {
+  0%, 100% { text-shadow: 0 0 12px rgba(255, 255, 255, 0.18); }
+  50% { text-shadow: 0 0 22px rgba(255, 255, 255, 0.4); }
+}
+
 .nebula-blob {
   animation: nebulaDrift 18s ease-in-out infinite;
 }
@@ -141,7 +198,9 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .nebula-blob,
-  .nebula-blob-delayed {
+  .nebula-blob-delayed,
+  .cosmic-title,
+  .text-dynamic {
     animation: none;
   }
 }
