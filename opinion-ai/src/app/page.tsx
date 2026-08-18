@@ -17,7 +17,7 @@ export default function Home() {
         <Link href="/submit" className="cosmic-cta inline-block text-sm px-10 py-3">
           Evaluate
         </Link>
-        <p className="warning-red text-xs sm:text-sm mt-10 mb-0">
+        <p className="warning-red text-xs sm:text-sm mt-10 mb-0 font-bold">
           Humans will look at your work too
         </p>
       </div>

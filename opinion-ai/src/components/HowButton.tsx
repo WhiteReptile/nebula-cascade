@@ -3,15 +3,29 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+const HOW_COPY = [
+  "You send in your work. We look at what’s actually there — we don’t try to please you.",
+  "First we list the facts, then we argue for it and against it, then we give a score.",
+  "That score is an opinion, not a fact. Taste is subjective, so people can disagree.",
+  "A real person will also look at your work, independently, and they won’t know who you are.",
+];
+
 export function HowButton() {
   const pathname = usePathname();
   if (pathname === "/how") return null;
 
   return (
-    <div className="relative z-10 px-6 pt-8 pb-2">
-      <Link href="/how" className="how-btn-red inline-block text-[10px] sm:text-xs px-3 py-1.5">
-        How does it work
-      </Link>
+    <div className="relative z-20 px-6 pt-10 pb-3">
+      <div className="how-wrap relative inline-block">
+        <Link href="/how" className="how-btn-red inline-block text-[10px] sm:text-xs px-3 py-1.5">
+          How does it work
+        </Link>
+        <div className="how-popout" role="tooltip">
+          {HOW_COPY.map((line) => (
+            <p key={line}>{line}</p>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

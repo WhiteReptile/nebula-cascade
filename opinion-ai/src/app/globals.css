@@ -120,6 +120,7 @@ body {
 
 .warning-red {
   color: #ff2a2a;
+  font-weight: 700;
   text-shadow:
     0 0 8px rgba(255, 42, 42, 0.85),
     0 0 22px rgba(180, 0, 0, 0.45);
@@ -139,6 +140,38 @@ body {
 .how-btn-red:hover {
   background: #e00000;
   border-color: #e00000;
+}
+
+.how-wrap:hover .how-popout,
+.how-wrap:focus-within .how-popout {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.how-popout {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 12px);
+  z-index: 40;
+  width: min(22rem, calc(100vw - 3rem));
+  padding: 1rem 1.1rem;
+  background: #0a0e1c;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(6px);
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+}
+
+.how-popout p + p {
+  margin-top: 0.65rem;
 }
 
 /* Blade Runner electric-blue titles */
