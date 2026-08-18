@@ -191,6 +191,12 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
         })}
       </div>
 
+      {queueSelected && (
+        <p className="warning-red sentence text-xs sm:text-sm mb-4">
+          Music, documents, and video need a human, so a review can take 5 to 10 minutes.
+        </p>
+      )}
+
       {slot && (
         <div className="cosmic-glass p-5 mb-4">
           <p className="text-dynamic text-sm leading-relaxed">{slot.note}</p>

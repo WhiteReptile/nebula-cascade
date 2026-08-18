@@ -139,6 +139,11 @@ body {
   text-transform: uppercase;
 }
 
+.warning-red.sentence {
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
+
 .how-btn-red {
   display: inline-block;
   background: #ff0000;
