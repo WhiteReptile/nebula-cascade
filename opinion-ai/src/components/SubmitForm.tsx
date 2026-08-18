@@ -6,45 +6,29 @@ import { getDailyLimit } from "@/lib/constants";
 import { getDailyUsage, incrementDailyUsage, saveVerdict } from "@/lib/storage";
 import type { CategoryId } from "@/lib/types";
 
-const HUD_SLOTS: { id: CategoryId; label: string; fileAccept?: string; explain: string[] }[] = [
+const HUD_SLOTS: { id: CategoryId; label: string; fileAccept?: string; note: string }[] = [
   {
     id: "music",
     label: "Music",
     fileAccept: "audio/*,.mp3,.wav,.m4a,.flac",
-    explain: [
-      "A human listens to your music.",
-      "That is why this slot is locked unless you have premium credits.",
-      "Upload the track when you can pay for that review.",
-    ],
+    note: "A person listens to the actual track — the sound, not a write-up. Music stays locked until you have credits. Then you send the file, and a little context.",
   },
   {
     id: "documents",
     label: "Documents",
     fileAccept: "image/*,.png,.jpg,.jpeg,.webp,.gif,.pdf",
-    explain: [
-      "Documents here means visual work: photographs, imagery, and marketing pieces.",
-      "We look at how it looks and how it sells, not the written words as literature.",
-      "Paste poems, lyrics, and scripts in Text instead.",
-    ],
+    note: "Bring the picture, not the manuscript. Photographs, stills, posters, ads — work meant to be seen. We judge the image and the sell. Writing belongs in Text.",
   },
   {
     id: "video",
     label: "Video",
     fileAccept: "video/*",
-    explain: [
-      "A human watches your video.",
-      "This slot is locked unless you have premium credits.",
-      "Use it for film, clips, and moving picture work.",
-    ],
+    note: "A person watches it move. Film, clips, anything that lives in time. Same lock as Music: credits first, then the file, then a little context.",
   },
   {
     id: "text",
     label: "Text",
-    explain: [
-      "Text is for the words themselves: poems, lyrics, screenplay scenes, and other writing.",
-      "Paste the work you want judged.",
-      "The free AI opinion is for this slot.",
-    ],
+    note: "Words only. A poem, a verse, a scene, a page of prose — paste it and we tell you what we think. Five times a day, no credits.",
   },
 ];
 
@@ -142,14 +126,7 @@ export function SubmitForm() {
 
       {slot && (
         <div className="cosmic-glass p-5 mb-4">
-          <p className="label-white text-[10px] mb-3">{slot.label}</p>
-          <div className="space-y-2">
-            {slot.explain.map((line) => (
-              <p key={line} className="text-dynamic text-sm leading-relaxed pl-3 border-l border-[#4ec4ff]/30">
-                {line}
-              </p>
-            ))}
-          </div>
+          <p className="text-dynamic text-sm leading-relaxed">{slot.note}</p>
         </div>
       )}
 
