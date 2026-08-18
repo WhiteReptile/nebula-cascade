@@ -14,7 +14,9 @@ export function VerdictView({ verdict, showActions = true }: { verdict: Verdict;
         <div className={`text-8xl font-extralight tabular-nums ${scoreClass(verdict.score)}`}>
           {verdict.score}
         </div>
-        <p className={`label-white text-[10px] mt-4 ${scoreClass(verdict.score)}`}>{rank.rank}</p>
+        <p className={`text-[10px] tracking-[0.22em] uppercase mt-4 ${scoreClass(verdict.score)}`}>
+          {rank.rank}
+        </p>
         <p className="text-dynamic mt-2 text-sm">{rank.meaning}</p>
       </div>
 

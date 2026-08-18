@@ -36,7 +36,7 @@ export default function HistoryPage() {
                   <span className={`text-3xl font-light tabular-nums ${scoreClass(entry.score)}`}>
                     {entry.score}
                   </span>
-                  <p className={`label-white text-[10px] mt-2 ${scoreClass(entry.score)}`}>
+                  <p className={`text-[10px] tracking-[0.22em] uppercase mt-2 ${scoreClass(entry.score)}`}>
                     {getRank(entry.score).rank}
                   </p>
                   <p className="text-dynamic text-sm mt-1 line-clamp-1">{entry.verdictPreview}</p>
