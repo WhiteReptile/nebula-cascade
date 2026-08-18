@@ -15,7 +15,7 @@ export default function Home() {
         <p className="text-dynamic text-sm mb-3">No yes-men. Just opinions.</p>
         <div className="cosmic-divider w-32 mx-auto my-8" />
         <Link href="/submit" className="cosmic-cta inline-block text-sm px-10 py-3">
-          Evaluate
+          Submit
         </Link>
         <p className="warning-red text-xs sm:text-sm mt-10 mb-0 font-bold">
           Humans will look at your work too

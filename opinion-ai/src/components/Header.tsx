@@ -9,7 +9,7 @@ export function Header() {
       </Link>
       <nav className="flex items-center gap-8 text-sm">
         <Link href="/submit" className="nav-white">
-          Evaluate
+          Submit
         </Link>
         <Link href="/history" className="nav-white">
           History

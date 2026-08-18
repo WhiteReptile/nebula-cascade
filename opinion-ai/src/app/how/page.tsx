@@ -53,7 +53,7 @@ export default function HowPage() {
 
       <div className="mt-10 text-center">
         <Link href="/submit" className="cosmic-cta inline-block text-sm px-10 py-3">
-          Evaluate
+          Submit
         </Link>
       </div>
     </div>

@@ -170,7 +170,7 @@ export function SubmitForm() {
           <span className="text-dynamic text-xs tracking-wide">0 credits</span>
         </div>
         <button type="submit" disabled={!canSubmit} className="cosmic-cta text-sm px-8 py-2.5">
-          {loading ? "Evaluating…" : "Evaluate"}
+          {loading ? "Submitting…" : "Submit"}
         </button>
       </div>
 
