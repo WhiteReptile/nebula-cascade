@@ -100,13 +100,19 @@ export function SubmitForm() {
       </div>
 
       {(!category || slot?.fileAccept) && (
-        <div className="file-native">
+        <div className="file-pick">
           <input
+            id="submit-file"
             type="file"
             accept={slot?.fileAccept ?? ".pdf,.doc,.docx,audio/*,video/*"}
+            className="sr-only"
             disabled={loading}
             onChange={(e) => setFileName(e.target.files?.[0]?.name ?? null)}
           />
+          <label htmlFor="submit-file" className="file-pick-btn">
+            Choose file
+          </label>
+          <span className="file-pick-name">{fileName ?? "No file chosen"}</span>
         </div>
       )}
 

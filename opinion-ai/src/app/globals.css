@@ -189,6 +189,7 @@ body {
   color: rgba(255, 255, 255, 0.55);
   background: transparent;
   border-right: 1px solid rgba(255, 255, 255, 0.2);
+  transition: color 0.7s ease, background-color 0.7s ease, box-shadow 0.7s ease;
 }
 
 .hud-slot:last-child {
@@ -209,19 +210,26 @@ body {
   background: #ffffff;
 }
 
-.file-native {
-  display: block;
-  width: 100%;
+.file-pick {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
   margin-bottom: 0.75rem;
-  padding: 0.35rem 0.4rem;
-  background: #ffffff;
-  color: #111111;
-  color-scheme: light;
 }
 
-.file-native input[type="file"] {
+.file-pick-btn {
+  font-size: 13px;
+  line-height: 1.3;
+  padding: 1px 8px;
+  background: #efefef;
   color: #111111;
-  width: 100%;
+  border: 1px solid #767676;
+  border-radius: 2px;
+}
+
+.file-pick-name {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.85);
 }
 
 .hud-slot-on {
