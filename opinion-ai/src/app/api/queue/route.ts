@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   addJob,
+  isExaminerModel,
   isHumanJobCategory,
   longVideoAllowed,
   MAX_QUEUE_FILE_BYTES,
@@ -23,6 +24,7 @@ export async function POST(request: Request) {
     const categoryRaw = form.get("category");
     const contextRaw = form.get("context");
     const fileRaw = form.get("file");
+    const modelRaw = form.get("model");
 
     if (!isHumanJobCategory(categoryRaw)) {
       return NextResponse.json({ error: "Choose a slot that takes a file." }, { status: 400 });
@@ -56,6 +58,7 @@ export async function POST(request: Request) {
     }
 
     const share = form.get("share") === "1";
+    const examinerModel = isExaminerModel(modelRaw) ? modelRaw : "pro-examiner-v2";
 
     const buffer = Buffer.from(await fileRaw.arrayBuffer());
     const job: QueueJob = {
@@ -68,6 +71,7 @@ export async function POST(request: Request) {
       status: "pending",
       createdAt: new Date().toISOString(),
       share,
+      examinerModel,
       ...(durationSeconds != null ? { durationSeconds } : {}),
     };
 

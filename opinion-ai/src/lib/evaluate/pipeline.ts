@@ -1,6 +1,7 @@
 import type { AnalystOutput, CategoryId, SteelmanOutput, Verdict } from "../types";
 import { getCategory } from "../categories";
 import { rankingGuide } from "../ranking";
+import type { ExaminerModel } from "../queue-shared";
 
 const GROQ_BASE = "https://api.groq.com/openai/v1";
 const GROQ_MODEL = "openai/gpt-oss-20b";
@@ -184,9 +185,18 @@ async function llmJson<T>(system: string, user: string, temperature: number): Pr
   return parseJsonContent<T>(raw);
 }
 
-const OPINION_SYSTEM = `You are Opinion.ai. Read the user's work and give a brutally honest opinion.
+function opinionSentenceRule(model: ExaminerModel): string {
+  return model === "pro-examiner-v1" ? "The opinion field must be 6 sentences or less." : "The opinion field must be exactly 8 sentences.";
+}
+
+function opinionOutputRule(model: ExaminerModel): string {
+  return model === "pro-examiner-v1" ? "- opinion: string, 6 sentences or less" : "- opinion: string, exactly 8 sentences";
+}
+
+function opinionSystem(model: ExaminerModel): string {
+  return `You are Opinion.ai. Read the user's work and give a brutally honest opinion.
 Do not flatter. Do not invent praise. Do not invent problems. If it is strong, say it is strong. If it is weak, say it is weak.
-Use simple words. The opinion field must be exactly 8 sentences.
+Use simple words. ${opinionSentenceRule(model)}
 The mix of strengths and weaknesses is free. Let the score decide:
 - Great work can have many strengths (up to 5) and few or zero weaknesses.
 - Mixed work can have both, in whatever split is true (for example 3 strengths and 2 weaknesses).
@@ -201,15 +211,17 @@ Write the opinion, strengths, and weaknesses in the same language as the submiss
 
 Return JSON only with these keys:
 - score: integer from 0 to 100 that matches the ranking system
-- opinion: string, exactly 8 sentences
+- opinion: string, ${opinionOutputRule(model).replace("- opinion: string, ", "")}
 - strengths: 0 to 5 short phrases. Use [] if there is no honest strength.
 - weaknesses: 0 to 5 short phrases. Use [] if there is no honest weakness.`;
+}
 
 export async function evaluateSubmission(
   content: string,
   revisionOf: string | undefined,
   category: CategoryId,
   context?: string,
+  model: ExaminerModel = "pro-examiner-v2",
 ): Promise<Verdict> {
   const framework = getCategory(category);
   const packed = context?.trim()
@@ -225,7 +237,7 @@ export async function evaluateSubmission(
   ];
   const hint = mixHints[Math.floor(Math.random() * mixHints.length)];
 
-  const result = await llmJson<SimpleOpinion>(OPINION_SYSTEM, `${hint}\n\n${packed}`, 0.7 + Math.random() * 0.5);
+  const result = await llmJson<SimpleOpinion>(opinionSystem(model), `${hint}\n\n${packed}`, 0.7 + Math.random() * 0.5);
   if (!result || typeof result.opinion !== "string" || !result.opinion.trim()) {
     return buildDemoVerdict(content, revisionOf, category, context);
   }
@@ -267,10 +279,11 @@ export async function evaluateSubmission(
   };
 }
 
-const HUMAN_OPINION_SYSTEM = `You are Opinion.ai. A human reviewer already formed an opinion of this work. Their notes are the source. You rewrite that opinion in simple, clear words — tighten sloppy phrasing, remove filler, keep every judgment they made.
+function humanOpinionSystem(model: ExaminerModel): string {
+  return `You are Opinion.ai. A human reviewer already formed an opinion of this work. Their notes are the source. You rewrite that opinion in simple, clear words — tighten sloppy phrasing, remove filler, keep every judgment they made.
 
 Do not invent a different take. Do not add praise or criticism that is not in the notes. Do not flatten or reverse their judgment. Do not replace their strengths and weaknesses lists.
-The opinion field must be exactly 8 sentences. This is the paid human + AI review.
+${opinionSentenceRule(model)} This is the paid human + AI review.
 Write in the same language as the notes. Handle English, Spanish, and Mandarin Chinese well.
 
 You MUST score with the Opinion.ai ranking system below. If the reviewer already gave a score, keep that exact score. If they did not, pick an integer that matches their notes — not a different opinion.
@@ -281,7 +294,8 @@ The reviewer already chose the strengths and weaknesses lists. Do not invent dif
 
 Return JSON only with these keys:
 - score: integer from 0 to 100 that matches the ranking system
-- opinion: string, exactly 8 sentences`;
+- opinion: string, ${opinionOutputRule(model).replace("- opinion: string, ", "")}`;
+}
 
 export type HumanOpinion = {
   score: number;
@@ -298,6 +312,7 @@ export async function opinionFromHumanNotes(input: {
   filename: string;
   strengths?: string[];
   weaknesses?: string[];
+  model?: ExaminerModel;
 }): Promise<HumanOpinion> {
   const notes = input.notes.trim();
   const strengths = phrases(input.strengths, 30);
@@ -328,7 +343,7 @@ export async function opinionFromHumanNotes(input: {
     scoreLine,
   ].join("\n");
 
-  const result = await llmJson<SimpleOpinion>(HUMAN_OPINION_SYSTEM, user, 0.2);
+  const result = await llmJson<SimpleOpinion>(humanOpinionSystem(input.model ?? "pro-examiner-v2"), user, 0.2);
   if (!result || typeof result.opinion !== "string" || !result.opinion.trim()) {
     return fallback;
   }

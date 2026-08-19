@@ -61,6 +61,7 @@ export async function POST(
       filename: job.filename,
       strengths,
       weaknesses,
+      model: job.examinerModel ?? "pro-examiner-v2",
     });
 
     const next = await updateJob(id, {

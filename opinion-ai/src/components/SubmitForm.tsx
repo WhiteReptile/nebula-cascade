@@ -13,7 +13,7 @@ import {
   spendPaidCredit,
   type PaidPack,
 } from "@/lib/storage";
-import { isJobId, VIDEO_CAP_SECONDS } from "@/lib/queue-shared";
+import { isJobId, VIDEO_CAP_SECONDS, type ExaminerModel } from "@/lib/queue-shared";
 import { QueueWait } from "@/components/QueueWait";
 import type { CategoryId } from "@/lib/types";
 
@@ -50,6 +50,10 @@ const HUD_SLOTS: { id: CategoryId; label: string; fileAccept?: string; note: str
 ];
 
 const QUEUE: CategoryId[] = ["music", "documents", "video", "physical_appearance"];
+const EXAMINER_MODELS: { id: ExaminerModel; label: string }[] = [
+  { id: "pro-examiner-v1", label: "Pro Examiner V1" },
+  { id: "pro-examiner-v2", label: "Pro Examiner V2" },
+];
 
 function videoDuration(file: File): Promise<number> {
   return new Promise((resolve, reject) => {
@@ -113,6 +117,7 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
   const [pack, setPack] = useState<PaidPack | null>(null);
   const [useCredit, setUseCredit] = useState(false);
   const [shareOpinion, setShareOpinion] = useState(false);
+  const [model, setModel] = useState<ExaminerModel>("pro-examiner-v2");
   const queuedId = searchParams.get("queued");
   const queued = Boolean(queuedId && isJobId(queuedId));
 
@@ -159,6 +164,7 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
     category: CategoryId;
     context: string;
     upload: File;
+    model: ExaminerModel;
     durationSeconds?: number;
     share?: boolean;
   }) {
@@ -166,6 +172,7 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
     body.append("category", args.category);
     body.append("context", args.context);
     body.append("file", args.upload);
+    body.append("model", args.model);
     if (args.durationSeconds != null) {
       body.append("durationSeconds", String(args.durationSeconds));
     }
@@ -206,6 +213,7 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
           category,
           context: content.trim(),
           upload: file,
+          model,
           durationSeconds,
           share: pack?.tier === "human-ai-pro" ? false : canShare ? shareOpinion : undefined,
         });
@@ -242,6 +250,7 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
           category: "text",
           context: work.slice(0, 8000),
           upload,
+          model,
           share: pack?.tier === "human-ai-pro" ? false : canShare ? shareOpinion : undefined,
         });
         const next = spendPaidCredit();
@@ -278,6 +287,7 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
           content: content.trim(),
           category: "text",
           revisionOf,
+          model,
         }),
       });
       if (!res.ok) {
@@ -373,6 +383,25 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
           )}
         </div>
       )}
+
+      <div className="cosmic-glass p-4 mb-4">
+        <label htmlFor="model-select" className="label-white text-[10px] block mb-2">
+          Model
+        </label>
+        <select
+          id="model-select"
+          value={model}
+          onChange={(e) => setModel(e.target.value as ExaminerModel)}
+          className="w-full bg-transparent border border-white/20 px-3 py-2 text-sm text-white focus:outline-none"
+          disabled={loading}
+        >
+          {EXAMINER_MODELS.map((item) => (
+            <option key={item.id} value={item.id} className="bg-[#060814] text-white">
+              {item.label}
+            </option>
+          ))}
+        </select>
+      </div>
 
       <div className="cosmic-glass p-1">
         <textarea

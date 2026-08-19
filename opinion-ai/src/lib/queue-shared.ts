@@ -1,5 +1,7 @@
 export const QUEUE_CATEGORIES = ["music", "documents", "video", "physical_appearance"] as const;
 export type QueueCategory = (typeof QUEUE_CATEGORIES)[number];
+export const EXAMINER_MODELS = ["pro-examiner-v1", "pro-examiner-v2"] as const;
+export type ExaminerModel = (typeof EXAMINER_MODELS)[number];
 
 export const MAX_QUEUE_FILE_BYTES = 80 * 1024 * 1024;
 export const VIDEO_CAP_SECONDS = 120;
@@ -23,6 +25,7 @@ export type QueueJob = {
   weaknesses?: string[];
   reviewedAt?: string;
   share?: boolean;
+  examinerModel?: ExaminerModel;
 };
 
 export function isQueueCategory(value: unknown): value is QueueCategory {
@@ -31,6 +34,10 @@ export function isQueueCategory(value: unknown): value is QueueCategory {
 
 export function isHumanJobCategory(value: unknown): value is QueueCategory | "text" {
   return isQueueCategory(value) || value === "text";
+}
+
+export function isExaminerModel(value: unknown): value is ExaminerModel {
+  return typeof value === "string" && EXAMINER_MODELS.includes(value as ExaminerModel);
 }
 
 export function isJobId(value: string): boolean {

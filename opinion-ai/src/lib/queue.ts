@@ -4,9 +4,11 @@ import type { QueueJob } from "./queue-shared";
 
 export type { QueueJob, QueueCategory, JobStatus } from "./queue-shared";
 export {
+  EXAMINER_MODELS,
   QUEUE_CATEGORIES,
   MAX_QUEUE_FILE_BYTES,
   VIDEO_CAP_SECONDS,
+  isExaminerModel,
   isQueueCategory,
   isHumanJobCategory,
   isJobId,

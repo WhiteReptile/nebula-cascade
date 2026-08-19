@@ -3,7 +3,7 @@ import { getDailyLimit } from "@/lib/constants";
 import { evaluateSubmission, getLlmConfig } from "@/lib/evaluate/pipeline";
 import { isCategoryId } from "@/lib/categories";
 import { recordOpinion } from "@/lib/opinion-count";
-import { isQueueCategory } from "@/lib/queue-shared";
+import { isExaminerModel, isQueueCategory } from "@/lib/queue-shared";
 
 export async function POST(request: Request) {
   try {
@@ -12,6 +12,7 @@ export async function POST(request: Request) {
     const context = typeof body.context === "string" ? body.context.trim() : "";
     const revisionOf = typeof body.revisionOf === "string" ? body.revisionOf : undefined;
     const category = isCategoryId(body.category) ? body.category : undefined;
+    const model = isExaminerModel(body.model) ? body.model : "pro-examiner-v2";
 
     if (isQueueCategory(category)) {
       return NextResponse.json({ error: "That slot needs a file and a human." }, { status: 400 });
@@ -32,7 +33,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Context is too long." }, { status: 400 });
     }
 
-    const verdict = await evaluateSubmission(content, revisionOf, resolved, context);
+    const verdict = await evaluateSubmission(content, revisionOf, resolved, context, model);
     await recordOpinion(verdict.id);
     return NextResponse.json({
       verdict,
