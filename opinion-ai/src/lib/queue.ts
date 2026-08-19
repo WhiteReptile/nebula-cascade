@@ -8,6 +8,7 @@ export {
   MAX_QUEUE_FILE_BYTES,
   VIDEO_CAP_SECONDS,
   isQueueCategory,
+  isHumanJobCategory,
   isJobId,
   longVideoAllowed,
 } from "./queue-shared";

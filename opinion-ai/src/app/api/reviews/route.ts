@@ -8,7 +8,9 @@ export const runtime = "nodejs";
 
 export async function GET() {
   const jobs = await listJobs();
-  const reviews = jobs.map((job) => {
+  const reviews = jobs
+    .filter((job) => job.share !== false)
+    .map((job) => {
     const framework = getCategory(job.category);
     const verdict = jobToVerdict(job);
     if (verdict) {

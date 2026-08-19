@@ -8,7 +8,7 @@ export type JobStatus = "pending" | "done";
 
 export type QueueJob = {
   id: string;
-  category: QueueCategory;
+  category: QueueCategory | "text";
   filename: string;
   mimeType: string;
   size: number;
@@ -22,10 +22,15 @@ export type QueueJob = {
   strengths?: string[];
   weaknesses?: string[];
   reviewedAt?: string;
+  share?: boolean;
 };
 
 export function isQueueCategory(value: unknown): value is QueueCategory {
   return typeof value === "string" && QUEUE_CATEGORIES.includes(value as QueueCategory);
+}
+
+export function isHumanJobCategory(value: unknown): value is QueueCategory | "text" {
+  return isQueueCategory(value) || value === "text";
 }
 
 export function isJobId(value: string): boolean {

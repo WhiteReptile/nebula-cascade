@@ -71,10 +71,16 @@ export default function PricingPage() {
         {standard.map((pkg) => (
           <article
             key={pkg.id}
-            className={`cosmic-glass p-6 flex flex-col ${pkg.id === "human-ai" ? "pricing-card-hot" : ""}`}
+            className={`cosmic-glass p-6 flex flex-col ${"cardTone" in pkg ? `pricing-card-${pkg.cardTone}` : ""}`}
           >
             <p className="label-white text-[10px]">{pkg.name}</p>
-            <p className="cosmic-title text-3xl font-light mt-3">{pkg.price}</p>
+            <p
+              className={`text-3xl font-light mt-3 ${
+                "cardTone" in pkg ? `pricing-price-${pkg.cardTone}` : "cosmic-title"
+              }`}
+            >
+              {pkg.price}
+            </p>
             <p className="text-white text-sm mt-4">{pkg.headline}</p>
             <div className="mt-3 space-y-2">
               {pkg.description.map((line) => (

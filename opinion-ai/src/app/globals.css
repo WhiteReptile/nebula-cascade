@@ -175,6 +175,41 @@ body {
   border-color: #e00000;
 }
 
+.pay-switch {
+  position: relative;
+  width: 2.6rem;
+  height: 1.4rem;
+  flex-shrink: 0;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(8, 12, 28, 0.9);
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.pay-switch::after {
+  content: "";
+  position: absolute;
+  top: 0.15rem;
+  left: 0.15rem;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.45);
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.pay-switch-on {
+  border-color: #4ec4ff;
+  background: rgba(78, 196, 255, 0.22);
+}
+
+.pay-switch-on::after {
+  transform: translateX(1.2rem);
+  background: #4ec4ff;
+  box-shadow: 0 0 12px rgba(78, 196, 255, 0.9);
+}
+
 .how-wrap:hover .how-popout,
 .how-wrap:focus-within .how-popout {
   opacity: 1;
@@ -509,13 +544,61 @@ body {
   line-height: 1.05;
 }
 
-.pricing-card-hot {
+.pricing-card-yellow {
+  border-color: rgba(255, 213, 106, 0.75);
+  box-shadow:
+    0 0 0 1px rgba(255, 213, 106, 0.16) inset,
+    0 12px 40px rgba(0, 0, 0, 0.5),
+    0 0 80px rgba(255, 213, 106, 0.22),
+    0 -20px 60px rgba(255, 213, 106, 0.1);
+}
+
+.pricing-card-blue {
   border-color: rgba(78, 196, 255, 0.7);
   box-shadow:
     0 0 0 1px rgba(78, 196, 255, 0.18) inset,
     0 12px 40px rgba(0, 0, 0, 0.5),
     0 0 80px rgba(78, 196, 255, 0.28),
     0 -20px 60px rgba(180, 230, 255, 0.12);
+}
+
+.pricing-card-red {
+  border-color: rgba(255, 42, 42, 0.75);
+  box-shadow:
+    0 0 0 1px rgba(255, 42, 42, 0.16) inset,
+    0 12px 40px rgba(0, 0, 0, 0.5),
+    0 0 80px rgba(255, 42, 42, 0.22),
+    0 -20px 60px rgba(255, 80, 80, 0.1);
+}
+
+.pricing-price-yellow {
+  font-family: var(--font-display);
+  color: #ffd56a;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-shadow:
+    0 0 8px rgba(255, 213, 106, 0.95),
+    0 0 22px rgba(180, 130, 0, 0.55);
+}
+
+.pricing-price-blue {
+  font-family: var(--font-display);
+  color: #4ec4ff;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-shadow:
+    0 0 6px rgba(78, 196, 255, 0.95),
+    0 0 18px rgba(30, 144, 255, 0.75);
+}
+
+.pricing-price-red {
+  font-family: var(--font-display);
+  color: #ff2a2a;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-shadow:
+    0 0 8px rgba(255, 42, 42, 0.95),
+    0 0 22px rgba(180, 0, 0, 0.55);
 }
 
 .pricing-paloma {

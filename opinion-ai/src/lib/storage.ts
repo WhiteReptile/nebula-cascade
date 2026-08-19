@@ -111,3 +111,39 @@ export function incrementDailyUsage(): void {
   usage[key] = (usage[key] ?? 0) + 1;
   localStorage.setItem(USAGE_KEY, JSON.stringify(usage));
 }
+
+export type PaidTier = "human-ai" | "human-ai-pro";
+
+export type PaidPack = {
+  tier: PaidTier;
+  credits: number;
+};
+
+const PACK_KEY = "opinion-ai-paid-pack";
+
+export function getPaidPack(): PaidPack | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(PACK_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as PaidPack;
+    if (parsed.tier !== "human-ai" && parsed.tier !== "human-ai-pro") return null;
+    if (!Number.isInteger(parsed.credits) || parsed.credits < 0) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+export function setPaidPack(pack: PaidPack): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(PACK_KEY, JSON.stringify(pack));
+}
+
+export function spendPaidCredit(): PaidPack | null {
+  const pack = getPaidPack();
+  if (!pack || pack.credits < 1) return null;
+  const next = { ...pack, credits: pack.credits - 1 };
+  setPaidPack(next);
+  return next;
+}

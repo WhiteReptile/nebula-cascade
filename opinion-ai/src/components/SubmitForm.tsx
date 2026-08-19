@@ -3,7 +3,16 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getDailyLimit } from "@/lib/constants";
-import { getDailyUsage, incrementDailyUsage, savePendingJob, saveVerdict } from "@/lib/storage";
+import {
+  getDailyUsage,
+  getPaidPack,
+  incrementDailyUsage,
+  savePendingJob,
+  saveVerdict,
+  setPaidPack,
+  spendPaidCredit,
+  type PaidPack,
+} from "@/lib/storage";
 import { isJobId, VIDEO_CAP_SECONDS } from "@/lib/queue-shared";
 import { QueueWait } from "@/components/QueueWait";
 import type { CategoryId } from "@/lib/types";
@@ -64,10 +73,35 @@ function videoDuration(file: File): Promise<number> {
   });
 }
 
+function PaySwitch({
+  checked,
+  label,
+  onChange,
+}: {
+  checked: boolean;
+  label: string;
+  onChange: (next: boolean) => void;
+}) {
+  return (
+    <div className="cosmic-glass flex items-center justify-between gap-4 px-4 py-3 mb-3">
+      <span className="text-dynamic text-sm">{label}</span>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        aria-label={label}
+        onClick={() => onChange(!checked)}
+        className={`pay-switch ${checked ? "pay-switch-on" : ""}`}
+      />
+    </div>
+  );
+}
+
 export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: boolean }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const revisionOf = searchParams.get("revision") ?? undefined;
+  const packParam = searchParams.get("pack");
   const fileInput = useRef<HTMLInputElement>(null);
 
   const [category, setCategory] = useState<CategoryId>("text");
@@ -76,6 +110,9 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [used, setUsed] = useState(0);
+  const [pack, setPack] = useState<PaidPack | null>(null);
+  const [useCredit, setUseCredit] = useState(false);
+  const [shareOpinion, setShareOpinion] = useState(false);
   const queuedId = searchParams.get("queued");
   const queued = Boolean(queuedId && isJobId(queuedId));
 
@@ -83,51 +120,108 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
     setUsed(getDailyUsage());
   }, []);
 
+  useEffect(() => {
+    if (packParam === "human-ai") {
+      setPaidPack({ tier: "human-ai", credits: 5 });
+    } else if (packParam === "human-ai-pro") {
+      setPaidPack({ tier: "human-ai-pro", credits: 10 });
+    }
+    setPack(getPaidPack());
+    if (packParam === "human-ai" || packParam === "human-ai-pro") {
+      router.replace("/submit");
+    }
+  }, [packParam, router]);
+
   const dailyLimit = getDailyLimit();
   const slot = HUD_SLOTS.find((s) => s.id === category);
   const queueSelected = QUEUE.includes(category);
+  const paid = Boolean(pack && pack.credits > 0);
+  const canShare = pack?.tier === "human-ai" && paid;
   const canSubmit = queueSelected
     ? Boolean(file) && Boolean(content.trim()) && !loading
     : Boolean(content.trim()) && !file && !loading;
+
+  useEffect(() => {
+    if (!paid) {
+      setUseCredit(false);
+      setShareOpinion(false);
+      return;
+    }
+    setUseCredit(queueSelected);
+  }, [paid, queueSelected]);
 
   function resetFile() {
     setFile(null);
     if (fileInput.current) fileInput.current.value = "";
   }
 
+  async function queueWork(args: {
+    category: CategoryId;
+    context: string;
+    upload: File;
+    durationSeconds?: number;
+    share?: boolean;
+  }) {
+    const body = new FormData();
+    body.append("category", args.category);
+    body.append("context", args.context);
+    body.append("file", args.upload);
+    if (args.durationSeconds != null) {
+      body.append("durationSeconds", String(args.durationSeconds));
+    }
+    if (args.share != null) {
+      body.append("share", args.share ? "1" : "0");
+    }
+    const res = await fetch("/api/queue", { method: "POST", body });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error ?? "Upload failed");
+    if (typeof data.id !== "string" || !isJobId(data.id)) {
+      throw new Error("Upload failed");
+    }
+    return data.id as string;
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    const useHuman = paid && useCredit;
+
     if (queueSelected) {
       if (!file || !content.trim()) return;
+      if (paid && !useCredit) {
+        setError("Turn on a Human + AI credit to submit this file.");
+        return;
+      }
       setLoading(true);
       setError(null);
       try {
-        const body = new FormData();
-        body.append("category", category);
-        body.append("context", content.trim());
-        body.append("file", file);
+        let durationSeconds: number | undefined;
         if (file.type.startsWith("video/")) {
           const duration = await videoDuration(file);
           if (duration > VIDEO_CAP_SECONDS && !longVideoAllowed) {
             throw new Error("Video over 2 minutes needs HUMAN + AI PRO.");
           }
-          body.append("durationSeconds", String(duration));
+          durationSeconds = duration;
         }
-        const res = await fetch("/api/queue", { method: "POST", body });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error ?? "Upload failed");
-        if (typeof data.id !== "string" || !isJobId(data.id)) {
-          throw new Error("Upload failed");
+        const id = await queueWork({
+          category,
+          context: content.trim(),
+          upload: file,
+          durationSeconds,
+          share: pack?.tier === "human-ai-pro" ? false : canShare ? shareOpinion : undefined,
+        });
+        if (useHuman) {
+          const next = spendPaidCredit();
+          setPack(next);
         }
         savePendingJob({
-          id: data.id,
+          id,
           categoryLabel: slot?.label ?? "Submit",
           scoreContext: "",
           createdAt: new Date().toISOString(),
         });
         setContent("");
         resetFile();
-        router.push(`/submit?queued=${data.id}`);
+        router.push(`/submit?queued=${id}`);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Something went wrong");
       } finally {
@@ -137,6 +231,37 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
     }
 
     if (!content.trim()) return;
+
+    if (useHuman) {
+      setLoading(true);
+      setError(null);
+      try {
+        const work = content.trim();
+        const upload = new File([work], "text.txt", { type: "text/plain" });
+        const id = await queueWork({
+          category: "text",
+          context: work.slice(0, 8000),
+          upload,
+          share: pack?.tier === "human-ai-pro" ? false : canShare ? shareOpinion : undefined,
+        });
+        const next = spendPaidCredit();
+        setPack(next);
+        savePendingJob({
+          id,
+          categoryLabel: "Text",
+          scoreContext: "",
+          createdAt: new Date().toISOString(),
+        });
+        setContent("");
+        router.push(`/submit?queued=${id}`);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Something went wrong");
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
     if (used >= dailyLimit) {
       setError(`Free limit reached (${dailyLimit}/day). Try again tomorrow.`);
       return;
@@ -232,6 +357,23 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
         </div>
       )}
 
+      {paid && (
+        <div className="mb-4">
+          <PaySwitch
+            checked={useCredit}
+            label="Use a Human + AI credit"
+            onChange={setUseCredit}
+          />
+          {canShare && (
+            <PaySwitch
+              checked={shareOpinion}
+              label="Share this opinion"
+              onChange={setShareOpinion}
+            />
+          )}
+        </div>
+      )}
+
       <div className="cosmic-glass p-1">
         <textarea
           value={content}
@@ -254,7 +396,9 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
           <span className="text-dynamic text-xs tracking-wide">
             {used}/{dailyLimit} free today
           </span>
-          <span className="text-dynamic text-xs tracking-wide">0 credits</span>
+          <span className="text-dynamic text-xs tracking-wide">
+            {pack ? `${pack.credits} credits` : "0 credits"}
+          </span>
         </div>
         <button type="submit" disabled={!canSubmit} className="cosmic-cta text-sm px-8 py-2.5">
           {loading ? "Submitting…" : "Submit"}

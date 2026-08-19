@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   addJob,
-  isQueueCategory,
+  isHumanJobCategory,
   longVideoAllowed,
   MAX_QUEUE_FILE_BYTES,
   VIDEO_CAP_SECONDS,
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     const contextRaw = form.get("context");
     const fileRaw = form.get("file");
 
-    if (!isQueueCategory(categoryRaw)) {
+    if (!isHumanJobCategory(categoryRaw)) {
       return NextResponse.json({ error: "Choose a slot that takes a file." }, { status: 400 });
     }
     const context = typeof contextRaw === "string" ? contextRaw.trim() : "";
@@ -55,6 +55,8 @@ export async function POST(request: Request) {
       }
     }
 
+    const share = form.get("share") === "1";
+
     const buffer = Buffer.from(await fileRaw.arrayBuffer());
     const job: QueueJob = {
       id: crypto.randomUUID(),
@@ -65,6 +67,7 @@ export async function POST(request: Request) {
       context,
       status: "pending",
       createdAt: new Date().toISOString(),
+      share,
       ...(durationSeconds != null ? { durationSeconds } : {}),
     };
 
