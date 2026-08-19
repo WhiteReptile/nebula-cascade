@@ -22,7 +22,7 @@ const HUD_SLOTS: { id: CategoryId; label: string; fileAccept?: string; note: str
     id: "music",
     label: "Music",
     fileAccept: "audio/*,.mp3,.wav,.m4a,.flac",
-    note: "A person listens to the actual track — the sound, not a write-up. Send the file, and a little context.",
+    note: "A person listens to the actual track — the sound, not a write-up. Send the file, and a little context. Your audio file is deleted after the opinion is saved.",
   },
   {
     id: "documents",
@@ -339,7 +339,7 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
 
       {queueSelected && (
         <p className="warning-red sentence text-xs sm:text-sm mb-4">
-          Music, documents, video, and physical appearance need a human, so a review can take 5 to 10 minutes.
+          Music, documents, video, and physical appearance need a human, so a review can take 5 to 10 minutes. Uploaded files (including tracks) are not kept — only the final opinion and score.
         </p>
       )}
 

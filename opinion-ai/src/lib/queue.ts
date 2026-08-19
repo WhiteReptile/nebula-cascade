@@ -1,4 +1,4 @@
-import { mkdir, readFile, stat, unlink, writeFile } from "fs/promises";
+import { mkdir, readdir, readFile, stat, unlink, writeFile } from "fs/promises";
 import path from "path";
 import {
   isJobComplete,
@@ -8,11 +8,13 @@ import {
   type JobStatus,
 } from "./job-lifecycle";
 import type { QueueJob } from "./queue-shared";
+import { isJobId, isTemporaryUploadCategory } from "./queue-shared";
 
 export type { QueueJob, QueueCategory, JobStatus } from "./queue-shared";
 export {
   EXAMINER_MODELS,
-  QUEUE_CATEGORIES,
+  TEMPORARY_UPLOAD_CATEGORIES,
+  isTemporaryUploadCategory,
   MAX_QUEUE_FILE_BYTES,
   VIDEO_CAP_SECONDS,
   isExaminerModel,
@@ -141,12 +143,38 @@ async function cleanupCompletedUploads(jobs: QueueJob[]): Promise<boolean> {
   return changed;
 }
 
+/** Remove upload files with no matching job, or left behind after completion. */
+async function cleanupOrphanedUploads(jobs: QueueJob[]): Promise<void> {
+  await ensureStore();
+  let names: string[];
+  try {
+    names = await readdir(uploadsDir());
+  } catch {
+    return;
+  }
+
+  const jobById = new Map(jobs.map((job) => [job.id, job]));
+
+  for (const name of names) {
+    if (!isJobId(name)) continue;
+    const job = jobById.get(name);
+    if (!job || (isJobComplete(job) && !jobHasUploadFile(job))) {
+      try {
+        await deleteUploadFile(name);
+      } catch {
+        /* retry on next read */
+      }
+    }
+  }
+}
+
 export function listJobs(): Promise<QueueJob[]> {
   return enqueue(async () => {
     const jobs = await readJobsUnlocked();
     if (await cleanupCompletedUploads(jobs)) {
       await writeJobsUnlocked(jobs);
     }
+    await cleanupOrphanedUploads(jobs);
     return [...jobs].sort((a, b) => {
       const rank = jobSortRank(a.status) - jobSortRank(b.status);
       if (rank !== 0) return rank;
@@ -170,6 +198,9 @@ export function getJob(id: string): Promise<QueueJob | null> {
 
 export function addJob(job: Omit<QueueJob, "status"> & Partial<Pick<QueueJob, "status">>, file: Buffer): Promise<QueueJob> {
   return enqueue(async () => {
+    if (job.category !== "text" && !isTemporaryUploadCategory(job.category)) {
+      throw new Error("Unsupported upload category");
+    }
     const now = new Date().toISOString();
     await writeFile(uploadPath(job.id), file);
 

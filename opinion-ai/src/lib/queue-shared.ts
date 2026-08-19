@@ -4,6 +4,10 @@ export type { JobStatus } from "./job-lifecycle";
 
 export const QUEUE_CATEGORIES = ["music", "documents", "video", "physical_appearance"] as const;
 export type QueueCategory = (typeof QUEUE_CATEGORIES)[number];
+
+/** File uploads for these categories are temporary and deleted after evaluation. */
+export const TEMPORARY_UPLOAD_CATEGORIES = QUEUE_CATEGORIES;
+
 export const EXAMINER_MODELS = ["pro-examiner-v1", "pro-examiner-v2"] as const;
 export type ExaminerModel = (typeof EXAMINER_MODELS)[number];
 
@@ -37,6 +41,10 @@ export type QueueJob = {
 
 export function isQueueCategory(value: unknown): value is QueueCategory {
   return typeof value === "string" && QUEUE_CATEGORIES.includes(value as QueueCategory);
+}
+
+export function isTemporaryUploadCategory(value: unknown): value is QueueCategory {
+  return isQueueCategory(value);
 }
 
 export function isHumanJobCategory(value: unknown): value is QueueCategory | "text" {
