@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { isAdmin } from "@/lib/admin-auth";
 import { opinionFromHumanNotes } from "@/lib/evaluate/pipeline";
+import { recordOpinion } from "@/lib/opinion-count";
 import { getJob, isJobId, updateJob } from "@/lib/queue";
 
 function parseTags(value: unknown): string[] {
@@ -72,6 +73,7 @@ export async function POST(
       reviewedAt: new Date().toISOString(),
     });
 
+    await recordOpinion(id);
     return NextResponse.json({ job: next });
   } catch {
     return NextResponse.json({ error: "Could not write the opinion." }, { status: 500 });

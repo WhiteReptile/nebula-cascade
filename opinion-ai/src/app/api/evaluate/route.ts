@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getDailyLimit } from "@/lib/constants";
 import { evaluateSubmission, getLlmConfig } from "@/lib/evaluate/pipeline";
 import { isCategoryId } from "@/lib/categories";
+import { recordOpinion } from "@/lib/opinion-count";
 import { isQueueCategory } from "@/lib/queue-shared";
 
 export async function POST(request: Request) {
@@ -32,6 +33,7 @@ export async function POST(request: Request) {
     }
 
     const verdict = await evaluateSubmission(content, revisionOf, resolved, context);
+    await recordOpinion(verdict.id);
     return NextResponse.json({
       verdict,
       meta: { dailyLimit: getDailyLimit(), demoMode: !getLlmConfig() },
