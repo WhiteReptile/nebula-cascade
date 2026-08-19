@@ -11,7 +11,7 @@ const HOW_COPY = [
   "A real person will also look at your work, independently, and they won’t know who you are.",
 ];
 
-export function HowButton() {
+export function HowButton({ opinionCount }: { opinionCount: number }) {
   const pathname = usePathname();
   if (pathname !== "/") return null;
 
@@ -27,7 +27,7 @@ export function HowButton() {
           ))}
         </div>
       </div>
-      <OpinionLaunchCount />
+      <OpinionLaunchCount count={opinionCount} />
     </div>
   );
 }

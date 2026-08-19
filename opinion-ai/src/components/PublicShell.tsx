@@ -5,7 +5,7 @@ import { CosmicBackground } from "@/components/CosmicBackground";
 import { Header } from "@/components/Header";
 import { HowButton } from "@/components/HowButton";
 
-export function PublicShell() {
+export function PublicShell({ opinionCount }: { opinionCount: number }) {
   const pathname = usePathname();
   if (pathname.startsWith("/admin")) return null;
 
@@ -13,7 +13,7 @@ export function PublicShell() {
     <>
       <CosmicBackground />
       <Header />
-      <HowButton />
+      <HowButton opinionCount={opinionCount} />
     </>
   );
 }

@@ -349,6 +349,10 @@ body {
 
 .launch-digit {
   position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
   width: 1.85rem;
   height: 2.45rem;
   overflow: hidden;
@@ -374,20 +378,13 @@ body {
   );
 }
 
-.launch-digit-strip {
-  display: flex;
-  flex-direction: column;
-  transition: transform 0.7s cubic-bezier(0.15, 0.85, 0.25, 1);
-}
-
-.launch-digit-strip span {
-  height: 2.45rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.launch-digit-face {
+  position: relative;
+  z-index: 1;
   font-family: var(--font-display);
   font-size: 1.35rem;
   letter-spacing: 0;
+  line-height: 1;
   color: #4ec4ff;
   text-shadow:
     0 0 8px rgba(78, 196, 255, 0.95),
@@ -544,9 +541,7 @@ body {
   .cosmic-title,
   .text-dynamic,
   .pricing-spot,
-  .pricing-beam,
-  .launch-digit-strip {
+  .pricing-beam {
     animation: none;
-    transition: none;
   }
 }
