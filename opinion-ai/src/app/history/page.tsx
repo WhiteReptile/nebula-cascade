@@ -2,44 +2,48 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { getHistory, saveVerdict } from "@/lib/storage";
+import { getHistory, mergeServerReviews, type ServerReview } from "@/lib/storage";
 import { getRank, scoreClass } from "@/lib/ranking";
-import type { HistoryEntry, Verdict } from "@/lib/types";
+import type { HistoryEntry } from "@/lib/types";
 
 export default function HistoryPage() {
   const [entries, setEntries] = useState<HistoryEntry[]>([]);
 
   useEffect(() => {
     let stop = false;
+    let timer: ReturnType<typeof setInterval> | undefined;
 
-    async function refreshPending(list: HistoryEntry[]) {
-      const pending = list.filter((entry) => entry.pending);
-      if (pending.length === 0) return list;
-      await Promise.all(
-        pending.map(async (entry) => {
-          try {
-            const res = await fetch(`/api/queue/${entry.id}`);
-            const data = (await res.json()) as { status?: string; verdict?: Verdict };
-            if (data.status === "done" && data.verdict) {
-              saveVerdict(data.verdict);
-            }
-          } catch {
-            /* still waiting */
-          }
-        }),
-      );
-      if (stop) return list;
-      return getHistory();
+    async function sync() {
+      try {
+        const res = await fetch("/api/reviews");
+        const data = (await res.json()) as { reviews?: ServerReview[] };
+        const next = Array.isArray(data.reviews)
+          ? mergeServerReviews(data.reviews)
+          : getHistory();
+        if (!stop) setEntries(next);
+        return next;
+      } catch {
+        const fallback = getHistory();
+        if (!stop) setEntries(fallback);
+        return fallback;
+      }
     }
 
-    const initial = getHistory();
-    setEntries(initial);
-    refreshPending(initial).then((next) => {
-      if (!stop) setEntries(next);
+    sync().then((next) => {
+      if (stop || !next.some((entry) => entry.pending)) return;
+      timer = setInterval(() => {
+        sync().then((latest) => {
+          if (stop) return;
+          if (!latest.some((entry) => entry.pending) && timer) {
+            clearInterval(timer);
+          }
+        });
+      }, 4000);
     });
 
     return () => {
       stop = true;
+      if (timer) clearInterval(timer);
     };
   }, []);
 

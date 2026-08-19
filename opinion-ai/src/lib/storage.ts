@@ -2,6 +2,15 @@
 
 import type { HistoryEntry, Verdict } from "./types";
 
+export type ServerReview = {
+  id: string;
+  status: "pending" | "done";
+  categoryLabel: string;
+  scoreContext: string;
+  createdAt: string;
+  verdict?: Verdict;
+};
+
 const HISTORY_KEY = "opinion-ai-history";
 const USAGE_KEY = "opinion-ai-usage";
 
@@ -37,6 +46,8 @@ export function saveVerdict(verdict: Verdict): void {
 
 export function savePendingJob(entry: Omit<HistoryEntry, "pending" | "score" | "verdictPreview"> & Partial<HistoryEntry>): void {
   if (typeof window === "undefined") return;
+  const existing = getHistory().find((h) => h.id === entry.id);
+  if (existing && !existing.pending) return;
   const next: HistoryEntry = {
     id: entry.id,
     score: 0,
@@ -49,6 +60,25 @@ export function savePendingJob(entry: Omit<HistoryEntry, "pending" | "score" | "
   const history = getHistory().filter((h) => h.id !== entry.id);
   history.unshift(next);
   localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, 50)));
+}
+
+export function mergeServerReviews(reviews: ServerReview[]): HistoryEntry[] {
+  if (typeof window === "undefined") return [];
+  for (const review of reviews) {
+    if (review.status === "done" && review.verdict) {
+      saveVerdict(review.verdict);
+      continue;
+    }
+    if (review.status === "pending") {
+      savePendingJob({
+        id: review.id,
+        categoryLabel: review.categoryLabel,
+        scoreContext: review.scoreContext,
+        createdAt: review.createdAt,
+      });
+    }
+  }
+  return getHistory().sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
 export function getVerdict(id: string): Verdict | null {
