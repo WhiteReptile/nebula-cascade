@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { isAdmin } from "@/lib/admin-auth";
 import { getCategory } from "@/lib/categories";
+import { displayJobStatus } from "@/lib/job-lifecycle";
 import { listJobs } from "@/lib/queue";
 import { AdminLogin } from "@/components/AdminLogin";
 import { AdminLogout } from "@/components/AdminLogout";
@@ -36,7 +37,7 @@ export default async function AdminPage() {
               <li key={job.id}>
                 <Link href={`/admin/${job.id}`} className="cosmic-glass p-5 block">
                   <p className="text-white text-sm">
-                    {job.status} · {getCategory(job.category).label} · {job.filename}
+                    {displayJobStatus(job.status)} · {getCategory(job.category).label} · {job.filename}
                   </p>
                   <p className="text-dynamic text-xs mt-2">{new Date(job.createdAt).toLocaleString()}</p>
                 </Link>

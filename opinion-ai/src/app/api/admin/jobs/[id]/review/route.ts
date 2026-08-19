@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { isAdmin } from "@/lib/admin-auth";
 import { opinionFromHumanNotes } from "@/lib/evaluate/pipeline";
+import { isJobAwaitingHuman, isJobComplete } from "@/lib/job-lifecycle";
 import { recordOpinion } from "@/lib/opinion-count";
-import { getJob, isJobId, updateJob } from "@/lib/queue";
+import { finalizeJobAndDeleteUpload, getJob, isJobId, transitionJob } from "@/lib/queue";
 
 function parseTags(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
@@ -30,6 +31,15 @@ export async function POST(
   if (!job) {
     return NextResponse.json({ error: "Not found." }, { status: 404 });
   }
+  if (isJobComplete(job)) {
+    return NextResponse.json({ error: "Job already completed." }, { status: 400 });
+  }
+  if (!isJobAwaitingHuman(job)) {
+    return NextResponse.json(
+      { error: `Job is not ready for review (status: ${job.status}).` },
+      { status: 400 },
+    );
+  }
 
   try {
     const body = await request.json();
@@ -53,6 +63,8 @@ export async function POST(
     const strengths = parseTags(body.strengths);
     const weaknesses = parseTags(body.weaknesses);
 
+    await transitionJob(id, "FINALIZING");
+
     const written = await opinionFromHumanNotes({
       notes,
       score,
@@ -64,19 +76,27 @@ export async function POST(
       model: job.examinerModel ?? "pro-examiner-v2",
     });
 
-    const next = await updateJob(id, {
+    const next = await finalizeJobAndDeleteUpload(id, {
       notes,
       score: written.score,
       opinion: written.opinion,
       strengths: written.strengths,
       weaknesses: written.weaknesses,
-      status: "done",
       reviewedAt: new Date().toISOString(),
+      share: job.share,
     });
+
+    if (!next) {
+      return NextResponse.json({ error: "Not found." }, { status: 404 });
+    }
 
     await recordOpinion(id);
     return NextResponse.json({ job: next });
-  } catch {
+  } catch (err) {
+    await transitionJob(id, "HUMAN_REVIEW", {
+      lastError: err instanceof Error ? err.message : "Finalize failed",
+    });
+    console.error("admin review POST", err);
     return NextResponse.json({ error: "Could not write the opinion." }, { status: 500 });
   }
 }

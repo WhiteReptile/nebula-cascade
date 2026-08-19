@@ -1,9 +1,10 @@
 import { getCategory } from "./categories";
+import { isJobComplete } from "./job-lifecycle";
 import type { QueueJob } from "./queue-shared";
 import type { Verdict } from "./types";
 
 export function jobToVerdict(job: QueueJob): Verdict | null {
-  if (job.status !== "done" || job.score == null || !job.opinion?.trim()) return null;
+  if (!isJobComplete(job) || job.score == null || !job.opinion?.trim()) return null;
   const framework = getCategory(job.category);
   const strengths = job.strengths ?? [];
   const weaknesses = job.weaknesses ?? [];
@@ -34,7 +35,7 @@ export function jobToVerdict(job: QueueJob): Verdict | null {
       caseAgainst: weaknesses,
     },
     submissionPreview: job.filename,
-    createdAt: job.reviewedAt ?? job.createdAt,
+    createdAt: job.reviewedAt ?? job.completedAt ?? job.createdAt,
     context: job.context,
   };
 }

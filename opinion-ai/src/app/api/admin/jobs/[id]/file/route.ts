@@ -1,6 +1,7 @@
 import { readFile, stat } from "fs/promises";
 import { NextResponse } from "next/server";
 import { isAdmin } from "@/lib/admin-auth";
+import { jobHasUploadFile } from "@/lib/job-lifecycle";
 import { getJob, isJobId, uploadPath } from "@/lib/queue";
 
 export const runtime = "nodejs";
@@ -21,6 +22,12 @@ export async function GET(
   const job = await getJob(id);
   if (!job) {
     return NextResponse.json({ error: "Not found." }, { status: 404 });
+  }
+  if (!jobHasUploadFile(job)) {
+    return NextResponse.json(
+      { error: "Upload file was deleted after the opinion was saved." },
+      { status: 404 },
+    );
   }
 
   const filePath = uploadPath(job.id);

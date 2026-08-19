@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { jobToVerdict } from "@/lib/job-verdict";
+import { isJobComplete } from "@/lib/job-lifecycle";
 import { getJob, isJobId } from "@/lib/queue";
 
 export const dynamic = "force-dynamic";
@@ -18,7 +19,7 @@ export async function GET(
     return NextResponse.json({ error: "Not found." }, { status: 404 });
   }
 
-  if (job.status !== "done") {
+  if (!isJobComplete(job)) {
     return NextResponse.json({ status: "pending" });
   }
 

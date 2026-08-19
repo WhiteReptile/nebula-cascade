@@ -1,5 +1,12 @@
-import { mkdir, readFile, writeFile } from "fs/promises";
+import { mkdir, readFile, stat, unlink, writeFile } from "fs/promises";
 import path from "path";
+import {
+  isJobComplete,
+  jobHasUploadFile,
+  jobSortRank,
+  normalizeJobStatus,
+  type JobStatus,
+} from "./job-lifecycle";
 import type { QueueJob } from "./queue-shared";
 
 export type { QueueJob, QueueCategory, JobStatus } from "./queue-shared";
@@ -51,12 +58,20 @@ async function ensureStore(): Promise<void> {
   await mkdir(uploadsDir(), { recursive: true });
 }
 
+function normalizeJob(job: QueueJob): QueueJob {
+  return {
+    ...job,
+    status: normalizeJobStatus(job.status),
+  };
+}
+
 async function readJobsUnlocked(): Promise<QueueJob[]> {
   await ensureStore();
   try {
     const raw = await readFile(jobsPath(), "utf8");
     const parsed = JSON.parse(raw) as unknown;
-    return Array.isArray(parsed) ? (parsed as QueueJob[]) : [];
+    const jobs = Array.isArray(parsed) ? (parsed as QueueJob[]) : [];
+    return jobs.map(normalizeJob);
   } catch {
     return [];
   }
@@ -67,11 +82,74 @@ async function writeJobsUnlocked(jobs: QueueJob[]): Promise<void> {
   await writeFile(jobsPath(), `${JSON.stringify(jobs, null, 2)}\n`, "utf8");
 }
 
+async function uploadExists(id: string): Promise<boolean> {
+  try {
+    await stat(uploadPath(id));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function deleteUploadFile(id: string): Promise<void> {
+  try {
+    await unlink(uploadPath(id));
+  } catch (err) {
+    const code = (err as NodeJS.ErrnoException).code;
+    if (code !== "ENOENT") throw err;
+  }
+}
+
+/** Remove uploads for jobs that already have a persisted result (including legacy done). */
+async function cleanupCompletedUploads(jobs: QueueJob[]): Promise<boolean> {
+  let changed = false;
+  const now = new Date().toISOString();
+
+  for (let index = 0; index < jobs.length; index += 1) {
+    const job = jobs[index];
+    if (!isJobComplete(job) || !jobHasUploadFile(job)) continue;
+    if (!(await uploadExists(job.id))) {
+      if (normalizeJobStatus(job.status) !== "FILE_DELETED") {
+        jobs[index] = {
+          ...job,
+          status: "FILE_DELETED",
+          fileDeletedAt: job.fileDeletedAt ?? now,
+        };
+        changed = true;
+      }
+      continue;
+    }
+
+    try {
+      await deleteUploadFile(job.id);
+      jobs[index] = {
+        ...job,
+        status: "FILE_DELETED",
+        fileDeletedAt: now,
+        lastError: undefined,
+      };
+      changed = true;
+    } catch (err) {
+      jobs[index] = {
+        ...job,
+        lastError: err instanceof Error ? err.message : "Failed to delete upload",
+      };
+      changed = true;
+    }
+  }
+
+  return changed;
+}
+
 export function listJobs(): Promise<QueueJob[]> {
   return enqueue(async () => {
     const jobs = await readJobsUnlocked();
+    if (await cleanupCompletedUploads(jobs)) {
+      await writeJobsUnlocked(jobs);
+    }
     return [...jobs].sort((a, b) => {
-      if (a.status !== b.status) return a.status === "pending" ? -1 : 1;
+      const rank = jobSortRank(a.status) - jobSortRank(b.status);
+      if (rank !== 0) return rank;
       return b.createdAt.localeCompare(a.createdAt);
     });
   });
@@ -80,17 +158,108 @@ export function listJobs(): Promise<QueueJob[]> {
 export function getJob(id: string): Promise<QueueJob | null> {
   return enqueue(async () => {
     const jobs = await readJobsUnlocked();
-    return jobs.find((job) => job.id === id) ?? null;
+    const index = jobs.findIndex((entry) => entry.id === id);
+    if (index < 0) return null;
+
+    if (await cleanupCompletedUploads(jobs)) {
+      await writeJobsUnlocked(jobs);
+    }
+    return jobs[index] ? normalizeJob(jobs[index]) : null;
   });
 }
 
-export function addJob(job: QueueJob, file: Buffer): Promise<QueueJob> {
+export function addJob(job: Omit<QueueJob, "status"> & Partial<Pick<QueueJob, "status">>, file: Buffer): Promise<QueueJob> {
   return enqueue(async () => {
+    const now = new Date().toISOString();
     await writeFile(uploadPath(job.id), file);
+
     const jobs = await readJobsUnlocked();
-    jobs.push(job);
+    const base: QueueJob = {
+      ...job,
+      status: "UPLOADED",
+      uploadedAt: now,
+    } as QueueJob;
+    jobs.push(base);
     await writeJobsUnlocked(jobs);
-    return job;
+
+    const index = jobs.length - 1;
+    jobs[index] = { ...base, status: "PROCESSING", processedAt: now };
+    await writeJobsUnlocked(jobs);
+
+    const ready: QueueJob = { ...jobs[index], status: "HUMAN_REVIEW" };
+    jobs[index] = ready;
+    await writeJobsUnlocked(jobs);
+    return ready;
+  });
+}
+
+export function transitionJob(
+  id: string,
+  status: JobStatus,
+  patch: Partial<QueueJob> = {},
+): Promise<QueueJob | null> {
+  return enqueue(async () => {
+    const jobs = await readJobsUnlocked();
+    const index = jobs.findIndex((job) => job.id === id);
+    if (index < 0) return null;
+    const next = { ...jobs[index], ...patch, status, id: jobs[index].id };
+    jobs[index] = next;
+    await writeJobsUnlocked(jobs);
+    return next;
+  });
+}
+
+export type JobResultPatch = {
+  notes: string;
+  score: number;
+  opinion: string;
+  strengths: string[];
+  weaknesses: string[];
+  reviewedAt?: string;
+  share?: boolean;
+};
+
+export function finalizeJobAndDeleteUpload(
+  id: string,
+  result: JobResultPatch,
+): Promise<QueueJob | null> {
+  return enqueue(async () => {
+    const jobs = await readJobsUnlocked();
+    const index = jobs.findIndex((job) => job.id === id);
+    if (index < 0) return null;
+
+    const now = new Date().toISOString();
+    const completed: QueueJob = {
+      ...jobs[index],
+      ...result,
+      status: "COMPLETED",
+      reviewedAt: result.reviewedAt ?? now,
+      completedAt: now,
+      lastError: undefined,
+    };
+    jobs[index] = completed;
+    await writeJobsUnlocked(jobs);
+
+    try {
+      await deleteUploadFile(id);
+    } catch (err) {
+      jobs[index] = {
+        ...completed,
+        lastError: err instanceof Error ? err.message : "Failed to delete upload",
+      };
+      await writeJobsUnlocked(jobs);
+      return jobs[index];
+    }
+
+    const deleted: QueueJob = {
+      ...completed,
+      status: "FILE_DELETED",
+      fileDeletedAt: now,
+      lastError: undefined,
+    };
+    jobs[index] = deleted;
+    await writeJobsUnlocked(jobs);
+    return deleted;
   });
 }
 
@@ -99,9 +268,16 @@ export function updateJob(id: string, patch: Partial<QueueJob>): Promise<QueueJo
     const jobs = await readJobsUnlocked();
     const index = jobs.findIndex((job) => job.id === id);
     if (index < 0) return null;
-    const next = { ...jobs[index], ...patch, id: jobs[index].id };
+    const next = {
+      ...jobs[index],
+      ...patch,
+      id: jobs[index].id,
+      ...(patch.status ? { status: normalizeJobStatus(patch.status) } : {}),
+    };
     jobs[index] = next;
     await writeJobsUnlocked(jobs);
     return next;
   });
 }
+
+export { readJobsUnlocked };

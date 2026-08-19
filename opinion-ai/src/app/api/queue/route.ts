@@ -68,7 +68,7 @@ export async function POST(request: Request) {
       mimeType: fileRaw.type || "application/octet-stream",
       size: fileRaw.size,
       context,
-      status: "pending",
+      status: "UPLOADED",
       createdAt: new Date().toISOString(),
       share,
       examinerModel,

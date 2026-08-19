@@ -1,5 +1,6 @@
 import { mkdir, readFile, writeFile } from "fs/promises";
 import path from "path";
+import { isJobComplete } from "@/lib/job-lifecycle";
 import { dataDir, listJobs } from "@/lib/queue";
 
 export const OPINION_COUNT_BASE = 110;
@@ -59,7 +60,7 @@ async function syncDoneJobs(store: CountStore): Promise<boolean> {
   const jobs = await listJobs();
   let changed = false;
   for (const job of jobs) {
-    if (job.status !== "done" || !job.opinion?.trim()) continue;
+    if (!isJobComplete(job) || !job.opinion?.trim()) continue;
     if (credit(store, job.id)) changed = true;
   }
   return changed;

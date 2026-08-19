@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { isAdmin } from "@/lib/admin-auth";
 import { getCategory } from "@/lib/categories";
+import { displayJobStatus, jobHasUploadFile } from "@/lib/job-lifecycle";
 import { getJob, isJobId } from "@/lib/queue";
 import { AdminReviewForm } from "@/components/AdminReviewForm";
 
@@ -43,17 +44,27 @@ export default async function AdminJobPage({ params }: { params: Promise<{ id: s
         </Link>
         <h1 className="cosmic-title font-light text-[1.5625rem] mt-4">{job.filename}</h1>
         <p className="text-dynamic text-xs mt-2">
-          {job.status} · {getCategory(job.category).label} · {new Date(job.createdAt).toLocaleString()}
+          {displayJobStatus(job.status)} · {getCategory(job.category).label} · {new Date(job.createdAt).toLocaleString()}
         </p>
       </div>
 
       <div className="max-w-xl mx-auto w-full space-y-6">
-        <div className="cosmic-glass p-5">
-          <Preview jobId={job.id} mime={job.mimeType} filename={job.filename} />
-        </div>
-        <a href={`/api/admin/jobs/${job.id}/file?download=1`} className="cosmic-cta-ghost inline-block text-sm px-8 py-2.5">
-          Download
-        </a>
+        {jobHasUploadFile(job) ? (
+          <>
+            <div className="cosmic-glass p-5">
+              <Preview jobId={job.id} mime={job.mimeType} filename={job.filename} />
+            </div>
+            <a href={`/api/admin/jobs/${job.id}/file?download=1`} className="cosmic-cta-ghost inline-block text-sm px-8 py-2.5">
+              Download
+            </a>
+          </>
+        ) : (
+          <div className="cosmic-glass p-5">
+            <p className="text-dynamic text-sm">
+              Upload file removed after the opinion was saved. Only the evaluation result is kept.
+            </p>
+          </div>
+        )}
         {job.context && (
           <div className="cosmic-glass p-5">
             <p className="label-white text-[10px] mb-3">Context</p>

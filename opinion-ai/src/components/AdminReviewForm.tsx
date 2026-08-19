@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { getRank, scoreClass } from "@/lib/ranking";
 import { STRENGTH_TAGS, WEAKNESS_TAGS } from "@/lib/review-tags";
+import { isJobComplete } from "@/lib/job-lifecycle";
 import type { QueueJob } from "@/lib/queue-shared";
 
 function hasTag(list: string[], tag: string): boolean {
@@ -137,7 +138,7 @@ export function AdminReviewForm({ job }: { job: QueueJob }) {
 
   return (
     <div className="space-y-8">
-      {job.status === "done" && job.opinion && (
+      {isJobComplete(job) && job.opinion && (
         <div>
           {job.score != null && rank && (
             <div className="cosmic-glass p-8 mb-8 text-center">
