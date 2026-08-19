@@ -35,6 +35,22 @@ export function saveVerdict(verdict: Verdict): void {
   localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, 50)));
 }
 
+export function savePendingJob(entry: Omit<HistoryEntry, "pending" | "score" | "verdictPreview"> & Partial<HistoryEntry>): void {
+  if (typeof window === "undefined") return;
+  const next: HistoryEntry = {
+    id: entry.id,
+    score: 0,
+    categoryLabel: entry.categoryLabel,
+    scoreContext: entry.scoreContext ?? "",
+    verdictPreview: "Waiting for a human…",
+    createdAt: entry.createdAt,
+    pending: true,
+  };
+  const history = getHistory().filter((h) => h.id !== entry.id);
+  history.unshift(next);
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, 50)));
+}
+
 export function getVerdict(id: string): Verdict | null {
   if (typeof window === "undefined") return null;
   try {

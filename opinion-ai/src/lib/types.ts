@@ -67,4 +67,5 @@ export interface HistoryEntry {
   scoreContext: string;
   verdictPreview: string;
   createdAt: string;
+  pending?: boolean;
 }
