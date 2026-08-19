@@ -24,10 +24,18 @@ function Paloma() {
   );
 }
 
-function FeatureList({ features }: { features?: readonly string[] }) {
+function FeatureList({
+  features,
+  className = "mt-5",
+  grow = true,
+}: {
+  features?: readonly string[];
+  className?: string;
+  grow?: boolean;
+}) {
   if (!features?.length) return null;
   return (
-    <ul className="mt-5 space-y-2.5 flex-1">
+    <ul className={`${grow ? "flex-1" : ""} ${className} space-y-2.5`}>
       {features.map((feature) => (
         <li key={feature} className="flex items-start gap-2.5 text-dynamic text-sm leading-relaxed">
           <Paloma />
@@ -75,7 +83,16 @@ export default function PricingPage() {
                 </p>
               ))}
             </div>
-            <FeatureList features={pkg.features} />
+            <FeatureList
+              features={pkg.features}
+              grow={!("privateFeatures" in pkg && pkg.privateFeatures)}
+            />
+            {"privateLabel" in pkg && pkg.privateLabel && "privateFeatures" in pkg && pkg.privateFeatures && (
+              <>
+                <p className="label-white text-[10px] mt-6">{pkg.privateLabel}</p>
+                <FeatureList features={pkg.privateFeatures} className="mt-3" grow={false} />
+              </>
+            )}
             <Link href={pkg.cta.href} className="cosmic-cta text-sm text-center mt-8 px-6 py-2.5">
               {pkg.cta.label}
             </Link>
