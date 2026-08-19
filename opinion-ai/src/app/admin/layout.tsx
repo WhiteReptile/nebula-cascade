@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { BackArrow } from "@/components/BackArrow";
 
 export const metadata: Metadata = {
   title: { absolute: "Review" },
@@ -16,5 +17,12 @@ export const metadata: Metadata = {
 };
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  return children;
+  return (
+    <>
+      <div className="relative z-10 px-6 pt-6">
+        <BackArrow fallback="/" hideOnHome={false} />
+      </div>
+      {children}
+    </>
+  );
 }

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { getDailyLimit } from "@/lib/constants";
 import { getDailyUsage, incrementDailyUsage, saveVerdict } from "@/lib/storage";
 import { VIDEO_CAP_SECONDS } from "@/lib/queue-shared";
+import { BackArrow } from "@/components/BackArrow";
 import type { CategoryId } from "@/lib/types";
 
 const HUD_SLOTS: { id: CategoryId; label: string; fileAccept?: string; note: string }[] = [
@@ -75,7 +76,7 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [used, setUsed] = useState(0);
-  const [queued, setQueued] = useState(false);
+  const queued = searchParams.get("queued") === "1";
 
   useEffect(() => {
     setUsed(getDailyUsage());
@@ -114,9 +115,9 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
         const res = await fetch("/api/queue", { method: "POST", body });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? "Upload failed");
-        setQueued(true);
         setContent("");
         resetFile();
+        router.push("/submit?queued=1");
       } catch (err) {
         setError(err instanceof Error ? err.message : "Something went wrong");
       } finally {
@@ -162,9 +163,19 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
 
   if (queued) {
     return (
-      <div className="max-w-xl mx-auto w-full text-center">
-        <div className="cosmic-glass p-8">
-          <p className="text-white text-base leading-relaxed">A human will look at this.</p>
+      <div className="max-w-xl mx-auto w-full">
+        <div className="mb-8">
+          <BackArrow onClick={() => router.push("/submit")} hideOnHome={false} />
+        </div>
+        <div className="cosmic-glass p-8 text-center">
+          <div className="work-spin" aria-hidden />
+          <p className="label-white text-[10px] mt-4 mb-8">Loading</p>
+          <p className="text-white text-base leading-relaxed mb-4">A person will look at your file.</p>
+          <p className="text-dynamic text-sm leading-relaxed mb-4">
+            They write how they feel, then we turn that into a short public opinion.
+          </p>
+          <p className="text-dynamic text-sm leading-relaxed mb-6">This is not instant like text.</p>
+          <p className="warning-red sentence text-xs sm:text-sm">A review can take 5 to 10 minutes.</p>
         </div>
       </div>
     );

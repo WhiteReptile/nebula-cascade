@@ -144,6 +144,23 @@ body {
   letter-spacing: 0.02em;
 }
 
+.work-spin {
+  width: 2.5rem;
+  height: 2.5rem;
+  margin: 0 auto;
+  border: 2px solid rgba(78, 196, 255, 0.18);
+  border-top-color: #4ec4ff;
+  border-radius: 50%;
+  animation: work-spin 0.9s linear infinite;
+  box-shadow: 0 0 18px rgba(78, 196, 255, 0.35);
+}
+
+@keyframes work-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .how-btn-red {
   display: inline-block;
   background: #ff0000;
