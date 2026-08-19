@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { OpinionLaunchCount } from "@/components/OpinionLaunchCount";
 
 const HOW_COPY = [
   "You send in your work. We look at what’s actually there — we don’t try to please you.",
@@ -15,7 +16,7 @@ export function HowButton() {
   if (pathname !== "/") return null;
 
   return (
-    <div className="relative z-20 px-6 pt-10 pb-3">
+    <div className="relative z-20 px-6 pt-10 pb-3 flex items-start justify-between gap-4">
       <div className="how-wrap relative inline-block">
         <Link href="/how" className="how-btn-red inline-block text-[10px] sm:text-xs px-3 py-1.5">
           How does it work
@@ -26,6 +27,7 @@ export function HowButton() {
           ))}
         </div>
       </div>
+      <OpinionLaunchCount />
     </div>
   );
 }
