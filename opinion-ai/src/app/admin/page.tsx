@@ -2,9 +2,11 @@ import Link from "next/link";
 import { isAdmin } from "@/lib/admin-auth";
 import { getCategory } from "@/lib/categories";
 import { displayJobStatus } from "@/lib/job-lifecycle";
+import { getUsageOutlook } from "@/lib/llm-usage";
 import { listJobs } from "@/lib/queue";
 import { AdminLogin } from "@/components/AdminLogin";
 import { AdminLogout } from "@/components/AdminLogout";
+import { AdminUsagePanel } from "@/components/AdminUsagePanel";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +22,7 @@ export default async function AdminPage() {
     );
   }
 
-  const jobs = await listJobs();
+  const [jobs, outlook] = await Promise.all([listJobs(), getUsageOutlook()]);
 
   return (
     <div className="px-6 py-16 sm:py-20">
@@ -28,7 +30,13 @@ export default async function AdminPage() {
         <h1 className="cosmic-title font-light text-[1.5625rem]">Admin</h1>
         <AdminLogout />
       </div>
+
+      <div className="max-w-xl mx-auto w-full mb-12">
+        <AdminUsagePanel initial={outlook} />
+      </div>
+
       <div className="max-w-xl mx-auto w-full">
+        <p className="label-white text-[10px] mb-4">Review queue</p>
         {jobs.length === 0 ? (
           <p className="text-dynamic text-sm">No jobs yet.</p>
         ) : (

@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { isAdmin } from "@/lib/admin-auth";
-import { opinionFromHumanNotes } from "@/lib/evaluate/pipeline";
+import { opinionFromHumanNotes, getLlmConfig } from "@/lib/evaluate/pipeline";
 import { isJobAwaitingHuman, isJobComplete } from "@/lib/job-lifecycle";
 import { recordOpinion } from "@/lib/opinion-count";
+import { recordLlmUsage } from "@/lib/llm-usage";
 import { finalizeJobAndDeleteUpload, getJob, isJobId, transitionJob } from "@/lib/queue";
 
 function parseTags(value: unknown): string[] {
@@ -91,6 +92,8 @@ export async function POST(
     }
 
     await recordOpinion(id);
+    const demoMode = !getLlmConfig();
+    await recordLlmUsage(demoMode ? "demo" : "human_review", demoMode);
     return NextResponse.json({ job: next });
   } catch (err) {
     await transitionJob(id, "HUMAN_REVIEW", {

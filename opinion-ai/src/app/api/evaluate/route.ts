@@ -3,6 +3,7 @@ import { getDailyLimit } from "@/lib/constants";
 import { evaluateSubmission, getLlmConfig } from "@/lib/evaluate/pipeline";
 import { isCategoryId } from "@/lib/categories";
 import { recordOpinion } from "@/lib/opinion-count";
+import { recordLlmUsage } from "@/lib/llm-usage";
 import { isExaminerModel, isQueueCategory } from "@/lib/queue-shared";
 
 export async function POST(request: Request) {
@@ -33,11 +34,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Context is too long." }, { status: 400 });
     }
 
+    const demoMode = !getLlmConfig();
     const verdict = await evaluateSubmission(content, revisionOf, resolved, context, model);
     await recordOpinion(verdict.id);
+    await recordLlmUsage(demoMode ? "demo" : "evaluate", demoMode);
     return NextResponse.json({
       verdict,
-      meta: { dailyLimit: getDailyLimit(), demoMode: !getLlmConfig() },
+      meta: { dailyLimit: getDailyLimit(), demoMode },
     });
   } catch {
     return NextResponse.json({ error: "Evaluation failed." }, { status: 500 });
