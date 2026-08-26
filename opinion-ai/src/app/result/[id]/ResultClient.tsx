@@ -8,17 +8,12 @@ import { getVerdict, saveVerdict } from "@/lib/storage";
 import type { Verdict } from "@/lib/types";
 
 export function ResultClient({ id }: { id: string }) {
-  const [verdict, setVerdict] = useState<Verdict | null>(null);
+  const [verdict, setVerdict] = useState<Verdict | null>(() => getVerdict(id));
   const [pending, setPending] = useState(false);
-  const [loaded, setLoaded] = useState(false);
+  const [loaded, setLoaded] = useState(() => Boolean(getVerdict(id)));
 
   useEffect(() => {
-    const local = getVerdict(id);
-    if (local) {
-      setVerdict(local);
-      setLoaded(true);
-      return;
-    }
+    if (getVerdict(id)) return;
 
     let stop = false;
     fetch(`/api/queue/${id}`)

@@ -113,8 +113,8 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [used, setUsed] = useState(0);
-  const [pack, setPack] = useState<PaidPack | null>(null);
+  const [used, setUsed] = useState(() => getDailyUsage());
+  const [pack, setPack] = useState<PaidPack | null>(() => getPaidPack());
   const [useCredit, setUseCredit] = useState(false);
   const [shareOpinion, setShareOpinion] = useState(false);
   const [model, setModel] = useState<ExaminerModel>("pro-examiner-v2");
@@ -122,19 +122,14 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
   const queued = Boolean(queuedId && isJobId(queuedId));
 
   useEffect(() => {
-    setUsed(getDailyUsage());
-  }, []);
-
-  useEffect(() => {
-    if (packParam === "human-ai") {
-      setPaidPack({ tier: "human-ai", credits: 5 });
-    } else if (packParam === "human-ai-pro") {
-      setPaidPack({ tier: "human-ai-pro", credits: 10 });
-    }
-    setPack(getPaidPack());
-    if (packParam === "human-ai" || packParam === "human-ai-pro") {
-      router.replace("/submit");
-    }
+    if (packParam !== "human-ai" && packParam !== "human-ai-pro") return;
+    const next =
+      packParam === "human-ai"
+        ? ({ tier: "human-ai", credits: 5 } as PaidPack)
+        : ({ tier: "human-ai-pro", credits: 10 } as PaidPack);
+    setPaidPack(next);
+    queueMicrotask(() => setPack(next));
+    router.replace("/submit");
   }, [packParam, router]);
 
   const dailyLimit = getDailyLimit();
@@ -145,16 +140,6 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
   const canSubmit = queueSelected
     ? Boolean(file) && Boolean(content.trim()) && !loading
     : Boolean(content.trim()) && !file && !loading;
-
-  useEffect(() => {
-    if (!paid) {
-      setUseCredit(false);
-      setShareOpinion(false);
-      return;
-    }
-    setUseCredit(queueSelected);
-  }, [paid, queueSelected]);
-
   function resetFile() {
     setFile(null);
     if (fileInput.current) fileInput.current.value = "";
@@ -328,6 +313,7 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
               onClick={() => {
                 setCategory(s.id);
                 resetFile();
+                if (paid && QUEUE.includes(s.id)) setUseCredit(true);
               }}
               className={`hud-slot ${on ? "hud-slot-on" : ""}`}
             >

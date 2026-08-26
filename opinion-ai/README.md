@@ -1,36 +1,91 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Opinion.ai
 
-## Getting Started
+Independent evaluation product: honest AI opinions on text, plus human + AI review for music, video, documents, and physical appearance.
 
-First, run the development server:
+Lives in the **nebula-cascade** monorepo as a sibling of the Nebula Cascade game. This app is a standalone Next.js project — it does not share the game’s Supabase backend.
+
+## Status
+
+See [STATUS.md](./STATUS.md) for the full readiness diagnosis.
+
+**Studio-ready today:** local demo of free text opinions + human file queue.  
+**Not launch-ready:** no Stripe, no user accounts, no durable cloud storage.
+
+## Quick start
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cd opinion-ai
+npm ci
+cp .env.example .env.local   # then fill LLM_API_KEY and ADMIN_PASSWORD
+npm run dev                  # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+| Script | Purpose |
+|--------|---------|
+| `npm run dev` | Dev server |
+| `npm run build` | Production build |
+| `npm run start` | Serve production build |
+| `npm run lint` | ESLint |
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Variable | Required | Purpose |
+|----------|----------|---------|
+| `LLM_API_KEY` | For real AI | Groq (or set OpenAI vars instead) |
+| `LLM_BASE_URL` | No | Default `https://api.groq.com/openai/v1` |
+| `LLM_MODEL` | No | Default `openai/gpt-oss-20b` |
+| `OPENAI_API_KEY` | Optional | Fallback if `LLM_API_KEY` empty |
+| `ADMIN_PASSWORD` | For `/admin` | Shared password for the human review queue |
+| `PRO_LONG_VIDEO` | No | Set `1` to allow video uploads over 2 minutes |
 
-## Learn More
+Without an LLM key the evaluate path still returns a **demo** verdict (hash-based). Submit does not surface that in the UI yet.
 
-To learn more about Next.js, take a look at the following resources:
+## Product surfaces
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Route | What it does |
+|-------|----------------|
+| `/` | Landing + mock signal samples |
+| `/submit` | Text (instant AI) or file slots (human queue) |
+| `/result/[id]` | Verdict view |
+| `/history` | Client history + server review sync |
+| `/pricing` | Free / $5 / $10 / Extended copy (no checkout yet) |
+| `/how` | How-it-works copy |
+| `/admin` | Human review login + job queue |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Architecture (local)
 
-## Deploy on Vercel
+```
+Browser
+  ├── POST /api/evaluate     → Groq (text) → localStorage history
+  └── POST /api/queue        → data/uploads/<id> + data/jobs.json
+        └── /admin review    → Groq rewrite of human notes
+              └── COMPLETED → delete upload → FILE_DELETED
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+**Lifecycle for uploads:**  
+`UPLOADED → PROCESSING → HUMAN_REVIEW → FINALIZING → COMPLETED → FILE_DELETED`
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Only score, opinion, metadata, and history are kept long-term. Music/video/images/documents are deleted after the final result is saved.
+
+Local data lives under `data/` (gitignored). That path does **not** survive serverless deploys (e.g. default Vercel).
+
+## Launch blockers (summary)
+
+1. **Payments** — Pricing CTAs grant fake localStorage credits via `?pack=`
+2. **Accounts** — No auth; history and free-tier limits are browser-only
+3. **Durable storage** — Need Postgres + blob storage before cloud deploy
+4. **Server enforcement** — Free daily limit and credits are client-side only
+5. **Privacy** — `GET /api/reviews` is a public shared feed without user scoping
+
+## Repo layout
+
+```
+opinion-ai/
+├── src/app/          # App Router pages + API routes
+├── src/components/   # UI
+├── src/lib/          # Queue, lifecycle, Groq pipeline, storage
+├── public/           # Static assets
+├── .env.example
+├── STATUS.md         # Readiness diagnosis
+└── README.md
+```

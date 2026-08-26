@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo, useSyncExternalStore } from "react";
 
 const STAR_COUNT = 120;
 
@@ -16,12 +16,17 @@ function makeStars(count: number) {
   }));
 }
 
-export function CosmicBackground() {
-  const [stars, setStars] = useState<ReturnType<typeof makeStars>>([]);
+function useIsClient() {
+  return useSyncExternalStore(
+    () => () => undefined,
+    () => true,
+    () => false,
+  );
+}
 
-  useEffect(() => {
-    setStars(makeStars(STAR_COUNT));
-  }, []);
+export function CosmicBackground() {
+  const isClient = useIsClient();
+  const stars = useMemo(() => (isClient ? makeStars(STAR_COUNT) : []), [isClient]);
 
   return (
     <div className="fixed inset-0 -z-10 overflow-hidden bg-[#020510]" aria-hidden>

@@ -4,6 +4,10 @@ A cosmic-themed cascade puzzle game. Phaser 3 engine, React HUD, Supabase backen
 
 > Legal name: **Nebula: ColdLogic**. Public/branding name: **Nebula Cascade**.
 
+## Sibling product: Opinion.ai
+
+This repository also contains **[opinion-ai/](./opinion-ai)** — a separate Next.js evaluation product (AI + human opinions). It does not share the game’s Supabase backend. See `opinion-ai/README.md` and `opinion-ai/STATUS.md`.
+
 ## Tech Stack
 
 - **Frontend**: React 18 + TypeScript + Vite 5
