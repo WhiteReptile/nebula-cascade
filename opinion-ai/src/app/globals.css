@@ -370,6 +370,94 @@ body {
     0 0 48px rgba(120, 0, 0, 0.3);
 }
 
+/* Minimal hero chat — glass thread + composer */
+.hero-chat {
+  overflow: hidden;
+}
+
+.hero-chat-msg {
+  max-width: 85%;
+  margin: 0;
+  padding: 0.55rem 0.85rem;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: #ffffff;
+  text-shadow: 0 0 12px rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(78, 196, 255, 0.18);
+  background: rgba(4, 8, 20, 0.55);
+  animation: heroChatIn 0.7s ease-out both;
+}
+
+.hero-chat-msg-in {
+  margin-right: auto;
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.hero-chat-msg-out {
+  margin-left: auto;
+  border-color: rgba(78, 196, 255, 0.35);
+  background: rgba(78, 196, 255, 0.08);
+  box-shadow: 0 0 24px rgba(78, 196, 255, 0.1);
+  animation-delay: 0.18s;
+}
+
+.hero-chat-composer {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  border-top: 1px solid rgba(78, 196, 255, 0.18);
+}
+
+.hero-chat-input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  padding: 0.85rem 1rem;
+  font-size: 0.8125rem;
+  color: #ffffff;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+  outline: none;
+}
+
+.hero-chat-input::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.hero-chat-send {
+  flex-shrink: 0;
+  padding: 0 1.1rem;
+  border: 0;
+  border-left: 1px solid rgba(78, 196, 255, 0.22);
+  background: transparent;
+  color: #4ec4ff;
+  font-family: var(--font-display);
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  text-shadow:
+    0 0 8px rgba(78, 196, 255, 0.85),
+    0 0 20px rgba(30, 144, 255, 0.4);
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.hero-chat-send:hover {
+  background: rgba(78, 196, 255, 0.1);
+  color: #ffffff;
+}
+
+@keyframes heroChatIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .nav-white {
   color: #ffffff;
   text-shadow: 0 0 14px rgba(255, 255, 255, 0.45);
@@ -650,6 +738,7 @@ body {
   .cosmic-title,
   .text-dynamic,
   .brand-your,
+  .hero-chat-msg,
   .pricing-spot,
   .pricing-beam {
     animation: none;

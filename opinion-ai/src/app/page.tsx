@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ExampleCard } from "@/components/ExampleCard";
+import { HeroChat } from "@/components/HeroChat";
 import { ScoreScale } from "@/components/ScoreScale";
 import { MOCK_VERDICTS } from "@/lib/mock-verdicts";
 
@@ -19,6 +20,7 @@ export default function Home() {
         </h1>
         <p className="text-dynamic text-sm mb-3">No yes-men. Just opinions.</p>
         <div className="cosmic-divider w-32 mx-auto my-8" />
+        <HeroChat />
         <Link href="/submit" className="cosmic-cta inline-block text-sm px-10 py-3">
           Submit
         </Link>

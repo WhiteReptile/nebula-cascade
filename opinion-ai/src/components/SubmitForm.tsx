@@ -109,7 +109,19 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
   const fileInput = useRef<HTMLInputElement>(null);
 
   const [category, setCategory] = useState<CategoryId>("text");
-  const [content, setContent] = useState("");
+  const [content, setContent] = useState(() => {
+    if (typeof window === "undefined") return "";
+    try {
+      const draft = sessionStorage.getItem("opinion-ai-draft");
+      if (draft?.trim()) {
+        sessionStorage.removeItem("opinion-ai-draft");
+        return draft;
+      }
+    } catch {
+      /* private mode */
+    }
+    return "";
+  });
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
