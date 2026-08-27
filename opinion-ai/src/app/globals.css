@@ -344,6 +344,32 @@ body {
   animation: bladePulse 4.5s ease-in-out infinite;
 }
 
+/* Brand wordmark: Your (white) + Truths (warning red) */
+.brand-wordmark {
+  font-family: var(--font-display);
+  font-weight: 300;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  line-height: 1.05;
+}
+
+.brand-your {
+  color: #ffffff;
+  text-shadow:
+    0 0 10px rgba(255, 255, 255, 0.55),
+    0 0 28px rgba(255, 255, 255, 0.28),
+    0 0 48px rgba(255, 255, 255, 0.12);
+  animation: whitePulse 6s ease-in-out infinite;
+}
+
+.brand-truths {
+  color: #ff2a2a;
+  text-shadow:
+    0 0 8px rgba(255, 42, 42, 0.9),
+    0 0 22px rgba(180, 0, 0, 0.55),
+    0 0 48px rgba(120, 0, 0, 0.3);
+}
+
 .nav-white {
   color: #ffffff;
   text-shadow: 0 0 14px rgba(255, 255, 255, 0.45);
@@ -623,6 +649,7 @@ body {
   .nebula-blob-delayed,
   .cosmic-title,
   .text-dynamic,
+  .brand-your,
   .pricing-spot,
   .pricing-beam {
     animation: none;
