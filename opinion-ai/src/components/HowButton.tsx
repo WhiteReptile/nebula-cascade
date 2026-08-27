@@ -3,13 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { OpinionLaunchCount } from "@/components/OpinionLaunchCount";
-
-const HOW_COPY = [
-  "You send in your work. We look at what’s actually there — we don’t try to please you.",
-  "First we list the facts, then we argue for it and against it, then we give a score.",
-  "That score is an opinion, not a fact. Taste is subjective, so people can disagree.",
-  "A real person will also look at your work, independently, and they won’t know who you are.",
-];
+import { HOW_HOVER_LINES } from "@/lib/how-copy";
 
 export function HowButton({ opinionCount }: { opinionCount: number }) {
   const pathname = usePathname();
@@ -22,7 +16,7 @@ export function HowButton({ opinionCount }: { opinionCount: number }) {
           How does it work
         </Link>
         <div className="how-popout" role="tooltip">
-          {HOW_COPY.map((line) => (
+          {HOW_HOVER_LINES.map((line) => (
             <p key={line}>{line}</p>
           ))}
         </div>

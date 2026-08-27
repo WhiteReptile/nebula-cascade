@@ -243,6 +243,32 @@ body {
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
 }
 
+.how-popout p + p {
+  margin-top: 0.65rem;
+}
+
+.how-key {
+  color: #ffffff;
+  font-weight: 600;
+  text-shadow:
+    0 0 10px rgba(78, 196, 255, 0.55),
+    0 0 22px rgba(255, 255, 255, 0.25);
+}
+
+.how-tagline {
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: #ffffff;
+  text-shadow: 0 0 14px rgba(255, 255, 255, 0.22);
+}
+
+.how-tagline .how-key {
+  color: #4ec4ff;
+  text-shadow:
+    0 0 8px rgba(78, 196, 255, 0.9),
+    0 0 24px rgba(30, 144, 255, 0.45);
+}
+
 .pricing-btn {
   font-size: 0.7rem;
   letter-spacing: 0.14em;
