@@ -1,44 +1,38 @@
 "use client";
 
-import { FormEvent, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 
 export function HeroChat() {
-  const router = useRouter();
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const [draft, setDraft] = useState("");
 
-  function onSubmit(e: FormEvent) {
-    e.preventDefault();
-    const text = draft.trim();
-    if (text) {
-      try {
-        sessionStorage.setItem("opinion-ai-draft", text);
-      } catch {
-        /* private mode */
-      }
+  useEffect(() => {
+    try {
+      if (draft.trim()) sessionStorage.setItem("opinion-ai-draft", draft.trim());
+      else sessionStorage.removeItem("opinion-ai-draft");
+    } catch {
+      /* private mode */
     }
-    router.push("/submit");
-  }
+  }, [draft]);
 
   return (
-    <div className="hero-chat cosmic-glass w-full max-w-md mx-auto text-left mb-8">
-      <div className="hero-chat-thread px-4 pt-4 pb-3 space-y-3">
-        <p className="hero-chat-msg hero-chat-msg-in">Tell me the truth about this.</p>
-        <p className="hero-chat-msg hero-chat-msg-out">We don’t soften it.</p>
-      </div>
-      <form onSubmit={onSubmit} className="hero-chat-composer">
-        <input
+    <div
+      className="hero-chat cosmic-glass w-full max-w-sm mx-auto mb-8"
+      onClick={() => inputRef.current?.focus()}
+      role="presentation"
+    >
+      <div className="hero-chat-shell">
+        <textarea
+          ref={inputRef}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          placeholder="Paste a line…"
-          aria-label="Start an opinion"
-          className="hero-chat-input"
+          onClick={(e) => e.stopPropagation()}
+          rows={3}
           maxLength={500}
+          className="hero-chat-input"
+          aria-label="Message"
         />
-        <button type="submit" className="hero-chat-send" aria-label="Continue to submit">
-          Ask
-        </button>
-      </form>
+      </div>
     </div>
   );
 }
