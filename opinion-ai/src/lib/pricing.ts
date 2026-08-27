@@ -12,7 +12,7 @@ export const PRICING_PACKAGES = [
     features: [
       "5 AI opinions every day",
       "Text and other short-form work",
-      "Opinion.ai scoring system",
+      "YourTruths scoring system",
       "Strengths and weaknesses",
       "Clear final verdict",
       "8 sentences",
@@ -37,7 +37,7 @@ export const PRICING_PACKAGES = [
       "8-sentence review (human notes, AI rewritten)",
       "Human review included",
       "Anonymous reviewers",
-      "Opinion.ai score + ranking",
+      "YourTruths score + ranking",
     ],
     cta: { label: "Get 5 Premium Opinions", href: "/submit?pack=human-ai" },
   },
@@ -58,7 +58,7 @@ export const PRICING_PACKAGES = [
       "8-sentence review (human notes, AI rewritten)",
       "Real human reviewers",
       "Longer submissions supported",
-      "Opinion.ai score + ranking",
+      "YourTruths score + ranking",
     ],
     privateLabel: "Private use",
     privateFeatures: ["Your opinion is not shared"],
@@ -70,7 +70,7 @@ export const PRICING_PACKAGES = [
     price: "Contact Sales",
     headline: "Need more than the standard packages?",
     description: [
-      "Opinion.ai offers custom plans for businesses, studios, agencies, creators, researchers, and organizations requiring large-scale or specialized evaluations.",
+      "YourTruths offers custom plans for businesses, studios, agencies, creators, researchers, and organizations requiring large-scale or specialized evaluations.",
     ],
     featuresLabel: "Plans can include:",
     features: [
@@ -84,16 +84,16 @@ export const PRICING_PACKAGES = [
       "Custom reports and analytics",
     ],
     footer:
-      "Tell us what you need, how much content you have, and how frequently you need evaluations. We'll build a custom Opinion.ai plan for you.",
+      "Tell us what you need, how much content you have, and how frequently you need evaluations. We'll build a custom YourTruths plan for you.",
     cta: {
       label: "Contact Sales",
-      href: "mailto:?subject=Opinion.ai%20Extended%20Premium",
+      href: "mailto:?subject=YourTruths%20Extended%20Premium",
     },
   },
 ] as const;
 
 export const PRICING_PROMISE = {
-  title: "The Opinion.ai Promise",
+  title: "The YourTruths Promise",
   lines: [
     "FREE = AI opinions. 5 every day. 8 sentences. No share switch.",
     "HUMAN + AI = 5 credits. Use them when you want. Human notes rewritten into 8 sentences. Share on or off at Submit.",

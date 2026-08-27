@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Orbitron, Space_Grotesk } from "next/font/google";
 import { PublicShell } from "@/components/PublicShell";
+import { BRAND_NAME } from "@/components/BrandMark";
 import { getOpinionTotal } from "@/lib/opinion-count";
 import "./globals.css";
 
@@ -9,7 +10,7 @@ const space = Space_Grotesk({ subsets: ["latin"], variable: "--font-space" });
 const orbitron = Orbitron({ subsets: ["latin"], variable: "--font-orbitron" });
 
 export const metadata: Metadata = {
-  title: "Opinion.ai",
+  title: BRAND_NAME,
   description: "An AI designed to give unbiased, real opinions of your work.",
 };
 

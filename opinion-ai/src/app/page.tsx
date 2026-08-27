@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BrandMark } from "@/components/BrandMark";
 import { ExampleCard } from "@/components/ExampleCard";
 import { HeroChat } from "@/components/HeroChat";
 import { ScoreScale } from "@/components/ScoreScale";
@@ -8,9 +9,8 @@ export default function Home() {
   return (
     <div className="flex flex-col items-center px-6 py-20 sm:py-28">
       <div className="max-w-2xl w-full text-center mb-20">
-        <p className="brand-wordmark text-4xl sm:text-5xl mb-8" aria-label="YourTruths">
-          <span className="brand-your">Your</span>
-          <span className="brand-truths">Truths</span>
+        <p className="mb-8">
+          <BrandMark size="hero" />
         </p>
         <p className="label-white text-[10px] sm:text-xs mb-6 max-w-md mx-auto leading-relaxed">
           An AI designed to give unbiased, real opinions of your work

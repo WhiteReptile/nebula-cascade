@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { BackArrow } from "@/components/BackArrow";
+import { BrandMark } from "@/components/BrandMark";
 import { PricingNav } from "@/components/PricingNav";
 
 export function Header() {
@@ -9,8 +10,8 @@ export function Header() {
     <header className="relative z-10 flex items-center justify-between px-6 py-5 border-b border-white/15">
       <div className="flex items-center gap-5">
         <BackArrow />
-        <Link href="/" className="cosmic-title text-sm font-medium tracking-[0.28em]">
-          Opinion.ai
+        <Link href="/" className="inline-flex items-center">
+          <BrandMark size="nav" />
         </Link>
       </div>
       <nav className="flex items-center gap-8 text-sm">

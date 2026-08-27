@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BrandMark } from "@/components/BrandMark";
 
 const STEPS = [
   {
@@ -33,7 +34,7 @@ export default function HowPage() {
     <div className="px-6 py-16 sm:py-20 max-w-xl mx-auto w-full">
       <h1 className="cosmic-title text-xl font-light mb-4">How does it work</h1>
       <p className="text-dynamic text-sm mb-10">
-        Opinion.ai is an evaluation system, not a chatbot with an attitude.
+        <BrandMark size="inline" /> is an evaluation system, not a chatbot with an attitude.
       </p>
 
       <ol className="space-y-4">

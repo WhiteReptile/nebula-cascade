@@ -32,7 +32,7 @@ export function VerdictView({ verdict, showActions = true }: { verdict: Verdict;
       {showActions && (
         <VerdictActions
           verdictId={verdict.id}
-          shareText={`Opinion.ai: ${verdict.score}/100 — ${verdict.verdict}`}
+          shareText={`YourTruths: ${verdict.score}/100 — ${verdict.verdict}`}
         />
       )}
     </article>
