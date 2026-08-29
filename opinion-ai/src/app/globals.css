@@ -396,6 +396,39 @@ body {
     0 0 48px rgba(120, 0, 0, 0.3);
 }
 
+/* Hero headline — long copy, wider span, balanced with chat + CTA below */
+.hero-headline {
+  max-width: 100%;
+  letter-spacing: 0.07em;
+  text-wrap: balance;
+}
+
+.hero-rotate-slot {
+  display: inline-block;
+  min-width: 10.5ch;
+  text-align: center;
+  vertical-align: baseline;
+}
+
+.hero-rotate-word {
+  display: inline-block;
+  color: #ff2a2a;
+  text-shadow:
+    0 0 8px rgba(255, 42, 42, 0.9),
+    0 0 22px rgba(180, 0, 0, 0.55),
+    0 0 48px rgba(120, 0, 0, 0.3);
+  opacity: 0;
+  transform: translateY(0.4em);
+  transition:
+    opacity 0.42s ease,
+    transform 0.42s ease;
+}
+
+.hero-rotate-word.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 /* Minimal hero chat — empty glass field only */
 .hero-chat {
   overflow: hidden;
@@ -708,7 +741,11 @@ body {
   .text-dynamic,
   .brand-your,
   .pricing-spot,
-  .pricing-beam {
+  .pricing-beam,
+  .hero-rotate-word {
     animation: none;
+    transition: none;
+    opacity: 1;
+    transform: none;
   }
 }
