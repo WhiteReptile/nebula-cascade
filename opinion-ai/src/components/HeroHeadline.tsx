@@ -13,49 +13,71 @@ const ROTATING_WORDS = [
 ] as const;
 
 const HOLD_MS = 2600;
-const EXIT_MS = 500;
+const SLIDE_MS = 500;
 
-function pickRandom(exclude?: string): string {
-  const pool = exclude ? ROTATING_WORDS.filter((word) => word !== exclude) : [...ROTATING_WORDS];
+function pickRandom(exclude: string): string {
+  const pool = ROTATING_WORDS.filter((word) => word !== exclude);
   return pool[Math.floor(Math.random() * pool.length)] ?? ROTATING_WORDS[0];
 }
 
 export function HeroHeadline() {
-  const [word, setWord] = useState<string>(ROTATING_WORDS[0]);
-  const [exiting, setExiting] = useState(false);
-  const wordRef = useRef(word);
-  wordRef.current = word;
+  const trackRef = useRef<HTMLSpanElement>(null);
+  const pairRef = useRef<[string, string]>([ROTATING_WORDS[0], pickRandom(ROTATING_WORDS[0])]);
+  const [pair, setPair] = useState<[string, string]>(pairRef.current);
 
   useEffect(() => {
     let alive = true;
-    const timers = new Set<ReturnType<typeof setTimeout>>();
+    const timers = new Set<number>();
 
-    const later = (ms: number, fn: () => void) => {
-      const id = window.setTimeout(() => {
-        timers.delete(id);
-        if (alive) fn();
-      }, ms);
-      timers.add(id);
-    };
-
-    const cycle = () => {
-      later(HOLD_MS, () => {
-        setExiting(true);
-        later(EXIT_MS, () => {
-          const next = pickRandom(wordRef.current);
-          setExiting(false);
-          setWord(next);
-          cycle();
-        });
+    const later = (ms: number) =>
+      new Promise<void>((resolve) => {
+        const id = window.setTimeout(() => {
+          timers.delete(id);
+          resolve();
+        }, ms);
+        timers.add(id);
       });
+
+    const slide = async () => {
+      while (alive) {
+        await later(HOLD_MS);
+        if (!alive) break;
+
+        const track = trackRef.current;
+        if (!track) continue;
+
+        const motion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        if (!motion) {
+          try {
+            await track.animate(
+              [{ transform: "translateY(0)" }, { transform: "translateY(-50%)" }],
+              { duration: SLIDE_MS, easing: "ease", fill: "forwards" },
+            ).finished;
+          } catch {
+            /* cancelled */
+          }
+        }
+
+        if (!alive) break;
+
+        const [, next] = pairRef.current;
+        const updated: [string, string] = [next, pickRandom(next)];
+        pairRef.current = updated;
+        setPair(updated);
+
+        track.style.transform = "translateY(0)";
+        track.getAnimations().forEach((anim) => anim.cancel());
+
+        await later(0);
+      }
     };
 
-    setWord((current) => pickRandom(current));
-    cycle();
+    void slide();
 
     return () => {
       alive = false;
       timers.forEach((id) => window.clearTimeout(id));
+      trackRef.current?.getAnimations().forEach((anim) => anim.cancel());
     };
   }, []);
 
@@ -63,8 +85,9 @@ export function HeroHeadline() {
     <h1 className="hero-headline cosmic-title text-2xl sm:text-[1.85rem] lg:text-3xl font-light mb-4 w-full mx-auto leading-snug px-1">
       An AI Engine designed to give unbiased, real opinions of your{" "}
       <span className="hero-rotate-slot" aria-live="polite">
-        <span key={word} className={`hero-rotate-word${exiting ? " is-exiting" : ""}`}>
-          {word}
+        <span ref={trackRef} className="hero-rotate-track">
+          <span className="hero-rotate-item">{pair[0]}</span>
+          <span className="hero-rotate-item">{pair[1]}</span>
         </span>
       </span>
     </h1>

@@ -421,42 +421,23 @@ body {
   text-align: center;
 }
 
-.hero-rotate-word {
-  display: inline-block;
+.hero-rotate-track {
+  display: flex;
+  flex-direction: column;
+  transform: translateY(0);
+  will-change: transform;
+}
+
+.hero-rotate-item {
+  display: block;
   height: 1.12em;
   line-height: 1.12em;
+  flex-shrink: 0;
   color: #ff2a2a !important;
   text-shadow:
     0 0 8px rgba(255, 42, 42, 0.9),
     0 0 22px rgba(180, 0, 0, 0.55),
     0 0 48px rgba(120, 0, 0, 0.3);
-  animation: heroWordIn 0.5s ease both;
-}
-
-.hero-rotate-word.is-exiting {
-  animation: heroWordOut 0.5s ease both;
-}
-
-@keyframes heroWordIn {
-  from {
-    opacity: 0;
-    transform: translateY(0.45em);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes heroWordOut {
-  from {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  to {
-    opacity: 0;
-    transform: translateY(-0.45em);
-  }
 }
 
 /* Minimal hero chat — empty glass field only */
@@ -773,12 +754,5 @@ body {
   .pricing-spot,
   .pricing-beam {
     animation: none;
-  }
-
-  .hero-rotate-word,
-  .hero-rotate-word.is-exiting {
-    animation: none;
-    opacity: 1;
-    transform: none;
   }
 }
