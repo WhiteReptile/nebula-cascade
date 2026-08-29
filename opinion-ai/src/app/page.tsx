@@ -12,11 +12,8 @@ export default function Home() {
         <p className="mb-8">
           <BrandMark size="hero" />
         </p>
-        <p className="label-white text-[10px] sm:text-xs mb-6 max-w-md mx-auto leading-relaxed">
-          An AI designed to give unbiased, real opinions of your work
-        </p>
-        <h1 className="cosmic-title text-3xl sm:text-4xl font-light mb-4">
-          Ask what we really think.
+        <h1 className="cosmic-title text-3xl sm:text-4xl font-light mb-4 max-w-xl mx-auto leading-snug">
+          An AI Engine designed to give unbiased, real opinions of your work
         </h1>
         <p className="text-dynamic text-sm mb-3">No yes-men. Just opinions.</p>
         <div className="cosmic-divider w-32 mx-auto my-8" />
