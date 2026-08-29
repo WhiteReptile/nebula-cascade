@@ -147,6 +147,7 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
   const dailyLimit = getDailyLimit();
   const slot = HUD_SLOTS.find((s) => s.id === category);
   const queueSelected = QUEUE.includes(category);
+  const textSelected = category === "text";
   const paid = Boolean(pack && pack.credits > 0);
   const canShare = pack?.tier === "human-ai" && paid;
   const canSubmit = queueSelected
@@ -237,37 +238,6 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
 
     if (!content.trim()) return;
 
-    if (useHuman) {
-      setLoading(true);
-      setError(null);
-      try {
-        const work = content.trim();
-        const upload = new File([work], "text.txt", { type: "text/plain" });
-        const id = await queueWork({
-          category: "text",
-          context: work.slice(0, 8000),
-          upload,
-          model,
-          share: pack?.tier === "human-ai-pro" ? false : canShare ? shareOpinion : undefined,
-        });
-        const next = spendPaidCredit();
-        setPack(next);
-        savePendingJob({
-          id,
-          categoryLabel: "Text",
-          scoreContext: "",
-          createdAt: new Date().toISOString(),
-        });
-        setContent("");
-        router.push(`/submit?queued=${id}`);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Something went wrong");
-      } finally {
-        setLoading(false);
-      }
-      return;
-    }
-
     if (used >= dailyLimit) {
       setError(`Free limit reached (${dailyLimit}/day). Try again tomorrow.`);
       return;
@@ -325,7 +295,11 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
               onClick={() => {
                 setCategory(s.id);
                 resetFile();
-                if (paid && QUEUE.includes(s.id)) setUseCredit(true);
+                if (s.id === "text") {
+                  setUseCredit(false);
+                } else if (paid && QUEUE.includes(s.id)) {
+                  setUseCredit(true);
+                }
               }}
               className={`hud-slot ${on ? "hud-slot-on" : ""}`}
             >
@@ -365,7 +339,7 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
         </div>
       )}
 
-      {paid && (
+      {paid && queueSelected && (
         <div className="mb-4">
           <PaySwitch
             checked={useCredit}
@@ -420,12 +394,20 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
 
       <div className="mt-6 flex items-start justify-between">
         <div className="flex flex-col items-start gap-2">
-          <span className="text-dynamic text-xs tracking-wide">
-            {used}/{dailyLimit} free today
-          </span>
-          <span className="text-dynamic text-xs tracking-wide">
-            {pack ? `${pack.credits} credits` : "0 credits"}
-          </span>
+          {textSelected ? (
+            <span className="text-dynamic text-xs tracking-wide">
+              {used}/{dailyLimit} free today · no credits needed
+            </span>
+          ) : (
+            <>
+              <span className="text-dynamic text-xs tracking-wide">
+                {used}/{dailyLimit} free today
+              </span>
+              <span className="text-dynamic text-xs tracking-wide">
+                {pack ? `${pack.credits} credits` : "0 credits"}
+              </span>
+            </>
+          )}
         </div>
         <button type="submit" disabled={!canSubmit} className="cosmic-cta text-sm px-8 py-2.5">
           {loading ? "Submitting…" : "Submit"}
