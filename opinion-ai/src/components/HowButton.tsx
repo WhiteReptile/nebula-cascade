@@ -10,7 +10,7 @@ export function HowButton({ opinionCount }: { opinionCount: number }) {
   if (pathname !== "/") return null;
 
   return (
-    <div className="relative z-20 px-6 pt-10 pb-3 flex items-start justify-between gap-4">
+    <div className="relative z-20 px-4 sm:px-6 pt-10 pb-3 flex items-start justify-between gap-3 sm:gap-4">
       <div className="how-wrap relative inline-block">
         <Link href="/how" className="how-btn-red inline-block text-[10px] sm:text-xs px-3 py-1.5">
           How does it work
