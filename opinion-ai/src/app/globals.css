@@ -422,7 +422,7 @@ body {
 }
 
 .hero-rotate-word {
-  display: block;
+  display: inline-block;
   height: 1.12em;
   line-height: 1.12em;
   color: #ff2a2a !important;
@@ -430,18 +430,16 @@ body {
     0 0 8px rgba(255, 42, 42, 0.9),
     0 0 22px rgba(180, 0, 0, 0.55),
     0 0 48px rgba(120, 0, 0, 0.3);
-  animation: heroWordIn 0.5s ease both;
+  opacity: 0;
+  transform: translateY(0.6em);
+  transition:
+    opacity 0.45s ease,
+    transform 0.45s ease;
 }
 
-@keyframes heroWordIn {
-  from {
-    opacity: 0;
-    transform: translateY(0.5em);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.hero-rotate-word.is-visible {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 /* Minimal hero chat — empty glass field only */
