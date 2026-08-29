@@ -101,7 +101,12 @@ function PaySwitch({
   );
 }
 
-export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: boolean }) {
+export function SubmitForm({
+  longVideoAllowed = false,
+}: {
+  longVideoAllowed?: boolean;
+  demoMode?: boolean;
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const revisionOf = searchParams.get("revision") ?? undefined;
@@ -149,11 +154,6 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
   const textSelected = category === "text";
   const paid = Boolean(pack && pack.credits > 0);
   const canShare = pack?.tier === "human-ai" && paid;
-  const canSubmit = textSelected
-    ? Boolean(content.trim()) && !loading
-    : queueSelected
-      ? Boolean(file) && Boolean(content.trim()) && !loading
-      : false;
   function resetFile() {
     setFile(null);
     if (fileInput.current) fileInput.current.value = "";
@@ -192,7 +192,10 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
     const useHuman = paid && useCredit;
 
     if (queueSelected) {
-      if (!file || !content.trim()) return;
+      if (!file || !content.trim()) {
+        setError(file ? "Add context for your file." : "Choose a file first.");
+        return;
+      }
       if (paid && !useCredit) {
         setError("Turn on a Human + AI credit to submit this file.");
         return;
@@ -420,7 +423,7 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
         </button>
       </div>
 
-      {error && <p className="mt-4 text-sm text-white">{error}</p>}
+      {error && <p className="mt-4 text-sm warning-red sentence">{error}</p>}
     </form>
   );
 }
