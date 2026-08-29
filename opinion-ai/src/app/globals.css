@@ -421,25 +421,61 @@ body {
   text-align: center;
 }
 
-.hero-rotate-word {
-  display: inline-block;
+.hero-rotate-track {
+  display: flex;
+  flex-direction: column;
+  animation: heroWordCycle 16s ease-in-out infinite;
+  will-change: transform;
+}
+
+.hero-rotate-item {
+  display: block;
   height: 1.12em;
   line-height: 1.12em;
+  flex-shrink: 0;
   color: #ff2a2a !important;
   text-shadow:
     0 0 8px rgba(255, 42, 42, 0.9),
     0 0 22px rgba(180, 0, 0, 0.55),
     0 0 48px rgba(120, 0, 0, 0.3);
-  opacity: 0;
-  transform: translateY(0.6em);
-  transition:
-    opacity 0.45s ease,
-    transform 0.45s ease;
 }
 
-.hero-rotate-word.is-visible {
-  opacity: 1;
-  transform: translateY(0);
+@keyframes heroWordCycle {
+  0%,
+  10.25% {
+    transform: translateY(0);
+  }
+  12.5%,
+  22.75% {
+    transform: translateY(-12.5%);
+  }
+  25%,
+  35.25% {
+    transform: translateY(-25%);
+  }
+  37.5%,
+  47.75% {
+    transform: translateY(-37.5%);
+  }
+  50%,
+  60.25% {
+    transform: translateY(-50%);
+  }
+  62.5%,
+  72.75% {
+    transform: translateY(-62.5%);
+  }
+  75%,
+  85.25% {
+    transform: translateY(-75%);
+  }
+  87.5%,
+  97.75% {
+    transform: translateY(-87.5%);
+  }
+  100% {
+    transform: translateY(0);
+  }
 }
 
 /* Minimal hero chat — empty glass field only */
