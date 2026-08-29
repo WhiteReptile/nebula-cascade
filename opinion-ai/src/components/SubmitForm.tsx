@@ -267,7 +267,7 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
       setUsed(getDailyUsage());
       saveVerdict(verdict);
       persistDraft("");
-      window.location.href = `/result/${verdict.id}`;
+      router.push(`/result/${verdict.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {

@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
 import { evaluateSubmission, getLlmConfig } from "@/lib/evaluate/pipeline";
 import { recordOpinion } from "@/lib/opinion-count";
 import { recordLlmUsage } from "@/lib/llm-usage";
+import { publicRedirect } from "@/lib/public-origin";
 import { isExaminerModel } from "@/lib/queue-shared";
 import { saveVerdictRecord } from "@/lib/verdict-store";
 
@@ -14,10 +14,10 @@ export async function POST(request: Request) {
     const model = isExaminerModel(modelRaw) ? modelRaw : "pro-examiner-v2";
 
     if (!content) {
-      return NextResponse.redirect(new URL("/submit?error=empty", request.url));
+      return publicRedirect(request, "/submit?error=empty");
     }
     if (content.length > 50000) {
-      return NextResponse.redirect(new URL("/submit?error=long", request.url));
+      return publicRedirect(request, "/submit?error=long");
     }
 
     const demoMode = !getLlmConfig();
@@ -26,8 +26,8 @@ export async function POST(request: Request) {
     await recordOpinion(verdict.id);
     await recordLlmUsage(demoMode ? "demo" : "evaluate", demoMode);
 
-    return NextResponse.redirect(new URL(`/result/${verdict.id}`, request.url));
+    return publicRedirect(request, `/result/${verdict.id}`);
   } catch {
-    return NextResponse.redirect(new URL("/submit?error=failed", request.url));
+    return publicRedirect(request, "/submit?error=failed");
   }
 }
