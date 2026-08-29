@@ -45,7 +45,7 @@ const HUD_SLOTS: { id: CategoryId; label: string; fileAccept?: string; note: str
   {
     id: "text",
     label: "Text",
-    note: "Words only. Poems, lyrics, homework, a marketing plan, a screenplay scene — paste it and we tell you what we think. Five times a day, no credits.",
+    note: "Words only. Poems, lyrics, homework, a marketing plan, a screenplay scene — paste it and we tell you what we think. Free for everyone.",
   },
 ];
 
@@ -109,29 +109,28 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
   const fileInput = useRef<HTMLInputElement>(null);
 
   const [category, setCategory] = useState<CategoryId>("text");
-  const [content, setContent] = useState(() => {
-    if (typeof window === "undefined") return "";
-    try {
-      const draft = sessionStorage.getItem("opinion-ai-draft");
-      if (draft?.trim()) {
-        sessionStorage.removeItem("opinion-ai-draft");
-        return draft;
-      }
-    } catch {
-      /* private mode */
-    }
-    return "";
-  });
+  const [content, setContent] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [used, setUsed] = useState(() => getDailyUsage());
-  const [pack, setPack] = useState<PaidPack | null>(() => getPaidPack());
+  const [used, setUsed] = useState(0);
+  const [pack, setPack] = useState<PaidPack | null>(null);
   const [useCredit, setUseCredit] = useState(false);
   const [shareOpinion, setShareOpinion] = useState(false);
   const [model, setModel] = useState<ExaminerModel>("pro-examiner-v2");
   const queuedId = searchParams.get("queued");
   const queued = Boolean(queuedId && isJobId(queuedId));
+
+  useEffect(() => {
+    setUsed(getDailyUsage());
+    setPack(getPaidPack());
+    try {
+      const draft = sessionStorage.getItem("opinion-ai-draft");
+      if (draft?.trim()) setContent(draft);
+    } catch {
+      /* private mode */
+    }
+  }, []);
 
   useEffect(() => {
     if (packParam !== "human-ai" && packParam !== "human-ai-pro") return;
@@ -150,9 +149,11 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
   const textSelected = category === "text";
   const paid = Boolean(pack && pack.credits > 0);
   const canShare = pack?.tier === "human-ai" && paid;
-  const canSubmit = queueSelected
-    ? Boolean(file) && Boolean(content.trim()) && !loading
-    : Boolean(content.trim()) && !file && !loading;
+  const canSubmit = textSelected
+    ? Boolean(content.trim()) && !loading
+    : queueSelected
+      ? Boolean(file) && Boolean(content.trim()) && !loading
+      : false;
   function resetFile() {
     setFile(null);
     if (fileInput.current) fileInput.current.value = "";
@@ -236,10 +237,8 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
       return;
     }
 
-    if (!content.trim()) return;
-
-    if (used >= dailyLimit) {
-      setError(`Free limit reached (${dailyLimit}/day). Try again tomorrow.`);
+    if (!content.trim()) {
+      setError("Paste your text first.");
       return;
     }
 
@@ -264,6 +263,11 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
       const { verdict } = await res.json();
       incrementDailyUsage();
       setUsed(getDailyUsage());
+      try {
+        sessionStorage.removeItem("opinion-ai-draft");
+      } catch {
+        /* private mode */
+      }
       saveVerdict(verdict);
       router.push(`/result/${verdict.id}`);
     } catch (err) {
@@ -395,9 +399,7 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
       <div className="mt-6 flex items-start justify-between">
         <div className="flex flex-col items-start gap-2">
           {textSelected ? (
-            <span className="text-dynamic text-xs tracking-wide">
-              {used}/{dailyLimit} free today · no credits needed
-            </span>
+            <span className="text-dynamic text-xs tracking-wide">Free · no credits needed</span>
           ) : (
             <>
               <span className="text-dynamic text-xs tracking-wide">
@@ -409,7 +411,11 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
             </>
           )}
         </div>
-        <button type="submit" disabled={!canSubmit} className="cosmic-cta text-sm px-8 py-2.5">
+        <button
+          type="submit"
+          disabled={loading}
+          className="cosmic-cta text-sm px-8 py-2.5 disabled:opacity-40"
+        >
           {loading ? "Submitting…" : "Submit"}
         </button>
       </div>

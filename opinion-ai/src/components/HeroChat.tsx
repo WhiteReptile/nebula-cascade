@@ -2,17 +2,21 @@
 
 import { useEffect, useRef, useState } from "react";
 
+function saveDraft(value: string) {
+  try {
+    if (value.trim()) sessionStorage.setItem("opinion-ai-draft", value.trim());
+    else sessionStorage.removeItem("opinion-ai-draft");
+  } catch {
+    /* private mode */
+  }
+}
+
 export function HeroChat() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [draft, setDraft] = useState("");
 
   useEffect(() => {
-    try {
-      if (draft.trim()) sessionStorage.setItem("opinion-ai-draft", draft.trim());
-      else sessionStorage.removeItem("opinion-ai-draft");
-    } catch {
-      /* private mode */
-    }
+    saveDraft(draft);
   }, [draft]);
 
   return (
@@ -25,7 +29,11 @@ export function HeroChat() {
         <textarea
           ref={inputRef}
           value={draft}
-          onChange={(e) => setDraft(e.target.value)}
+          onChange={(e) => {
+            const next = e.target.value;
+            setDraft(next);
+            saveDraft(next);
+          }}
           onClick={(e) => e.stopPropagation()}
           rows={3}
           maxLength={500}

@@ -3,6 +3,7 @@ import { BrandMark } from "@/components/BrandMark";
 import { ExampleCard } from "@/components/ExampleCard";
 import { HeroChat } from "@/components/HeroChat";
 import { HeroHeadline } from "@/components/HeroHeadline";
+import { HomeSubmitLink } from "@/components/HomeSubmitLink";
 import { ScoreScale } from "@/components/ScoreScale";
 import { MOCK_VERDICTS } from "@/lib/mock-verdicts";
 
@@ -17,9 +18,7 @@ export default function Home() {
         <p className="text-dynamic text-sm mb-3">No yes-men. Just opinions.</p>
         <div className="cosmic-divider w-32 mx-auto my-8" />
         <HeroChat />
-        <Link href="/submit" className="cosmic-cta inline-block text-sm px-10 py-3">
-          Submit
-        </Link>
+        <HomeSubmitLink />
         <p className="warning-red text-xs sm:text-sm mt-10 mb-0 font-bold">
           Humans will look at your work too
         </p>
