@@ -425,7 +425,15 @@ body {
   display: flex;
   flex-direction: column;
   transform: translateY(0);
-  will-change: transform;
+  transition: transform 0.5s ease;
+}
+
+.hero-rotate-track.is-raised {
+  transform: translateY(-50%);
+}
+
+.hero-rotate-track.is-snap {
+  transition: none;
 }
 
 .hero-rotate-item {
