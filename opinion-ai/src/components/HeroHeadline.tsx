@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 const WORDS = [
   "Documents",
@@ -18,32 +18,21 @@ function nextWord(current: string) {
 }
 
 export function HeroHeadline() {
-  const [top, setTop] = useState(WORDS[0]);
-  const [bottom, setBottom] = useState(() => nextWord(WORDS[0]));
-  const bottomRef = useRef(bottom);
-  bottomRef.current = bottom;
+  const [word, setWord] = useState(WORDS[0]);
 
   useEffect(() => {
-    const track = document.getElementById("hero-rotate-track");
-    if (!track) return;
-
-    const onLoop = () => {
-      const landed = bottomRef.current;
-      setTop(landed);
-      setBottom(nextWord(landed));
-    };
-
-    track.addEventListener("animationiteration", onLoop);
-    return () => track.removeEventListener("animationiteration", onLoop);
+    const timer = setInterval(() => {
+      setWord((current) => nextWord(current));
+    }, 2800);
+    return () => clearInterval(timer);
   }, []);
 
   return (
     <h1 className="hero-headline cosmic-title text-2xl sm:text-[1.85rem] lg:text-3xl font-light mb-4 w-full mx-auto leading-snug px-1">
       An AI Engine designed to give unbiased, real opinions of your{" "}
       <span className="hero-rotate-slot" aria-live="polite">
-        <span id="hero-rotate-track" className="hero-rotate-track">
-          <span className="hero-rotate-item">{top}</span>
-          <span className="hero-rotate-item">{bottom}</span>
+        <span key={word} className="hero-rotate-word">
+          {word}
         </span>
       </span>
     </h1>
