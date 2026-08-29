@@ -36,10 +36,12 @@ export function ResultClient({ id }: { id: string }) {
             } else if (queueData.status === "pending") {
               setPending(true);
             }
-            setLoaded(true);
           });
       })
       .catch(() => {
+        /* network error */
+      })
+      .finally(() => {
         if (!stop) setLoaded(true);
       });
 
