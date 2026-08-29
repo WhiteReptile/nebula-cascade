@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { loadDraft, persistDraft } from "@/components/HeroDraft";
 import { getDailyLimit } from "@/lib/constants";
@@ -108,6 +108,7 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
   const revisionOf = searchParams.get("revision") ?? undefined;
   const packParam = searchParams.get("pack");
   const fileInput = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const [category, setCategory] = useState<CategoryId>("text");
   const [content, setContent] = useState("");
@@ -122,11 +123,14 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
   const queuedId = searchParams.get("queued");
   const queued = Boolean(queuedId && isJobId(queuedId));
 
+  useLayoutEffect(() => {
+    const draft = loadDraft();
+    if (draft) setContent(draft);
+  }, []);
+
   useEffect(() => {
     setUsed(getDailyUsage());
     setPack(getPaidPack());
-    const draft = loadDraft();
-    if (draft) setContent(draft);
   }, []);
 
   useEffect(() => {
@@ -179,12 +183,20 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
     return data.id as string;
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  function readContent(): string {
+    return (
+      content.trim() ||
+      textareaRef.current?.value.trim() ||
+      loadDraft()
+    );
+  }
+
+  async function handleSubmit() {
+    const text = readContent();
     const useHuman = paid && useCredit;
 
     if (queueSelected) {
-      if (!file || !content.trim()) {
+      if (!file || !text) {
         setError(file ? "Add context for your file." : "Choose a file first.");
         return;
       }
@@ -205,7 +217,7 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
         }
         const id = await queueWork({
           category,
-          context: content.trim(),
+          context: text,
           upload: file,
           model,
           durationSeconds,
@@ -232,7 +244,7 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
       return;
     }
 
-    if (!content.trim()) {
+    if (!text) {
       setError("Paste your text first.");
       return;
     }
@@ -245,7 +257,7 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          content: content.trim(),
+          content: text,
           category: "text",
           revisionOf,
           model,
@@ -273,7 +285,7 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
   }
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-xl mx-auto w-full">
+    <div className="max-w-xl mx-auto w-full">
       {revisionOf && (
         <p className="text-dynamic text-sm mb-4">Revising a previous submission.</p>
       )}
@@ -372,6 +384,7 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
 
       <div className="cosmic-glass p-1">
         <textarea
+          ref={textareaRef}
           value={content}
           onChange={(e) => {
             const next = e.target.value;
@@ -407,8 +420,9 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
           )}
         </div>
         <button
-          type="submit"
+          type="button"
           disabled={loading}
+          onClick={() => void handleSubmit()}
           className="cosmic-cta text-sm px-8 py-2.5 disabled:opacity-40"
         >
           {loading ? "Submitting…" : "Submit"}
@@ -416,6 +430,6 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
       </div>
 
       {error && <p className="mt-4 text-sm warning-red sentence">{error}</p>}
-    </form>
+    </div>
   );
 }

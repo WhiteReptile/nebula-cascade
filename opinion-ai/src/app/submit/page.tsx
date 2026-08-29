@@ -16,7 +16,7 @@ export default function SubmitPage() {
         )}
       </div>
       <Suspense fallback={<p className="text-dynamic text-sm text-center">Loading…</p>}>
-        <SubmitForm longVideoAllowed={process.env.PRO_LONG_VIDEO === "1"} demoMode={demoMode} />
+        <SubmitForm longVideoAllowed={process.env.PRO_LONG_VIDEO === "1"} />
       </Suspense>
     </div>
   );
