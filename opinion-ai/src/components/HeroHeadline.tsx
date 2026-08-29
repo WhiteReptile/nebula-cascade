@@ -18,41 +18,32 @@ function nextWord(current: string) {
 }
 
 export function HeroHeadline() {
-  const [current, setCurrent] = useState(WORDS[0]);
-  const [next, setNext] = useState(() => nextWord(WORDS[0]));
-  const [raised, setRaised] = useState(false);
-  const [snap, setSnap] = useState(false);
-  const nextRef = useRef(next);
-  nextRef.current = next;
+  const [top, setTop] = useState(WORDS[0]);
+  const [bottom, setBottom] = useState(() => nextWord(WORDS[0]));
+  const bottomRef = useRef(bottom);
+  bottomRef.current = bottom;
 
   useEffect(() => {
-    let swapTimer: ReturnType<typeof setTimeout>;
+    const track = document.getElementById("hero-rotate-track");
+    if (!track) return;
 
-    const timer = setInterval(() => {
-      setRaised(true);
-      swapTimer = setTimeout(() => {
-        const landed = nextRef.current;
-        setSnap(true);
-        setCurrent(landed);
-        setNext(nextWord(landed));
-        setRaised(false);
-        requestAnimationFrame(() => setSnap(false));
-      }, 500);
-    }, 2800);
-
-    return () => {
-      clearInterval(timer);
-      clearTimeout(swapTimer);
+    const onLoop = () => {
+      const landed = bottomRef.current;
+      setTop(landed);
+      setBottom(nextWord(landed));
     };
+
+    track.addEventListener("animationiteration", onLoop);
+    return () => track.removeEventListener("animationiteration", onLoop);
   }, []);
 
   return (
     <h1 className="hero-headline cosmic-title text-2xl sm:text-[1.85rem] lg:text-3xl font-light mb-4 w-full mx-auto leading-snug px-1">
       An AI Engine designed to give unbiased, real opinions of your{" "}
       <span className="hero-rotate-slot" aria-live="polite">
-        <span className={`hero-rotate-track${raised ? " is-raised" : ""}${snap ? " is-snap" : ""}`}>
-          <span className="hero-rotate-item">{current}</span>
-          <span className="hero-rotate-item">{next}</span>
+        <span id="hero-rotate-track" className="hero-rotate-track">
+          <span className="hero-rotate-item">{top}</span>
+          <span className="hero-rotate-item">{bottom}</span>
         </span>
       </span>
     </h1>

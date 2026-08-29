@@ -424,16 +424,21 @@ body {
 .hero-rotate-track {
   display: flex;
   flex-direction: column;
-  transform: translateY(0);
-  transition: transform 0.5s ease;
+  animation: heroWordSlide 3.2s ease-in-out infinite;
 }
 
-.hero-rotate-track.is-raised {
-  transform: translateY(-50%);
-}
-
-.hero-rotate-track.is-snap {
-  transition: none;
+@keyframes heroWordSlide {
+  0%,
+  38% {
+    transform: translateY(0);
+  }
+  48%,
+  88% {
+    transform: translateY(-1.12em);
+  }
+  100% {
+    transform: translateY(-1.12em);
+  }
 }
 
 .hero-rotate-item {
