@@ -65,6 +65,10 @@ chainlit.md
 agenthub/agents/youtube/db
 opinion-ai/data/
 
+# Design artifacts (local screenshots / mockups)
+yourtruths-hero-*.webp
+submit-*-note.png
+
 # Archive files and large assets
 **/*.zip
 **/*.tar.gz
