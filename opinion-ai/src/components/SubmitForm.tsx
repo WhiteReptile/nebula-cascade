@@ -111,7 +111,6 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const [category, setCategory] = useState<CategoryId>("text");
-  const [content, setContent] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -125,7 +124,7 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
 
   useLayoutEffect(() => {
     const draft = loadDraft();
-    if (draft) setContent(draft);
+    if (draft && textareaRef.current) textareaRef.current.value = draft;
   }, []);
 
   useEffect(() => {
@@ -184,11 +183,7 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
   }
 
   function readContent(): string {
-    return (
-      content.trim() ||
-      textareaRef.current?.value.trim() ||
-      loadDraft()
-    );
+    return textareaRef.current?.value.trim() || loadDraft();
   }
 
   async function handleSubmit() {
@@ -233,7 +228,7 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
           scoreContext: "",
           createdAt: new Date().toISOString(),
         });
-        setContent("");
+        if (textareaRef.current) textareaRef.current.value = "";
         resetFile();
         router.push(`/submit?queued=${id}`);
       } catch (err) {
@@ -285,7 +280,15 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
   }
 
   return (
-    <div className="max-w-xl mx-auto w-full">
+    <form
+      method={textSelected ? "POST" : undefined}
+      action={textSelected ? "/api/submit-text" : undefined}
+      onSubmit={(e) => {
+        e.preventDefault();
+        void handleSubmit();
+      }}
+      className="max-w-xl mx-auto w-full"
+    >
       {revisionOf && (
         <p className="text-dynamic text-sm mb-4">Revising a previous submission.</p>
       )}
@@ -385,11 +388,10 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
       <div className="cosmic-glass p-1">
         <textarea
           ref={textareaRef}
-          value={content}
+          name="content"
+          defaultValue=""
           onChange={(e) => {
-            const next = e.target.value;
-            setContent(next);
-            if (category === "text") persistDraft(next);
+            if (category === "text") persistDraft(e.target.value);
           }}
           placeholder={
             category === "text"
@@ -402,6 +404,8 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
           className="w-full bg-transparent px-5 py-4 text-sm text-white placeholder:text-white/40 focus:outline-none resize-y"
           disabled={loading}
         />
+        <input type="hidden" name="model" value={model} />
+        {revisionOf && <input type="hidden" name="revisionOf" value={revisionOf} />}
       </div>
 
       <div className="mt-6 flex items-start justify-between">
@@ -420,9 +424,9 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
           )}
         </div>
         <button
-          type="button"
+          type={textSelected ? "submit" : "button"}
           disabled={loading}
-          onClick={() => void handleSubmit()}
+          onClick={textSelected ? undefined : () => void handleSubmit()}
           className="cosmic-cta text-sm px-8 py-2.5 disabled:opacity-40"
         >
           {loading ? "Submitting…" : "Submit"}
@@ -430,6 +434,6 @@ export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: bo
       </div>
 
       {error && <p className="mt-4 text-sm warning-red sentence">{error}</p>}
-    </div>
+    </form>
   );
 }

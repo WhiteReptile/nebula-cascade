@@ -5,6 +5,7 @@ import { isCategoryId } from "@/lib/categories";
 import { recordOpinion } from "@/lib/opinion-count";
 import { recordLlmUsage } from "@/lib/llm-usage";
 import { isExaminerModel, isQueueCategory } from "@/lib/queue-shared";
+import { saveVerdictRecord } from "@/lib/verdict-store";
 
 export async function POST(request: Request) {
   try {
@@ -36,6 +37,7 @@ export async function POST(request: Request) {
 
     const demoMode = !getLlmConfig();
     const verdict = await evaluateSubmission(content, revisionOf, resolved, context, model);
+    await saveVerdictRecord(verdict);
     await recordOpinion(verdict.id);
     await recordLlmUsage(demoMode ? "demo" : "evaluate", demoMode);
     return NextResponse.json({

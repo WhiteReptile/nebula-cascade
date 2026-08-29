@@ -16,17 +16,28 @@ export function ResultClient({ id }: { id: string }) {
     if (getVerdict(id)) return;
 
     let stop = false;
-    fetch(`/api/queue/${id}`)
-      .then((res) => res.json())
-      .then((data: { status?: string; verdict?: Verdict }) => {
+    fetch(`/api/verdict/${id}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { verdict?: Verdict } | null) => {
         if (stop) return;
-        if (data.status === "done" && data.verdict) {
+        if (data?.verdict) {
           saveVerdict(data.verdict);
           setVerdict(data.verdict);
-        } else if (data.status === "pending") {
-          setPending(true);
+          setLoaded(true);
+          return;
         }
-        setLoaded(true);
+        return fetch(`/api/queue/${id}`)
+          .then((res) => res.json())
+          .then((queueData: { status?: string; verdict?: Verdict }) => {
+            if (stop) return;
+            if (queueData.status === "done" && queueData.verdict) {
+              saveVerdict(queueData.verdict);
+              setVerdict(queueData.verdict);
+            } else if (queueData.status === "pending") {
+              setPending(true);
+            }
+            setLoaded(true);
+          });
       })
       .catch(() => {
         if (!stop) setLoaded(true);

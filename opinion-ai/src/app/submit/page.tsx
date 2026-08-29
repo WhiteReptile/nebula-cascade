@@ -2,8 +2,20 @@ import { Suspense } from "react";
 import { SubmitForm } from "@/components/SubmitForm";
 import { getLlmConfig } from "@/lib/evaluate/pipeline";
 
-export default function SubmitPage() {
+export default function SubmitPage({
+  searchParams,
+}: {
+  searchParams?: { error?: string };
+}) {
   const demoMode = !getLlmConfig();
+  const errorMessage =
+    searchParams?.error === "empty"
+      ? "Paste your text first."
+      : searchParams?.error === "long"
+        ? "Submission too long (max 50,000 characters)."
+        : searchParams?.error === "failed"
+          ? "Evaluation failed. Try again."
+          : null;
 
   return (
     <div className="px-6 py-16 sm:py-20">
@@ -13,6 +25,9 @@ export default function SubmitPage() {
           <p className="warning-red sentence text-xs sm:text-sm mt-4">
             Demo mode — add a Groq API key in .env to enable real AI opinions.
           </p>
+        )}
+        {errorMessage && (
+          <p className="warning-red sentence text-xs sm:text-sm mt-4">{errorMessage}</p>
         )}
       </div>
       <Suspense fallback={<p className="text-dynamic text-sm text-center">Loading…</p>}>
