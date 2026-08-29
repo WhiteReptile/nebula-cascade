@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { loadDraft, persistDraft } from "@/components/HeroDraft";
 import { getDailyLimit } from "@/lib/constants";
 import {
   getDailyUsage,
@@ -101,12 +102,7 @@ function PaySwitch({
   );
 }
 
-export function SubmitForm({
-  longVideoAllowed = false,
-}: {
-  longVideoAllowed?: boolean;
-  demoMode?: boolean;
-}) {
+export function SubmitForm({ longVideoAllowed = false }: { longVideoAllowed?: boolean }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const revisionOf = searchParams.get("revision") ?? undefined;
@@ -129,12 +125,8 @@ export function SubmitForm({
   useEffect(() => {
     setUsed(getDailyUsage());
     setPack(getPaidPack());
-    try {
-      const draft = sessionStorage.getItem("opinion-ai-draft");
-      if (draft?.trim()) setContent(draft);
-    } catch {
-      /* private mode */
-    }
+    const draft = loadDraft();
+    if (draft) setContent(draft);
   }, []);
 
   useEffect(() => {
@@ -266,13 +258,9 @@ export function SubmitForm({
       const { verdict } = await res.json();
       incrementDailyUsage();
       setUsed(getDailyUsage());
-      try {
-        sessionStorage.removeItem("opinion-ai-draft");
-      } catch {
-        /* private mode */
-      }
       saveVerdict(verdict);
-      router.push(`/result/${verdict.id}`);
+      persistDraft("");
+      window.location.href = `/result/${verdict.id}`;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -385,7 +373,11 @@ export function SubmitForm({
       <div className="cosmic-glass p-1">
         <textarea
           value={content}
-          onChange={(e) => setContent(e.target.value)}
+          onChange={(e) => {
+            const next = e.target.value;
+            setContent(next);
+            if (category === "text") persistDraft(next);
+          }}
           placeholder={
             category === "text"
               ? "Paste a poem, lyrics, homework, a marketing plan, a screenplay scene…"

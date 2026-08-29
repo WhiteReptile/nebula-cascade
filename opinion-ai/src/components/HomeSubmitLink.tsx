@@ -1,26 +1,28 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { loadDraft, persistDraft, useHeroDraft } from "@/components/HeroDraft";
 import { saveVerdict } from "@/lib/storage";
 
-function heroText() {
-  const el = document.querySelector<HTMLTextAreaElement>(".hero-chat-input");
-  return el?.value.trim() ?? "";
-}
-
 export function HomeSubmitLink() {
-  const router = useRouter();
+  const { draft } = useHeroDraft();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleClick(e: React.MouseEvent<HTMLAnchorElement>) {
-    const text = heroText();
-    if (!text) return;
-
     e.preventDefault();
     if (loading) return;
 
+    const text = draft.trim() || loadDraft();
+    if (!text) {
+      window.location.href = "/submit";
+      return;
+    }
+
+    persistDraft(text);
     setLoading(true);
+    setError(null);
+
     try {
       const res = await fetch("/api/evaluate", {
         method: "POST",
@@ -30,34 +32,29 @@ export function HomeSubmitLink() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Evaluation failed");
 
-      try {
-        sessionStorage.removeItem("opinion-ai-draft");
-      } catch {
-        /* private mode */
-      }
-
       saveVerdict(data.verdict);
-      router.push(`/result/${data.verdict.id}`);
-    } catch {
-      try {
-        sessionStorage.setItem("opinion-ai-draft", text);
-      } catch {
-        /* private mode */
-      }
-      router.push("/submit");
+      persistDraft("");
+      window.location.href = `/result/${data.verdict.id}`;
+    } catch (err) {
+      persistDraft(text);
+      setError(err instanceof Error ? err.message : "Something went wrong");
+      window.location.href = "/submit";
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <a
-      href="/submit"
-      onClick={handleClick}
-      className="cosmic-cta inline-block text-sm px-10 py-3"
-      aria-busy={loading}
-    >
-      {loading ? "Submitting…" : "Submit"}
-    </a>
+    <div>
+      <a
+        href="/submit"
+        onClick={handleClick}
+        className="cosmic-cta inline-block text-sm px-10 py-3"
+        aria-busy={loading}
+      >
+        {loading ? "Submitting…" : "Submit"}
+      </a>
+      {error && <p className="warning-red sentence text-xs mt-3">{error}</p>}
+    </div>
   );
 }

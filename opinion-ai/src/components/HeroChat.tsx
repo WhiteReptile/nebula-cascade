@@ -1,23 +1,19 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-
-function saveDraft(value: string) {
-  try {
-    if (value.trim()) sessionStorage.setItem("opinion-ai-draft", value.trim());
-    else sessionStorage.removeItem("opinion-ai-draft");
-  } catch {
-    /* private mode */
-  }
-}
+import { useHeroDraft, loadDraft } from "@/components/HeroDraft";
+import { useEffect, useRef } from "react";
 
 export function HeroChat() {
+  const { draft, setDraft } = useHeroDraft();
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const [draft, setDraft] = useState("");
+  const hydrated = useRef(false);
 
   useEffect(() => {
-    saveDraft(draft);
-  }, [draft]);
+    if (hydrated.current) return;
+    hydrated.current = true;
+    const saved = loadDraft();
+    if (saved) setDraft(saved);
+  }, [setDraft]);
 
   return (
     <div
@@ -29,11 +25,7 @@ export function HeroChat() {
         <textarea
           ref={inputRef}
           value={draft}
-          onChange={(e) => {
-            const next = e.target.value;
-            setDraft(next);
-            saveDraft(next);
-          }}
+          onChange={(e) => setDraft(e.target.value)}
           onClick={(e) => e.stopPropagation()}
           rows={3}
           maxLength={500}
