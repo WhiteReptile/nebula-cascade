@@ -3,13 +3,11 @@
 import { BrandMark } from "@/components/BrandMark";
 import { HeroChat } from "@/components/HeroChat";
 import { HeroHeadline } from "@/components/HeroHeadline";
-import { HeroDraftProvider } from "@/components/HeroDraft";
 import { HomeSubmitLink } from "@/components/HomeSubmitLink";
 
 export function HomeHero() {
   return (
-    <HeroDraftProvider>
-      <div className="max-w-3xl w-full text-center mb-20">
+    <div className="max-w-3xl w-full text-center mb-20">
         <p className="mb-8">
           <BrandMark size="hero" />
         </p>
@@ -22,6 +20,5 @@ export function HomeHero() {
           Humans will look at your work too
         </p>
       </div>
-    </HeroDraftProvider>
   );
 }

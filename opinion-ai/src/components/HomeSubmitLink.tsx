@@ -1,11 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { loadDraft, persistDraft, useHeroDraft } from "@/components/HeroDraft";
+import { loadDraft, persistDraft } from "@/components/HeroDraft";
 import { saveVerdict } from "@/lib/storage";
 
+function readHomeDraft(): string {
+  const saved = loadDraft();
+  if (saved) return saved;
+  const el = document.querySelector<HTMLTextAreaElement>(".hero-chat-input");
+  return el?.value.trim() ?? "";
+}
+
 export function HomeSubmitLink() {
-  const { draft } = useHeroDraft();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -13,7 +19,7 @@ export function HomeSubmitLink() {
     e.preventDefault();
     if (loading) return;
 
-    const text = draft.trim() || loadDraft();
+    const text = readHomeDraft();
     if (!text) {
       window.location.href = "/submit";
       return;

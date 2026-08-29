@@ -1,19 +1,21 @@
 "use client";
 
-import { useHeroDraft, loadDraft } from "@/components/HeroDraft";
+import { persistDraft } from "@/components/HeroDraft";
 import { useEffect, useRef } from "react";
 
 export function HeroChat() {
-  const { draft, setDraft } = useHeroDraft();
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const hydrated = useRef(false);
 
   useEffect(() => {
-    if (hydrated.current) return;
-    hydrated.current = true;
-    const saved = loadDraft();
-    if (saved) setDraft(saved);
-  }, [setDraft]);
+    try {
+      const saved = sessionStorage.getItem("opinion-ai-draft")?.trim() ?? "";
+      if (saved && inputRef.current && !inputRef.current.value) {
+        inputRef.current.value = saved;
+      }
+    } catch {
+      /* private mode */
+    }
+  }, []);
 
   return (
     <div
@@ -24,8 +26,8 @@ export function HeroChat() {
       <div className="hero-chat-shell">
         <textarea
           ref={inputRef}
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
+          defaultValue=""
+          onChange={(e) => persistDraft(e.target.value)}
           onClick={(e) => e.stopPropagation()}
           rows={3}
           maxLength={500}

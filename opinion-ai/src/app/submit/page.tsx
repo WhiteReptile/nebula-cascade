@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { DraftHydrateScript } from "@/components/DraftHydrateScript";
 import { SubmitForm } from "@/components/SubmitForm";
 import { getLlmConfig } from "@/lib/evaluate/pipeline";
 
@@ -19,6 +20,7 @@ export default function SubmitPage({
 
   return (
     <div className="px-6 py-16 sm:py-20">
+      <DraftHydrateScript />
       <div className="max-w-xl mx-auto mb-12 text-center">
         <h1 className="cosmic-title font-light text-[1.796875rem]">Submit</h1>
         {demoMode && (
