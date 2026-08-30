@@ -289,6 +289,9 @@ body {
 }
 
 .hud-slot {
+  display: block;
+  text-align: center;
+  text-decoration: none;
   padding: 0.55rem 0.15rem;
   font-size: 0.62rem;
   letter-spacing: 0.08em;

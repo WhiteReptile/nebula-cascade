@@ -1,66 +1,25 @@
 "use client";
 
-import { useState } from "react";
-import { loadDraft, persistDraft } from "@/components/HeroDraft";
-import { saveVerdict } from "@/lib/storage";
+import Link from "next/link";
+import { persistDraft } from "@/components/HeroDraft";
 
 function readHomeDraft(): string {
-  const saved = loadDraft();
-  if (saved) return saved;
+  if (typeof document === "undefined") return "";
   const el = document.querySelector<HTMLTextAreaElement>(".hero-chat-input");
   return el?.value.trim() ?? "";
 }
 
 export function HomeSubmitLink() {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function handleClick(e: React.MouseEvent<HTMLAnchorElement>) {
-    e.preventDefault();
-    if (loading) return;
-
-    const text = readHomeDraft();
-    if (!text) {
-      window.location.href = "/submit";
-      return;
-    }
-
-    persistDraft(text);
-    setLoading(true);
-    setError(null);
-
-    try {
-      const res = await fetch("/api/evaluate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: text, category: "text" }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Evaluation failed");
-
-      saveVerdict(data.verdict);
-      persistDraft("");
-      window.location.href = `/result/${data.verdict.id}`;
-    } catch (err) {
-      persistDraft(text);
-      setError(err instanceof Error ? err.message : "Something went wrong");
-      window.location.href = "/submit";
-    } finally {
-      setLoading(false);
-    }
-  }
-
   return (
-    <div>
-      <a
-        href="/submit"
-        onClick={handleClick}
-        className="cosmic-cta inline-block text-sm px-10 py-3"
-        aria-busy={loading}
-      >
-        {loading ? "Submitting…" : "Submit"}
-      </a>
-      {error && <p className="warning-red sentence text-xs mt-3">{error}</p>}
-    </div>
+    <Link
+      href="/submit"
+      className="cosmic-cta inline-block text-sm px-10 py-3"
+      onClick={() => {
+        const text = readHomeDraft();
+        if (text) persistDraft(text);
+      }}
+    >
+      Submit
+    </Link>
   );
 }

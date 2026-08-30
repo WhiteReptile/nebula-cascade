@@ -37,7 +37,7 @@ export function QueueWait({ jobId }: { jobId: string }) {
   return (
     <div className="max-w-xl mx-auto w-full">
       <div className="mb-8">
-        <BackArrow onClick={() => router.push("/submit")} hideOnHome={false} />
+        <BackArrow href="/submit" hideOnHome={false} />
       </div>
       <div className="cosmic-glass p-8 text-center">
         <div className="work-spin" aria-hidden />

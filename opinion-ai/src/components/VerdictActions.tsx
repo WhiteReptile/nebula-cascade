@@ -6,15 +6,13 @@ interface VerdictActionsProps {
 }
 
 export function VerdictActions({ verdictId, shareText }: VerdictActionsProps) {
+  const mailto = `mailto:?subject=${encodeURIComponent("YourTruths opinion")}&body=${encodeURIComponent(shareText)}`;
+
   return (
     <div className="mt-12 flex flex-wrap gap-6 text-sm">
-      <button
-        type="button"
-        onClick={() => navigator.clipboard?.writeText(shareText)}
-        className="nav-white"
-      >
+      <a href={mailto} className="nav-white">
         Share
-      </button>
+      </a>
       <a href={`/submit?revision=${verdictId}`} className="nav-white">
         Submit revision
       </a>
