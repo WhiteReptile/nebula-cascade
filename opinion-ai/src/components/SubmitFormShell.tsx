@@ -54,9 +54,9 @@ export function SubmitFormShell({
   return (
     <form
       id="submit-form"
-      method={textSelected ? "POST" : "POST"}
+      method="POST"
       action={textSelected ? "/api/submit-text" : "/api/queue-submit"}
-      encType={textSelected ? "application/x-www-form-urlencoded" : "multipart/form-data"}
+      encType={textSelected ? "multipart/form-data" : "multipart/form-data"}
       className="max-w-xl mx-auto w-full"
     >
       {revisionOf && (
@@ -82,7 +82,7 @@ export function SubmitFormShell({
 
       {queueSelected && (
         <p className="warning-red sentence text-xs sm:text-sm mb-4">
-          Music, documents, video, and physical appearance need a human, so a review can take 5 to 10 minutes. Uploaded files (including tracks) are not kept — only the final opinion and score.
+          Music, images, video, and physical appearance need a human, so a review can take 5 to 10 minutes. Uploaded files (including tracks) are not kept — only the final opinion and score.
         </p>
       )}
 
@@ -95,7 +95,7 @@ export function SubmitFormShell({
       {queueSelected && (
         <>
           <input type="hidden" name="category" value={category} />
-          <div className="file-pick">
+          <div className="file-pick mb-4">
             <input
               id="submit-file"
               name="file"
@@ -111,6 +111,43 @@ export function SubmitFormShell({
             </span>
           </div>
         </>
+      )}
+
+      <div className="cosmic-glass p-1 mb-4">
+        <textarea
+          name={textSelected ? "content" : "context"}
+          defaultValue=""
+          placeholder={
+            category === "text"
+              ? "Paste a poem, essay, homework, report, or screenplay…"
+              : category === "physical_appearance"
+                ? "Hair loss, a procedure, what you want judged…"
+                : category === "images"
+                  ? "What should we look at? Poster, ad, artwork, photo…"
+                  : "Context for the human reviewer…"
+          }
+          rows={14}
+          className="w-full bg-transparent px-5 py-4 text-sm text-white placeholder:text-white/40 focus:outline-none resize-y"
+        />
+        {revisionOf && <input type="hidden" name="revisionOf" value={revisionOf} />}
+      </div>
+
+      {textSelected && (
+        <div className="file-pick mb-4">
+          <input
+            id="submit-pdf"
+            name="pdf"
+            type="file"
+            accept=".pdf,application/pdf"
+            className="sr-only"
+          />
+          <label htmlFor="submit-pdf" className="file-pick-btn">
+            Or upload PDF
+          </label>
+          <span className="file-pick-name" id="submit-pdf-name">
+            No PDF chosen
+          </span>
+        </div>
       )}
 
       <div className="cosmic-glass p-4 mb-4">
@@ -129,23 +166,6 @@ export function SubmitFormShell({
             </option>
           ))}
         </select>
-      </div>
-
-      <div className="cosmic-glass p-1">
-        <textarea
-          name={textSelected ? "content" : "context"}
-          defaultValue=""
-          placeholder={
-            category === "text"
-              ? "Paste a poem, lyrics, homework, a marketing plan, a screenplay scene…"
-              : category === "physical_appearance"
-                ? "Hair loss, a procedure, what you want judged…"
-                : "Context for the AI and human…"
-          }
-          rows={14}
-          className="w-full bg-transparent px-5 py-4 text-sm text-white placeholder:text-white/40 focus:outline-none resize-y"
-        />
-        {revisionOf && <input type="hidden" name="revisionOf" value={revisionOf} />}
       </div>
 
       <div className="mt-6 flex items-start justify-between">

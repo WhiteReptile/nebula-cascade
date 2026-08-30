@@ -1,4 +1,4 @@
-import { addJob, isExaminerModel, isHumanJobCategory, longVideoAllowed, MAX_QUEUE_FILE_BYTES, VIDEO_CAP_SECONDS, type QueueJob } from "@/lib/queue";
+import { addJob, isExaminerModel, isHumanJobCategory, longVideoAllowed, MAX_QUEUE_FILE_BYTES, normalizeQueueCategory, VIDEO_CAP_SECONDS, type QueueJob } from "@/lib/queue";
 import { publicRedirect } from "@/lib/public-origin";
 
 export const runtime = "nodejs";
@@ -21,6 +21,10 @@ export async function POST(request: Request) {
     if (!isHumanJobCategory(categoryRaw)) {
       return publicRedirect(request, "/submit?error=category");
     }
+    const category = categoryRaw === "text" ? null : normalizeQueueCategory(categoryRaw);
+    if (!category) {
+      return publicRedirect(request, "/submit?error=category");
+    }
     const context = typeof contextRaw === "string" ? contextRaw.trim() : "";
     if (!context) {
       return publicRedirect(request, "/submit?error=empty");
@@ -33,7 +37,7 @@ export async function POST(request: Request) {
     }
 
     const durationSeconds = parseDuration(form.get("durationSeconds"));
-    const isVideo = categoryRaw === "video" || (fileRaw.type || "").startsWith("video/");
+    const isVideo = category === "video" || (fileRaw.type || "").startsWith("video/");
     if (isVideo && durationSeconds != null && durationSeconds > VIDEO_CAP_SECONDS && !longVideoAllowed()) {
       return publicRedirect(request, "/submit?error=longvideo");
     }
@@ -42,7 +46,7 @@ export async function POST(request: Request) {
     const buffer = Buffer.from(await fileRaw.arrayBuffer());
     const job: QueueJob = {
       id: crypto.randomUUID(),
-      category: categoryRaw,
+      category,
       filename: fileRaw.name || "upload",
       mimeType: fileRaw.type || "application/octet-stream",
       size: fileRaw.size,

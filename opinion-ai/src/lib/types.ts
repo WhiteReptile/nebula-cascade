@@ -2,6 +2,7 @@ export type CategoryId =
   | "text"
   | "homework"
   | "documents"
+  | "images"
   | "audio"
   | "music"
   | "video"

@@ -4,8 +4,8 @@ export const LAUNCH_CATEGORIES: CategoryFramework[] = [
   {
     id: "text",
     label: "Text",
-    blurb: "Writing, copy, essays, scripts. We judge clarity, voice, and whether it holds together.",
-    placeholder: "Paste the writing you want judged…",
+    blurb: "Writing, copy, essays, scripts, and PDFs. Paste text or upload a PDF — we judge clarity, voice, and whether it holds together.",
+    placeholder: "Paste your writing, or upload a PDF below…",
     contextHint: "Who is this for? What’s the goal? Draft or final?",
     scoreContext: "for written work",
     dimensions: [
@@ -17,6 +17,8 @@ export const LAUNCH_CATEGORIES: CategoryFramework[] = [
     ],
     analystPrompt: `Extract neutral observations about this text. Note structure, claims, tone, audience signals, and gaps. Do not judge — only observe.`,
     opinionPrompt: `Evaluate this writing. Be accurate, not mean. Framework: Clarity 25%, Voice 20%, Structure 20%, Originality 20%, Impact 15%. Taste is subjective — say so when it is.`,
+    acceptsFile: true,
+    fileAccept: ".pdf,application/pdf",
   },
   {
     id: "homework",
@@ -36,9 +38,28 @@ export const LAUNCH_CATEGORIES: CategoryFramework[] = [
     opinionPrompt: `Evaluate this homework against the prompt and rubric in the context. Framework: Prompt fit 30%, Reasoning 25%, Evidence 20%, Clarity 15%, Completeness 10%. It is still an opinion.`,
   },
   {
+    id: "images",
+    label: "Images",
+    blurb: "Posters, ads, artwork, and photos — work meant to be seen. A person looks at the image and judges composition, clarity, and impact.",
+    placeholder: "What should we look at in this image?",
+    contextHint: "What is this for? Who is the audience? What should we focus on?",
+    scoreContext: "for visual work",
+    acceptsFile: true,
+    fileAccept: "image/*,.png,.jpg,.jpeg,.webp,.gif",
+    dimensions: [
+      { name: "Composition", weight: 25 },
+      { name: "Clarity", weight: 25 },
+      { name: "Impact", weight: 20 },
+      { name: "Originality", weight: 15 },
+      { name: "Polish", weight: 15 },
+    ],
+    analystPrompt: `Extract neutral observations about this image submission from the file or notes. Do not judge — only observe.`,
+    opinionPrompt: `Evaluate this visual work. Framework: Composition 25%, Clarity 25%, Impact 20%, Originality 15%, Polish 15%. Taste is subjective — say so when it is.`,
+  },
+  {
     id: "documents",
     label: "Documents",
-    blurb: "Reports, PDFs, decks, memos. We look at structure, claims, and whether a reader would trust it.",
+    blurb: "Legacy category — use Text for PDFs and Images for visual work.",
     placeholder: "Paste the document text, or describe what’s in the file…",
     contextHint: "What’s this document for? Who reads it? What decision should it drive?",
     scoreContext: "for professional documents",
@@ -211,6 +232,7 @@ export function classifyCategory(content: string): CategoryId {
   if (score(["pitch deck", "seed round", "investor", "traction"]) > 0) return "pitch_pdf";
   if (score(["landing page", "sign up", "headline", "cta"]) > 0) return "landing_page";
   if (score(["startup", "market size", "tam", "revenue"]) > 0) return "business_idea";
-  if (score(["memo", "report", "pdf", "document"]) > 0) return "documents";
+  if (score(["memo", "report", "pdf", "document"]) > 0) return "text";
+  if (score(["poster", "artwork", "photo", "image", "ad", "stills"]) > 0) return "images";
   return "text";
 }

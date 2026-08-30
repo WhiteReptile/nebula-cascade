@@ -66,9 +66,14 @@ export function SubmitFormEnhancer({
     }
 
     const fileInput = form.querySelector<HTMLInputElement>('input[name="file"]');
+    const pdfInput = form.querySelector<HTMLInputElement>('input[name="pdf"]');
     const fileName = document.getElementById("submit-file-name");
+    const pdfName = document.getElementById("submit-pdf-name");
     fileInput?.addEventListener("change", () => {
       if (fileName) fileName.textContent = fileInput.files?.[0]?.name ?? "No file chosen";
+    });
+    pdfInput?.addEventListener("change", () => {
+      if (pdfName) pdfName.textContent = pdfInput.files?.[0]?.name ?? "No PDF chosen";
     });
 
     textarea?.addEventListener("input", () => {
@@ -127,14 +132,18 @@ export function SubmitFormEnhancer({
         }
 
         const content = textarea instanceof HTMLTextAreaElement ? textarea.value.trim() : "";
-        if (!content) throw new Error("Paste your text first.");
+        const pdfFile = pdfInput?.files?.[0] ?? null;
+        if (!content && !pdfFile) throw new Error("Paste your text or upload a PDF.");
 
         const model = form.querySelector<HTMLSelectElement>('select[name="model"]')?.value ?? "pro-examiner-v2";
-        const res = await fetch("/api/evaluate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content, category: "text", revisionOf, model }),
-        });
+        const body = new FormData();
+        body.append("content", content);
+        body.append("category", "text");
+        if (revisionOf) body.append("revisionOf", revisionOf);
+        body.append("model", model);
+        if (pdfFile) body.append("pdf", pdfFile);
+
+        const res = await fetch("/api/evaluate", { method: "POST", body });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? "Evaluation failed");
 

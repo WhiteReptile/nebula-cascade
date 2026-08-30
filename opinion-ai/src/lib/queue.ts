@@ -22,6 +22,7 @@ export {
   isHumanJobCategory,
   isJobId,
   longVideoAllowed,
+  normalizeQueueCategory,
 } from "./queue-shared";
 
 function dataRoot(): string {

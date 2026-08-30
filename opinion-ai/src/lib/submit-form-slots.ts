@@ -15,10 +15,10 @@ export const SUBMIT_SLOTS: SubmitSlot[] = [
     note: "A person listens to the actual track — the sound, not a write-up. Send the file, and a little context. Your audio file is deleted after the opinion is saved.",
   },
   {
-    id: "documents",
-    label: "Documents",
-    fileAccept: "image/*,.png,.jpg,.jpeg,.webp,.gif,.pdf",
-    note: "Bring the picture, not the manuscript. Photographs, stills, posters, ads — work meant to be seen. We judge the image and the sell. Writing belongs in Text.",
+    id: "images",
+    label: "Images",
+    fileAccept: "image/*,.png,.jpg,.jpeg,.webp,.gif",
+    note: "Posters, ads, artwork, and photos — work meant to be seen. A person looks at the image and judges composition, clarity, and impact. Send the file and a little context. Your image is deleted after the opinion is saved.",
   },
   {
     id: "video",
@@ -35,13 +35,13 @@ export const SUBMIT_SLOTS: SubmitSlot[] = [
   {
     id: "text",
     label: "Text",
-    note: "Words only. Poems, lyrics, homework, a marketing plan, a screenplay scene — paste it and we tell you what we think. Free for everyone.",
+    note: "Words and PDFs. Paste writing or upload a PDF — poems, essays, homework, reports, screenplays. Instant AI opinion. Free for everyone.",
   },
 ];
 
 export const QUEUE_CATEGORY_IDS: CategoryId[] = [
   "music",
-  "documents",
+  "images",
   "video",
   "physical_appearance",
 ];

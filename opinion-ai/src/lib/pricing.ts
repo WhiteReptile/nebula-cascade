@@ -26,7 +26,7 @@ export const PRICING_PACKAGES = [
     cardTone: "blue",
     headline: "5 AI + human opinions",
     description: [
-      "For music, video, documents, artwork, and other supported files.",
+      "For music, video, images, and other supported files.",
       "A real person watches, listens to, or reads the work. Groq rewrites their notes into an 8-sentence review.",
       "Use the 5 credits when you want. On Submit, switch Human + AI on or off, and switch share on or off.",
     ],

@@ -1,6 +1,6 @@
 # Opinion.ai
 
-Independent evaluation product: honest AI opinions on text, plus human + AI review for music, video, documents, and physical appearance.
+Independent evaluation product: honest AI opinions on text and PDFs, plus human + AI review for music, video, images, and physical appearance.
 
 Lives in the **nebula-cascade** monorepo as a sibling of the Nebula Cascade game. This app is a standalone Next.js project — it does not share the game’s Supabase backend.
 
@@ -65,7 +65,7 @@ Browser
 **Lifecycle for uploads:**  
 `UPLOADED → PROCESSING → HUMAN_REVIEW → FINALIZING → COMPLETED → FILE_DELETED`
 
-Only score, opinion, metadata, and history are kept long-term. Music/video/images/documents are deleted after the final result is saved.
+Only score, opinion, metadata, and history are kept long-term. Music/video/images are deleted after the final result is saved.
 
 Local data lives under `data/` (gitignored). That path does **not** survive serverless deploys (e.g. default Vercel).
 
