@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 
 export function publicOrigin(request: Request): string {
+  const configured = process.env.PUBLIC_ORIGIN?.trim().replace(/\/$/, "");
+  if (configured) return configured;
+
   const forwardedHost = request.headers.get("x-forwarded-host");
   const host = forwardedHost?.split(",")[0]?.trim() || request.headers.get("host");
   if (!host) return new URL(request.url).origin;

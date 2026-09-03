@@ -325,3 +325,103 @@ All colors MUST be HSL.
       0 0 100px rgba(200,30,30,0.25);
   }
 }
+
+/* ═══════════════════════════════════════════
+   Portfolio hub
+   ═══════════════════════════════════════════ */
+
+:root {
+  --portfolio-bg: #050510;
+  --portfolio-cyan: #7ee7ff;
+  --portfolio-ink: #e8f2ff;
+}
+
+.font-display {
+  font-family: "Syne", "Avenir Next", "Segoe UI", sans-serif;
+  font-weight: 700;
+}
+
+.portfolio-glass {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+  backdrop-filter: blur(18px);
+  border-radius: 1.25rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+}
+
+.portfolio-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: linear-gradient(120deg, rgba(80, 200, 255, 0.95), rgba(120, 140, 255, 0.9));
+  color: #041018;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 0.85rem 1.4rem;
+  transition: transform 0.25s ease, filter 0.25s ease, box-shadow 0.25s ease;
+  box-shadow: 0 0 24px rgba(80, 200, 255, 0.25);
+}
+
+.portfolio-cta:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.06);
+  box-shadow: 0 0 32px rgba(80, 200, 255, 0.4);
+}
+
+.portfolio-cta-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.04);
+  color: #e8f2ff;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 0.85rem 1.4rem;
+  transition: border-color 0.25s ease, background 0.25s ease, color 0.25s ease;
+}
+
+.portfolio-cta-ghost:hover {
+  border-color: rgba(126, 231, 255, 0.45);
+  background: rgba(126, 231, 255, 0.08);
+  color: #fff;
+}
+
+.portfolio-blob {
+  animation: portfolioDrift 18s ease-in-out infinite alternate;
+}
+
+.portfolio-blob-delayed {
+  animation: portfolioDrift 22s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes portfolioDrift {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(24px, -18px, 0) scale(1.06); }
+}
+
+.animate-fade-up {
+  animation: fadeUp 0.8s ease both;
+}
+
+.animate-fade-up.delay-1 { animation-delay: 0.08s; }
+.animate-fade-up.delay-2 { animation-delay: 0.16s; }
+.animate-fade-up.delay-3 { animation-delay: 0.24s; }
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
