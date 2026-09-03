@@ -1,36 +1,51 @@
 # Nebula Cascade
 
-A cosmic-themed cascade puzzle game. Phaser 3 engine, React HUD, Supabase backend.
+Studio portfolio + Nebula Cascade film/game + sibling product **YourTruths** (`opinion-ai/`).
 
 > Legal name: **Nebula: ColdLogic**. Public/branding name: **Nebula Cascade**.
 
+## Public site (this package)
+
+Vite React app:
+
+| Route | Page |
+|---|---|
+| `/` | Studio portfolio hub |
+| `/film` | Nebula Cascade film landing (+ game passphrase gate) |
+| `/work/yourtruths` | YourTruths case study |
+| `/work/nebula-cascade` | Film / game case study |
+
+```bash
+npm install
+npm run dev      # http://localhost:5173
+npm run build    # → dist/ for Cloudflare Pages
+```
+
+Deploy notes: [`docs/DEPLOY_CLOUDFLARE.md`](./docs/DEPLOY_CLOUDFLARE.md)
+
+## Sibling product: YourTruths (Opinion.ai)
+
+[`opinion-ai/`](./opinion-ai) — Next.js evaluation product (AI + human opinions). Target subdomain: `yourtruths.nebula-cascade.com`. Does not share the game’s Supabase backend. See `opinion-ai/README.md` and `opinion-ai/STATUS.md`.
+
 ## Tech Stack
 
-- **Frontend**: React 18 + TypeScript + Vite 5
-- **Styling**: Tailwind CSS v3 + shadcn/ui (Radix primitives)
-- **Game engine**: Phaser 3.80
-- **Routing**: react-router-dom v6
-- **State/data**: @tanstack/react-query
-- **Backend**: Supabase (Postgres + Auth + Edge Functions) — provisioned via Lovable Cloud
-- **Web3 (planned)**: Thirdweb SDK on Base (ETH L2, chain 8453)
+- **Portfolio / film**: React 18 + TypeScript + Vite 5 + Tailwind
+- **YourTruths**: Next.js 16 + React 19 (see `opinion-ai/`)
+- **Game (in repo)**: Phaser 3 + Supabase + Base / Thirdweb (gated; see `src/App.tsx`)
 
 ## Getting Started
 
 ```bash
 npm install
-cp .env.example .env   # fill in your Supabase project values
-npm run dev            # http://localhost:3000
+npm run dev
 ```
 
 ### Scripts
 | Command           | Purpose                          |
 |-------------------|----------------------------------|
-| `npm run dev`     | Vite dev server (port 3000)      |
-| `npm run build`   | Production build                 |
+| `npm run dev`     | Vite dev server (port 5173)      |
+| `npm run build`   | Production build → `dist/`       |
 | `npm run preview` | Preview production build         |
-| `npm run lint`    | ESLint                           |
-| `npm run test`    | Vitest (run once)                |
-| `npm run test:watch` | Vitest watch mode             |
 
 ## Folder Structure
 

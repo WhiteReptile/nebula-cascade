@@ -1,28 +1,24 @@
-// Runs before `vite dev` and `vite build` (predev/prebuild hooks); writes public/sitemap.xml.
-import { writeFileSync } from 'fs';
-import { resolve } from 'path';
+// Runs before `vite build` when wired; writes public/sitemap.xml.
+import { writeFileSync } from "fs";
+import { resolve } from "path";
 
-// TODO: replace with your project URL once a custom domain is set.
-const BASE_URL = '';
+const BASE_URL = "https://nebula-cascade.com";
 
 interface SitemapEntry {
   path: string;
-  changefreq?: 'always' | 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'never';
+  changefreq?: "always" | "hourly" | "daily" | "weekly" | "monthly" | "yearly" | "never";
   priority?: string;
 }
 
 const entries: SitemapEntry[] = [
-  { path: '/', changefreq: 'weekly', priority: '1.0' },
-  { path: '/marketplace', changefreq: 'daily', priority: '0.9' },
-  { path: '/leaderboard', changefreq: 'hourly', priority: '0.8' },
-  { path: '/rewards', changefreq: 'weekly', priority: '0.7' },
-  { path: '/roadmap', changefreq: 'weekly', priority: '0.6' },
-  { path: '/options', changefreq: 'monthly', priority: '0.3' },
-  { path: '/auth', changefreq: 'monthly', priority: '0.4' },
+  { path: "/", changefreq: "weekly", priority: "1.0" },
+  { path: "/film", changefreq: "monthly", priority: "0.8" },
+  { path: "/work/yourtruths", changefreq: "monthly", priority: "0.9" },
+  { path: "/work/nebula-cascade", changefreq: "monthly", priority: "0.8" },
 ];
 
-function generateSitemap(entries: SitemapEntry[]) {
-  const urls = entries.map((e) =>
+function generateSitemap(list: SitemapEntry[]) {
+  const urls = list.map((e) =>
     [
       `  <url>`,
       `    <loc>${BASE_URL}${e.path}</loc>`,
@@ -31,7 +27,7 @@ function generateSitemap(entries: SitemapEntry[]) {
       `  </url>`,
     ]
       .filter(Boolean)
-      .join('\n'),
+      .join("\n"),
   );
 
   return [
@@ -39,8 +35,8 @@ function generateSitemap(entries: SitemapEntry[]) {
     `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">`,
     ...urls,
     `</urlset>`,
-  ].join('\n');
+  ].join("\n");
 }
 
-writeFileSync(resolve('public/sitemap.xml'), generateSitemap(entries));
+writeFileSync(resolve("public/sitemap.xml"), generateSitemap(entries));
 console.log(`sitemap.xml written (${entries.length} entries)`);

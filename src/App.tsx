@@ -40,7 +40,7 @@ const GameGuard = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   if (accessState === 'pending') return null;
-  if (accessState === 'denied') return <Navigate to="/" replace />;
+  if (accessState === 'denied') return <Navigate to="/film" replace />;
   return <>{children}</>;
 };
 
