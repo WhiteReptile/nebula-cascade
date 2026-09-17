@@ -2,9 +2,10 @@ import type { JobStatus } from "./job-lifecycle";
 
 export type { JobStatus } from "./job-lifecycle";
 
-export const QUEUE_CATEGORIES = ["music", "images", "video", "physical_appearance"] as const;
-export const LEGACY_QUEUE_CATEGORIES = ["documents"] as const;
+export const QUEUE_CATEGORIES = ["music", "video"] as const;
+export const LEGACY_QUEUE_CATEGORIES = ["documents", "images", "physical_appearance"] as const;
 export type QueueCategory = (typeof QUEUE_CATEGORIES)[number];
+export type LegacyQueueCategory = (typeof LEGACY_QUEUE_CATEGORIES)[number];
 
 /** File uploads for these categories are temporary and deleted after evaluation. */
 export const TEMPORARY_UPLOAD_CATEGORIES = QUEUE_CATEGORIES;
@@ -17,7 +18,7 @@ export const VIDEO_CAP_SECONDS = 120;
 
 export type QueueJob = {
   id: string;
-  category: QueueCategory | "text" | "documents";
+  category: QueueCategory | LegacyQueueCategory | "text";
   filename: string;
   mimeType: string;
   size: number;
@@ -44,21 +45,22 @@ export function isQueueCategory(value: unknown): value is QueueCategory {
   return typeof value === "string" && QUEUE_CATEGORIES.includes(value as QueueCategory);
 }
 
-export function isLegacyQueueCategory(value: unknown): value is (typeof LEGACY_QUEUE_CATEGORIES)[number] {
-  return typeof value === "string" && LEGACY_QUEUE_CATEGORIES.includes(value as (typeof LEGACY_QUEUE_CATEGORIES)[number]);
+export function isLegacyQueueCategory(value: unknown): value is LegacyQueueCategory {
+  return typeof value === "string" && LEGACY_QUEUE_CATEGORIES.includes(value as LegacyQueueCategory);
 }
 
-export function isTemporaryUploadCategory(value: unknown): value is QueueCategory {
-  return isQueueCategory(value);
+export function isTemporaryUploadCategory(value: unknown): boolean {
+  return isQueueCategory(value) || isLegacyQueueCategory(value);
 }
 
 export function normalizeQueueCategory(value: unknown): QueueCategory | null {
-  if (value === "documents") return "images";
+  // Legacy "documents" jobs map to images for admin display labels only.
+  // New human-queue submissions are music/video only.
   return isQueueCategory(value) ? value : null;
 }
 
-export function isHumanJobCategory(value: unknown): value is QueueCategory | "text" | "documents" {
-  return normalizeQueueCategory(value) !== null || value === "text";
+export function isHumanJobCategory(value: unknown): value is QueueCategory {
+  return isQueueCategory(value);
 }
 
 export function isExaminerModel(value: unknown): value is ExaminerModel {

@@ -3,6 +3,7 @@ import { BackArrow } from "@/components/BackArrow";
 import {
   QUEUE_CATEGORY_IDS,
   SUBMIT_SLOTS,
+  isFreeAiCategory,
   submitTabHref,
 } from "@/lib/submit-form-slots";
 import type { SubmitCategoryId } from "@/lib/submit-categories";
@@ -49,14 +50,16 @@ export function SubmitFormShell({
 
   const slot = SUBMIT_SLOTS.find((s) => s.id === category);
   const queueSelected = QUEUE_CATEGORY_IDS.includes(category);
+  const freeSelected = isFreeAiCategory(category);
   const textSelected = category === "text";
+  const visualFree = category === "images" || category === "physical_appearance";
 
   return (
     <form
       id="submit-form"
       method="POST"
-      action={textSelected ? "/api/submit-text" : "/api/queue-submit"}
-      encType={textSelected ? "multipart/form-data" : "multipart/form-data"}
+      action={queueSelected ? "/api/queue-submit" : "/api/submit-free"}
+      encType="multipart/form-data"
       className="max-w-xl mx-auto w-full"
     >
       {revisionOf && (
@@ -82,7 +85,13 @@ export function SubmitFormShell({
 
       {queueSelected && (
         <p className="warning-red sentence text-xs sm:text-sm mb-4">
-          Music, images, video, and physical appearance need a human, so a review can take 5 to 10 minutes. Uploaded files (including tracks) are not kept — only the final opinion and score.
+          Music and video need a human, so a review can take 5 to 10 minutes. Uploaded files are not kept — only the final opinion and score.
+        </p>
+      )}
+
+      {freeSelected && !textSelected && (
+        <p className="text-dynamic text-xs sm:text-sm mb-4">
+          Free AI opinion — describe the work. Optional photo upload is for your notes; the AI judges from your description.
         </p>
       )}
 
@@ -92,30 +101,29 @@ export function SubmitFormShell({
         </div>
       )}
 
-      {queueSelected && (
-        <>
-          <input type="hidden" name="category" value={category} />
-          <div className="file-pick mb-4">
-            <input
-              id="submit-file"
-              name="file"
-              type="file"
-              accept={slot?.fileAccept}
-              className="sr-only"
-            />
-            <label htmlFor="submit-file" className="file-pick-btn">
-              Choose file
-            </label>
-            <span className="file-pick-name" id="submit-file-name">
-              No file chosen
-            </span>
-          </div>
-        </>
+      <input type="hidden" name="category" value={category} />
+
+      {(queueSelected || visualFree) && (
+        <div className="file-pick mb-4">
+          <input
+            id="submit-file"
+            name="file"
+            type="file"
+            accept={slot?.fileAccept}
+            className="sr-only"
+          />
+          <label htmlFor="submit-file" className="file-pick-btn">
+            {queueSelected ? "Choose file" : "Optional photo"}
+          </label>
+          <span className="file-pick-name" id="submit-file-name">
+            No file chosen
+          </span>
+        </div>
       )}
 
       <div className="cosmic-glass p-1 mb-4">
         <textarea
-          name={textSelected ? "content" : "context"}
+          name={queueSelected ? "context" : "content"}
           defaultValue=""
           placeholder={
             category === "text"
@@ -123,7 +131,7 @@ export function SubmitFormShell({
               : category === "physical_appearance"
                 ? "Hair loss, a procedure, what you want judged…"
                 : category === "images"
-                  ? "What should we look at? Poster, ad, artwork, photo…"
+                  ? "Describe the poster, ad, artwork, or photo…"
                   : "Context for the human reviewer…"
           }
           rows={14}
@@ -170,7 +178,7 @@ export function SubmitFormShell({
 
       <div className="mt-6 flex items-start justify-between">
         <div className="flex flex-col items-start gap-2">
-          {textSelected ? (
+          {freeSelected ? (
             <span className="text-dynamic text-xs tracking-wide">Free · no credits needed</span>
           ) : (
             <span className="text-dynamic text-xs tracking-wide">Human review · credits may apply</span>

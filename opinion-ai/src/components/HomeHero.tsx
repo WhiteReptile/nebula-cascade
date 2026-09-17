@@ -17,7 +17,7 @@ export function HomeHero() {
         <HeroChat />
         <HomeSubmitLink />
         <p className="warning-red text-xs sm:text-sm mt-10 mb-0 font-bold">
-          Humans will look at your work too
+          Humans review music and video
         </p>
       </div>
   );

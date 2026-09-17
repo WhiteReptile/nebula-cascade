@@ -21,7 +21,7 @@ export async function POST(request: Request) {
     if (!isHumanJobCategory(categoryRaw)) {
       return publicRedirect(request, "/submit?error=category");
     }
-    const category = categoryRaw === "text" ? null : normalizeQueueCategory(categoryRaw);
+    const category = normalizeQueueCategory(categoryRaw);
     if (!category) {
       return publicRedirect(request, "/submit?error=category");
     }

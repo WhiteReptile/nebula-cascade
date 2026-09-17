@@ -1,7 +1,7 @@
 /** Compact hover blurb on the home “How does it work” control. */
 export const HOW_HOVER_LINES = [
   "Honest, focused feedback on your work — ideas, writing, art, music, video, and more.",
-  "Music, video, and images use a human + AI hybrid. Real people give a raw take in 3–4 sentences. Anonymous.",
+  "Music and video use a human + AI hybrid. Real people give a raw take in 3–4 sentences. Anonymous.",
   "YourTruths AI turns that into a clear structured evaluation — same judgment, sharper form.",
   "Real human perspective. Advanced AI evaluation. One focused opinion.",
 ] as const;
@@ -28,7 +28,7 @@ export const HOW_PAGE = {
       type: "p",
       parts: [
         "For ",
-        { key: "music, video, and images" },
+        { key: "music and video" },
         ", YourTruths uses a ",
         { key: "human-AI hybrid evaluation system" },
         ". Real people independently listen to or watch your work and give their immediate, genuine opinion based on what they experienced.",

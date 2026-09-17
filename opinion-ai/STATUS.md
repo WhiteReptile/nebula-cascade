@@ -11,7 +11,7 @@
 Opinion.ai is a working Next.js 16 app for unbiased evaluations:
 
 - Free **text** opinions via Groq (or silent demo mode without a key)
-- **Human + AI** queue for music, video, images, physical appearance
+- **Human + AI** queue for music and video only (text, images, physical appearance are free AI)
 - Temporary uploads with a safe delete-after-result lifecycle
 - Cosmic UI, pricing copy, history, admin review tools
 

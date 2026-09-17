@@ -11,7 +11,7 @@ import {
 } from "@/lib/storage";
 import { isJobId, VIDEO_CAP_SECONDS } from "@/lib/queue-shared";
 import type { SubmitCategoryId } from "@/lib/submit-categories";
-import { QUEUE_CATEGORY_IDS } from "@/lib/submit-form-slots";
+import { QUEUE_CATEGORY_IDS, isFreeAiCategory } from "@/lib/submit-form-slots";
 
 function videoDuration(file: File): Promise<number> {
   return new Promise((resolve, reject) => {
@@ -53,6 +53,7 @@ export function SubmitFormEnhancer({
 }) {
   const router = useRouter();
   const queueSelected = QUEUE_CATEGORY_IDS.includes(category);
+  const freeSelected = isFreeAiCategory(category);
   const textSelected = category === "text";
 
   useEffect(() => {
@@ -61,7 +62,7 @@ export function SubmitFormEnhancer({
 
     const draft = loadDraft();
     const textarea = form.querySelector("textarea");
-    if (draft && textarea instanceof HTMLTextAreaElement && !textarea.value) {
+    if (draft && textarea instanceof HTMLTextAreaElement && !textarea.value && textSelected) {
       textarea.value = draft;
     }
 
@@ -131,17 +132,27 @@ export function SubmitFormEnhancer({
           return;
         }
 
+        if (!freeSelected) throw new Error("Choose a category.");
+
         const content = textarea instanceof HTMLTextAreaElement ? textarea.value.trim() : "";
         const pdfFile = pdfInput?.files?.[0] ?? null;
-        if (!content && !pdfFile) throw new Error("Paste your text or upload a PDF.");
+        const imageFile = fileInput?.files?.[0] ?? null;
+        const model =
+          form.querySelector<HTMLSelectElement>('select[name="model"]')?.value ?? "pro-examiner-v2";
 
-        const model = form.querySelector<HTMLSelectElement>('select[name="model"]')?.value ?? "pro-examiner-v2";
+        if (textSelected) {
+          if (!content && !pdfFile) throw new Error("Paste your text or upload a PDF.");
+        } else if (!content) {
+          throw new Error("Describe what you want judged.");
+        }
+
         const body = new FormData();
         body.append("content", content);
-        body.append("category", "text");
+        body.append("category", category);
         if (revisionOf) body.append("revisionOf", revisionOf);
         body.append("model", model);
         if (pdfFile) body.append("pdf", pdfFile);
+        if (imageFile && !textSelected) body.append("file", imageFile);
 
         const res = await fetch("/api/evaluate", { method: "POST", body });
         const data = await res.json();
@@ -150,7 +161,7 @@ export function SubmitFormEnhancer({
         incrementDailyUsage();
         getDailyUsage();
         saveVerdict(data.verdict);
-        persistDraft("");
+        if (textSelected) persistDraft("");
         router.push(`/result/${data.verdict.id}`);
       } catch (err) {
         showError(err instanceof Error ? err.message : "Something went wrong");
@@ -163,7 +174,7 @@ export function SubmitFormEnhancer({
 
     form.addEventListener("submit", onSubmit);
     return () => form.removeEventListener("submit", onSubmit);
-  }, [category, longVideoAllowed, queueSelected, revisionOf, router, textSelected]);
+  }, [category, freeSelected, longVideoAllowed, queueSelected, revisionOf, router, textSelected]);
 
   return null;
 }

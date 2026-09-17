@@ -11,7 +11,7 @@ export const PRICING_PACKAGES = [
     ],
     features: [
       "5 AI opinions every day",
-      "Text and other short-form work",
+      "Text, images, physical appearance, and PDFs",
       "YourTruths scoring system",
       "Strengths and weaknesses",
       "Clear final verdict",
@@ -26,8 +26,8 @@ export const PRICING_PACKAGES = [
     cardTone: "blue",
     headline: "5 AI + human opinions",
     description: [
-      "For music, video, images, and other supported files.",
-      "A real person watches, listens to, or reads the work. Groq rewrites their notes into an 8-sentence review.",
+      "For music and video files that need a real listener or viewer.",
+      "A real person watches or listens to the work. Groq rewrites their notes into an 8-sentence review.",
       "Use the 5 credits when you want. On Submit, switch Human + AI on or off, and switch share on or off.",
     ],
     features: [

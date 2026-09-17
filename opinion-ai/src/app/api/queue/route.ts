@@ -28,11 +28,11 @@ export async function POST(request: Request) {
     const modelRaw = form.get("model");
 
     if (!isHumanJobCategory(categoryRaw)) {
-      return NextResponse.json({ error: "Choose a slot that takes a file." }, { status: 400 });
+      return NextResponse.json({ error: "Only music and video use human review." }, { status: 400 });
     }
-    const category = categoryRaw === "text" ? "text" : normalizeQueueCategory(categoryRaw);
-    if (!category || category === "text") {
-      return NextResponse.json({ error: "Choose a slot that takes a file." }, { status: 400 });
+    const category = normalizeQueueCategory(categoryRaw);
+    if (!category) {
+      return NextResponse.json({ error: "Only music and video use human review." }, { status: 400 });
     }
     const context = typeof contextRaw === "string" ? contextRaw.trim() : "";
     if (!context) {

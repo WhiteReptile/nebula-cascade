@@ -40,7 +40,7 @@ export const LAUNCH_CATEGORIES: CategoryFramework[] = [
   {
     id: "images",
     label: "Images",
-    blurb: "Posters, ads, artwork, and photos — work meant to be seen. A person looks at the image and judges composition, clarity, and impact.",
+    blurb: "Posters, ads, artwork, and photos. Describe the image for an instant free AI opinion.",
     placeholder: "What should we look at in this image?",
     contextHint: "What is this for? Who is the audience? What should we focus on?",
     scoreContext: "for visual work",
@@ -137,7 +137,7 @@ export const LAUNCH_CATEGORIES: CategoryFramework[] = [
   {
     id: "physical_appearance",
     label: "Physical appearance",
-    blurb: "Hair, face, a procedure. A person looks at the photo or video, then we give a subjective opinion.",
+    blurb: "Hair, face, a procedure. Describe what to judge for an instant free AI opinion.",
     placeholder: "Hair loss, a procedure, what you want judged…",
     contextHint: "What should we look at? Hair, a surgery, before and after?",
     scoreContext: "for physical appearance",

@@ -1,6 +1,6 @@
 # Opinion.ai
 
-Independent evaluation product: honest AI opinions on text and PDFs, plus human + AI review for music, video, images, and physical appearance.
+Independent evaluation product: honest AI opinions on text, PDFs, images, and physical appearance, plus human + AI review for music and video.
 
 Lives in the **nebula-cascade** monorepo as a sibling of the Nebula Cascade game. This app is a standalone Next.js project — it does not share the game’s Supabase backend.
 
