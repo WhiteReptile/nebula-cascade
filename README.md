@@ -25,7 +25,7 @@ Deploy notes: [`docs/DEPLOY_CLOUDFLARE.md`](./docs/DEPLOY_CLOUDFLARE.md)
 
 ## Sibling product: YourTruths (Opinion.ai)
 
-[`opinion-ai/`](./opinion-ai) — Next.js evaluation product (AI + human opinions). Target subdomain: `yourtruths.nebula-cascade.com`. Does not share the game’s Supabase backend. See `opinion-ai/README.md` and `opinion-ai/STATUS.md`.
+[`opinion-ai/`](./opinion-ai) — Next.js evaluation product (AI + human opinions). Target subdomain: `yourtruths.nebulacascade.com`. Does not share the game’s Supabase backend. See `opinion-ai/README.md` and `opinion-ai/STATUS.md`.
 
 ## Tech Stack
 

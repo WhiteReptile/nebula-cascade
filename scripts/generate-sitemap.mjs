@@ -4,7 +4,7 @@ import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const BASE_URL = "https://nebula-cascade.com";
+const BASE_URL = "https://nebulacascade.com";
 
 const entries = [
   { path: "/", changefreq: "weekly", priority: "1.0" },

@@ -1,6 +1,6 @@
 # Deploy on Cloudflare
 
-## Portfolio hub — `nebula-cascade.com`
+## Portfolio hub — `nebulacascade.com`
 
 Static Vite SPA from the **repo root**.
 
@@ -10,7 +10,7 @@ Static Vite SPA from the **repo root**.
 | Root directory | `/` (repository root) |
 | Build command | `npm run build` |
 | Output directory | `dist` |
-| Custom domain | `nebula-cascade.com` (+ redirect `www` → apex) |
+| Custom domain | `nebulacascade.com` (+ redirect `www` → apex) |
 
 SPA routes are handled by [`public/_redirects`](../public/_redirects) (`/* → /index.html`).
 
@@ -25,7 +25,7 @@ After connecting the domain in Cloudflare Pages → Custom domains, wait for SSL
 
 ---
 
-## YourTruths — `yourtruths.nebula-cascade.com`
+## YourTruths — `yourtruths.nebulacascade.com`
 
 Next.js app in [`opinion-ai/`](../opinion-ai/). Needs a **Node runtime** (API routes, PDF parse, disk queue).
 
@@ -35,7 +35,7 @@ Next.js app in [`opinion-ai/`](../opinion-ai/). Needs a **Node runtime** (API ro
 2. Set env:
    - `LLM_API_KEY` — Groq key
    - `ADMIN_PASSWORD` — admin gate
-   - `PUBLIC_ORIGIN=https://yourtruths.nebula-cascade.com` (optional; redirects also honor `X-Forwarded-Host`)
+   - `PUBLIC_ORIGIN=https://yourtruths.nebulacascade.com` (optional; redirects also honor `X-Forwarded-Host`)
 3. In Cloudflare DNS:
    - `yourtruths` → `CNAME` → your host target
    - Proxy on (orange cloud), SSL Full (strict)
@@ -48,7 +48,7 @@ Requires migrating `opinion-ai/data/` disk storage to **R2** (or another durable
 
 Project cards and the contact CTA already point at:
 
-`https://yourtruths.nebula-cascade.com`
+`https://yourtruths.nebulacascade.com`
 
 Until that subdomain is live, visitors will see DNS/host downtime — ship a “coming soon” page on the host if needed.
 

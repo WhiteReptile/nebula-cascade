@@ -7,7 +7,7 @@ export const film = {
   poster: '/poster.png',
   contact: {
     email: 'enrique.catalan.hoeflich@gmail.com',
-    website: 'https://nebula-cascade.com',
+    website: 'https://nebulacascade.com',
   },
   trailerYouTubeId: 'axZPpBFk_qI',
   socials: {

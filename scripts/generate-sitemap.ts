@@ -2,7 +2,7 @@
 import { writeFileSync } from "fs";
 import { resolve } from "path";
 
-const BASE_URL = "https://nebula-cascade.com";
+const BASE_URL = "https://nebulacascade.com";
 
 interface SitemapEntry {
   path: string;

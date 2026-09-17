@@ -25,8 +25,8 @@ export const studio = {
   founder: "Enrique Catalan",
   tagline: "Product, UI/UX, and full-stack builds — solo and in pair with AI.",
   email: "enrique.catalan.hoeflich@gmail.com",
-  domain: "https://nebula-cascade.com",
-  yourtruthsUrl: "https://yourtruths.nebula-cascade.com",
+  domain: "https://nebulacascade.com",
+  yourtruthsUrl: "https://yourtruths.nebulacascade.com",
 };
 
 export const PROJECTS: Project[] = [
@@ -46,7 +46,7 @@ export const PROJECTS: Project[] = [
     ],
     image: "/poster.png",
     imageAlt: "YourTruths cosmic product surface",
-    liveHref: "https://yourtruths.nebula-cascade.com",
+    liveHref: "https://yourtruths.nebulacascade.com",
     liveExternal: true,
     caseHref: "/work/yourtruths",
     status: "preview",
