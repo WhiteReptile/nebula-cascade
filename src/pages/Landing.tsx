@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import TrailerPlayer from '@/components/TrailerPlayer';
 import { film } from '@/content/film';
 
@@ -79,6 +79,12 @@ const Landing = () => {
       {/* Top navigation */}
       <nav className="relative z-20 flex items-center justify-between px-6 py-6 sm:px-10 lg:px-16">
         <div className="flex items-center gap-6 sm:gap-8">
+          <Link
+            to="/"
+            className="text-[10px] sm:text-[11px] uppercase tracking-[0.35em] text-slate-400 transition-colors duration-300 hover:text-white"
+          >
+            Studio
+          </Link>
           {navItems.map((item) => (
             <button
               key={item.id}
