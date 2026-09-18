@@ -37,7 +37,7 @@ export const PROJECTS: Project[] = [
     pitch:
       "Honest AI opinions on writing and PDFs — plus human + AI review for music, video, and images. No yes-men.",
     role: "Product design, UI/UX, full-stack (Next.js)",
-    stack: ["Next.js 16", "React 19", "Tailwind", "Groq LLM", "PDF extract"],
+    stack: ["Next.js 16", "React 19", "Tailwind", "Pro Examiner V2", "PDF extract"],
     highlights: [
       "Instant AI for text and PDF uploads",
       "Human review queue for music, video, and images",

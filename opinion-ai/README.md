@@ -31,9 +31,9 @@ npm run dev                  # http://localhost:3000
 
 | Variable | Required | Purpose |
 |----------|----------|---------|
-| `LLM_API_KEY` | For real AI | Groq (or set OpenAI vars instead) |
-| `LLM_BASE_URL` | No | Default `https://api.groq.com/openai/v1` |
-| `LLM_MODEL` | No | Default `openai/gpt-oss-20b` |
+| `LLM_API_KEY` | For real AI | Powers Pro Examiner V2 (or set OpenAI vars instead) |
+| `LLM_BASE_URL` | No | Default LLM OpenAI-compatible endpoint |
+| `LLM_MODEL` | No | Default model id for Pro Examiner V2 |
 | `OPENAI_API_KEY` | Optional | Fallback if `LLM_API_KEY` empty |
 | `ADMIN_PASSWORD` | For `/admin` | Shared password for the human review queue |
 | `PRO_LONG_VIDEO` | No | Set `1` to allow video uploads over 2 minutes |
@@ -56,9 +56,9 @@ Without an LLM key the evaluate path still returns a **demo** verdict (hash-base
 
 ```
 Browser
-  ├── POST /api/evaluate     → Groq (text) → localStorage history
+  ├── POST /api/evaluate     → Pro Examiner V2 (text) → localStorage history
   └── POST /api/queue        → data/uploads/<id> + data/jobs.json
-        └── /admin review    → Groq rewrite of human notes
+        └── /admin review    → Pro Examiner V2 rewrite of human notes
               └── COMPLETED → delete upload → FILE_DELETED
 ```
 
@@ -83,7 +83,7 @@ Local data lives under `data/` (gitignored). That path does **not** survive serv
 opinion-ai/
 ├── src/app/          # App Router pages + API routes
 ├── src/components/   # UI
-├── src/lib/          # Queue, lifecycle, Groq pipeline, storage
+├── src/lib/          # Queue, lifecycle, Pro Examiner V2 pipeline, storage
 ├── public/           # Static assets
 ├── .env.example
 ├── STATUS.md         # Readiness diagnosis

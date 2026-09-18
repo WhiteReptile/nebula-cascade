@@ -10,7 +10,7 @@
 
 Opinion.ai is a working Next.js 16 app for unbiased evaluations:
 
-- Free **text** opinions via Groq (or silent demo mode without a key)
+- Free **text** opinions via Pro Examiner V2 (or silent demo mode without a key)
 - **Human + AI** queue for music and video only (text, images, physical appearance are free AI)
 - Temporary uploads with a safe delete-after-result lifecycle
 - Cosmic UI, pricing copy, history, admin review tools
@@ -20,7 +20,7 @@ It sits beside Nebula Cascade in the same git repo but is **not** wired to Nebul
 | Layer | Today | For launch |
 |-------|--------|------------|
 | App UI | Solid | Polish copy/how vs real pipeline |
-| AI (Groq) | Works when keyed | Rate limits + cost controls |
+| AI (Pro Examiner V2) | Works when keyed | Rate limits + cost controls |
 | Human queue | Works on one machine | Multi-reviewer + durable jobs |
 | Storage | Local `data/` JSON + files | Postgres + ephemeral blob |
 | Auth | Admin password only | User accounts |
@@ -58,7 +58,7 @@ It sits beside Nebula Cascade in the same git repo but is **not** wired to Nebul
 
 Rough order of what breaks first:
 
-1. **Groq free tier** (~1k req/day on current model) ≈ hundreds of free text users/day
+1. **Pro Examiner V2 capacity** (~1k req/day on current model) ≈ hundreds of free text users/day
 2. **Human reviewers** for music/files ≈ tens of reviews/day per person
 3. **Hosting** (Vercel Hobby → Pro) for commercial traffic
 4. **Database size** last — opinion rows are tiny; Supabase free DB would hold a huge number of results
@@ -69,7 +69,7 @@ See prior product notes: store results in Postgres; do **not** keep media long-t
 
 ## Recommended next build order
 
-1. **Env + secrets** — Groq key + strong `ADMIN_PASSWORD` in production secrets
+1. **Env + secrets** — LLM API key + strong `ADMIN_PASSWORD` in production secrets
 2. **Durable jobs** — Postgres (e.g. Supabase) for jobs/results; blob with TTL for uploads
 3. **Auth** — Google + email magic link; bind history and quotas to `userId`
 4. **Stripe** — Real packs; webhooks mint credits server-side

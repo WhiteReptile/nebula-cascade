@@ -2,7 +2,7 @@ import { mkdir, readFile, writeFile } from "fs/promises";
 import path from "path";
 import { dataDir } from "@/lib/queue";
 
-/** Groq free-tier style caps for openai/gpt-oss-20b (org-wide). */
+/** Default LLM provider free-tier style caps (org-wide). */
 export const GROQ_FREE_LIMITS = {
   requestsPerMinute: 30,
   requestsPerDay: 1000,

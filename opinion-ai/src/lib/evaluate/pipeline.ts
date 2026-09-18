@@ -3,8 +3,8 @@ import { getCategory } from "../categories";
 import { rankingGuide } from "../ranking";
 import type { ExaminerModel } from "../queue-shared";
 
-const GROQ_BASE = "https://api.groq.com/openai/v1";
-const GROQ_MODEL = "openai/gpt-oss-20b";
+const DEFAULT_LLM_BASE = "https://api.groq.com/openai/v1";
+const DEFAULT_LLM_MODEL = "openai/gpt-oss-20b";
 
 type LlmConfig = { apiKey: string; baseUrl: string; model: string };
 
@@ -50,8 +50,8 @@ export function getLlmConfig(): LlmConfig | null {
   if (llmKey) {
     return {
       apiKey: llmKey,
-      baseUrl: (process.env.LLM_BASE_URL?.trim() || GROQ_BASE).replace(/\/$/, ""),
-      model: process.env.LLM_MODEL?.trim() || GROQ_MODEL,
+      baseUrl: (process.env.LLM_BASE_URL?.trim() || DEFAULT_LLM_BASE).replace(/\/$/, ""),
+      model: process.env.LLM_MODEL?.trim() || DEFAULT_LLM_MODEL,
     };
   }
 

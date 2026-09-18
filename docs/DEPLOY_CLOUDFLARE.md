@@ -33,7 +33,7 @@ Next.js app in [`opinion-ai/`](../opinion-ai/). Needs a **Node runtime** (API ro
 
 1. Deploy `opinion-ai/` to Railway, Render, or Fly.io (`npm run build` + `npm run start`).
 2. Set env:
-   - `LLM_API_KEY` — Groq key
+   - `LLM_API_KEY` — Pro Examiner V2 / LLM provider key
    - `ADMIN_PASSWORD` — admin gate
    - `PUBLIC_ORIGIN=https://yourtruths.nebulacascade.com` (optional; redirects also honor `X-Forwarded-Host`)
 3. In Cloudflare DNS:

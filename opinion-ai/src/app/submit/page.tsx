@@ -47,7 +47,7 @@ export default async function SubmitPage({
         <h1 className="cosmic-title font-light text-[1.796875rem]">Submit</h1>
         {demoMode && (
           <p className="warning-red sentence text-xs sm:text-sm mt-4">
-            Demo mode — add a Groq API key in .env to enable real AI opinions.
+            Demo mode — add an LLM API key in .env to enable Pro Examiner V2.
           </p>
         )}
         {errorMessage && (

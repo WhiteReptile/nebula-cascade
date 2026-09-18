@@ -89,7 +89,7 @@ export function AdminUsagePanel({ initial }: { initial: UsageOutlook }) {
           ~{data.peopleEstimate.heavy} more people if each uses all 5 free asks
         </p>
         <p className="text-dynamic text-xs mt-3">
-          Free Groq tank: {data.limits.requestsPerMinute}/min · {data.limits.requestsPerDay}/day for the whole site
+          Pro Examiner V2 capacity: {data.limits.requestsPerMinute}/min · {data.limits.requestsPerDay}/day for the whole site
         </p>
         <p className="text-dynamic text-[10px] mt-2 opacity-70">
           Updated {new Date(data.updatedAt).toLocaleTimeString()}
