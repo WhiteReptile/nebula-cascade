@@ -6,7 +6,8 @@ Lives in the **nebula-cascade** monorepo as a sibling of the Nebula Cascade game
 
 ## Status
 
-See [STATUS.md](./STATUS.md) for the full readiness diagnosis.
+See [YOURTRUTHS_BIBLE.md](./YOURTRUTHS_BIBLE.md) for the absolute product bible.  
+See [STATUS.md](./STATUS.md) for the readiness diagnosis.
 
 **Studio-ready today:** local demo of free text opinions + human file queue.  
 **Not launch-ready:** no Stripe, no user accounts, no durable cloud storage.
