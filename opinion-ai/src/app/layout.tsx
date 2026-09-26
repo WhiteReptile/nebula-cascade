@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Orbitron, Space_Grotesk } from "next/font/google";
 import { PublicShell } from "@/components/PublicShell";
+import { SiteFooter } from "@/components/SiteFooter";
 import { BRAND_NAME } from "@/components/BrandMark";
 import { getOpinionTotal } from "@/lib/opinion-count";
 import "./globals.css";
@@ -22,6 +23,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col antialiased">
         <PublicShell opinionCount={opinionCount} />
         <main className="relative z-10 flex-1">{children}</main>
+        <SiteFooter />
       </body>
     </html>
   );
