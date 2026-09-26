@@ -786,6 +786,45 @@ body {
   animation: nebulaDrift 22s ease-in-out infinite reverse;
 }
 
+/* Google sign-in — visual only until OAuth is wired */
+.google-signin {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.7rem 0.35rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.96);
+  color: #3c4043;
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.google-signin:hover {
+  background: #ffffff;
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 0 1px rgba(78, 196, 255, 0.25), 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+.google-signin:focus-visible {
+  outline: 2px solid #4ec4ff;
+  outline-offset: 2px;
+}
+
+.google-signin-g {
+  flex-shrink: 0;
+  display: block;
+}
+
+.google-signin-label {
+  color: #3c4043;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .nebula-blob,
   .nebula-blob-delayed,
