@@ -14,7 +14,6 @@ export type HowBlock =
 
 /** Full /how page copy — key phrases marked for highlight. */
 export const HOW_PAGE = {
-  title: "How YourTruths Works",
   blocks: [
     {
       type: "p",
