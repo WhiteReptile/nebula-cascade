@@ -1,9 +1,11 @@
 /** Compact hover blurb on the home “How does it work” control. */
 export const HOW_HOVER_LINES = [
-  "Honest, focused feedback on your work — ideas, writing, art, music, video, and more.",
-  "Music, video, and images use a human + AI hybrid. Real people give a raw take in 3–4 sentences. Anonymous.",
-  "YourTruths AI turns that into a clear structured evaluation — same judgment, sharper form.",
-  "Real human perspective. Advanced AI evaluation. One focused opinion.",
+  "YourTruths is an AI evaluation engine built to generate independent, structured opinions on ideas, content, and creative work.",
+  "It analyzes what you submit, identifies strengths, weaknesses, inconsistencies, and potential issues, and converts them into a clear 0–100 evaluation with a focused verdict.",
+  "For music, video, and selected visual work, YourTruths can incorporate anonymous human reactions as an additional data signal. Real people provide their immediate perspective, and the AI processes those reactions into a consistent, structured evaluation.",
+  "The result is not generic praise or simulated feedback.",
+  "It is an independent opinion generated through AI analysis and, where applicable, real human perspective.",
+  "YourTruths: An AI engine for objective, independent evaluation.",
 ] as const;
 
 export type HowPart = string | { key: string };
