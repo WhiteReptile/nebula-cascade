@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { hasAcceptedTerms } from "@/lib/accept-terms";
 import { getDailyLimit } from "@/lib/constants";
 import { evaluateSubmission, getLlmConfig } from "@/lib/evaluate/pipeline";
 import { isCategoryId } from "@/lib/categories";
@@ -57,6 +58,12 @@ export async function POST(request: Request) {
 
     if (contentType.includes("multipart/form-data")) {
       const form = await request.formData();
+      if (!hasAcceptedTerms(form.get("acceptTerms"))) {
+        return NextResponse.json(
+          { error: "Accept the Terms and Content Policy to continue." },
+          { status: 400 },
+        );
+      }
       const pasted = typeof form.get("content") === "string" ? String(form.get("content")).trim() : "";
       const revisionOf = typeof form.get("revisionOf") === "string" ? String(form.get("revisionOf")) : undefined;
       const category = typeof form.get("category") === "string" ? String(form.get("category")) : "text";
@@ -85,6 +92,12 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
+    if (!hasAcceptedTerms(body.acceptTerms)) {
+      return NextResponse.json(
+        { error: "Accept the Terms and Content Policy to continue." },
+        { status: 400 },
+      );
+    }
     const content = typeof body.content === "string" ? body.content.trim() : "";
     const context = typeof body.context === "string" ? body.context.trim() : "";
     const revisionOf = typeof body.revisionOf === "string" ? body.revisionOf : undefined;

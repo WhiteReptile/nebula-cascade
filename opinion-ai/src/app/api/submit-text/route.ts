@@ -1,3 +1,4 @@
+import { hasAcceptedTerms } from "@/lib/accept-terms";
 import { resolveTextSubmission } from "@/lib/resolve-text-content";
 import { evaluateSubmission, getLlmConfig } from "@/lib/evaluate/pipeline";
 import { recordOpinion } from "@/lib/opinion-count";
@@ -11,6 +12,9 @@ export const runtime = "nodejs";
 export async function POST(request: Request) {
   try {
     const form = await request.formData();
+    if (!hasAcceptedTerms(form.get("acceptTerms"))) {
+      return publicRedirect(request, "/submit?error=terms");
+    }
     const pasted = String(form.get("content") ?? "").trim();
     const revisionOf = String(form.get("revisionOf") ?? "").trim() || undefined;
     const modelRaw = String(form.get("model") ?? "");

@@ -46,9 +46,10 @@ export const QUEUE_CATEGORY_IDS: CategoryId[] = [
   "physical_appearance",
 ];
 
-export function submitTabHref(tab: CategoryId, revisionOf?: string): string {
+export function submitTabHref(tab: CategoryId, revisionOf?: string, pack?: string): string {
   const params = new URLSearchParams();
   params.set("category", tab);
   if (revisionOf) params.set("revision", revisionOf);
+  if (pack) params.set("pack", pack);
   return `/submit?${params.toString()}`;
 }

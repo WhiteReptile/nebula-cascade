@@ -1,6 +1,9 @@
 "use client";
 
+import type { PaidTier } from "@/lib/share-policy";
 import type { HistoryEntry, Verdict } from "./types";
+
+export type { PaidTier };
 
 export type ServerReview = {
   id: string;
@@ -111,8 +114,6 @@ export function incrementDailyUsage(): void {
   usage[key] = (usage[key] ?? 0) + 1;
   localStorage.setItem(USAGE_KEY, JSON.stringify(usage));
 }
-
-export type PaidTier = "human-ai" | "human-ai-pro";
 
 export type PaidPack = {
   tier: PaidTier;

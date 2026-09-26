@@ -7,6 +7,7 @@ import {
 } from "@/lib/submit-form-slots";
 import type { SubmitCategoryId } from "@/lib/submit-categories";
 import type { ExaminerModel } from "@/lib/queue-shared";
+import { isPrivatePack, parsePackTier } from "@/lib/share-policy";
 
 const EXAMINER_MODELS: { id: ExaminerModel; label: string }[] = [
   { id: "pro-examiner-v1", label: "Pro Examiner V1" },
@@ -17,10 +18,12 @@ export function SubmitFormShell({
   category,
   revisionOf,
   queuedId,
+  pack,
 }: {
   category: SubmitCategoryId;
   revisionOf?: string;
   queuedId?: string;
+  pack?: string;
 }) {
   if (queuedId) {
     return (
@@ -33,7 +36,7 @@ export function SubmitFormShell({
           <p className="label-white text-[10px] mt-4 mb-8">Loading</p>
           <p className="text-white text-base leading-relaxed mb-4">A person will look at your file.</p>
           <p className="text-dynamic text-sm leading-relaxed mb-4">
-            They write how they feel, then we turn that into a short public opinion.
+            They write how they feel, then we turn that into a short opinion.
           </p>
           <p className="text-dynamic text-sm leading-relaxed mb-6">This is not instant like text.</p>
           <p className="warning-red sentence text-xs sm:text-sm">A review can take 5 to 10 minutes.</p>
@@ -50,18 +53,21 @@ export function SubmitFormShell({
   const slot = SUBMIT_SLOTS.find((s) => s.id === category);
   const queueSelected = QUEUE_CATEGORY_IDS.includes(category);
   const textSelected = category === "text";
+  const packTier = parsePackTier(pack);
+  const privateForced = isPrivatePack(packTier);
 
   return (
     <form
       id="submit-form"
       method="POST"
       action={textSelected ? "/api/submit-text" : "/api/queue-submit"}
-      encType={textSelected ? "multipart/form-data" : "multipart/form-data"}
+      encType="multipart/form-data"
       className="max-w-xl mx-auto w-full"
     >
       {revisionOf && (
         <p className="text-dynamic text-sm mb-4">Revising a previous submission.</p>
       )}
+      {packTier && <input type="hidden" name="pack" value={packTier} />}
 
       <div className="hud-row mb-3" role="listbox" aria-label="Category">
         {SUBMIT_SLOTS.map((s) => {
@@ -69,7 +75,7 @@ export function SubmitFormShell({
           return (
             <Link
               key={s.id}
-              href={submitTabHref(s.id, revisionOf)}
+              href={submitTabHref(s.id, revisionOf, packTier ?? undefined)}
               role="option"
               aria-selected={on}
               className={`hud-slot ${on ? "hud-slot-on" : ""}`}
@@ -82,7 +88,8 @@ export function SubmitFormShell({
 
       {queueSelected && (
         <p className="warning-red sentence text-xs sm:text-sm mb-4">
-          Music, images, video, and physical appearance need a human, so a review can take 5 to 10 minutes. Uploaded files (including tracks) are not kept — only the final opinion and score.
+          Music, images, video, and physical appearance need a human, so a review can take 5 to 10
+          minutes. Uploaded files are not kept — only the final opinion and score.
         </p>
       )}
 
@@ -168,10 +175,67 @@ export function SubmitFormShell({
         </select>
       </div>
 
+      {queueSelected && (
+        <div className="cosmic-glass p-4 mb-4">
+          {privateForced ? (
+            <>
+              <input type="hidden" name="share" value="0" />
+              <p className="label-white text-[10px] mb-2">Sharing</p>
+              <p className="text-dynamic text-sm leading-relaxed">
+                HUMAN + AI PRO is private. Your opinion is not shared on the public feed.
+              </p>
+            </>
+          ) : (
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                id="share-toggle"
+                name="share"
+                type="checkbox"
+                value="1"
+                defaultChecked
+                className="mt-1 accent-[#4ec4ff]"
+              />
+              <span>
+                <span className="label-white text-[10px] block mb-1">Share opinion</span>
+                <span className="text-dynamic text-sm leading-relaxed">
+                  Allow this completed opinion on the public shared feed. Turn off to keep it private.
+                </span>
+              </span>
+            </label>
+          )}
+        </div>
+      )}
+
+      <div className="cosmic-glass p-4 mb-4">
+        <label className="flex items-start gap-3 cursor-pointer">
+          <input
+            id="accept-terms"
+            name="acceptTerms"
+            type="checkbox"
+            value="1"
+            required
+            className="mt-1 accent-[#4ec4ff]"
+          />
+          <span className="text-dynamic text-sm leading-relaxed">
+            I agree to the{" "}
+            <Link href="/terms" className="nav-white" target="_blank" rel="noreferrer">
+              Terms of Service
+            </Link>{" "}
+            and{" "}
+            <Link href="/content-policy" className="nav-white" target="_blank" rel="noreferrer">
+              User Content &amp; Copyright Policy
+            </Link>
+            .
+          </span>
+        </label>
+      </div>
+
       <div className="mt-6 flex items-start justify-between">
         <div className="flex flex-col items-start gap-2">
           {textSelected ? (
             <span className="text-dynamic text-xs tracking-wide">Free · no credits needed</span>
+          ) : privateForced ? (
+            <span className="text-dynamic text-xs tracking-wide">Human review · private PRO</span>
           ) : (
             <span className="text-dynamic text-xs tracking-wide">Human review · credits may apply</span>
           )}

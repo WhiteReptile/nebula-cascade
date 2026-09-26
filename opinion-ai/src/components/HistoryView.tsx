@@ -2,38 +2,42 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { getHistory, mergeServerReviews, type ServerReview } from "@/lib/storage";
+import { getHistory, saveVerdict } from "@/lib/storage";
 import { getRank, scoreClass } from "@/lib/ranking";
 import type { HistoryEntry } from "@/lib/types";
+import type { Verdict } from "@/lib/types";
 
 export function HistoryView({ initialEntries }: { initialEntries: HistoryEntry[] }) {
   const [entries, setEntries] = useState(initialEntries);
 
   useEffect(() => {
     const local = getHistory();
-    if (local.length > 0) {
-      const merged = new Map<string, HistoryEntry>();
-      for (const entry of [...initialEntries, ...local]) merged.set(entry.id, entry);
-      setEntries(
-        [...merged.values()].sort(
-          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-        ),
-      );
-    }
+    const merged = new Map<string, HistoryEntry>();
+    for (const entry of [...initialEntries, ...local]) merged.set(entry.id, entry);
+    setEntries(
+      [...merged.values()].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      ),
+    );
   }, [initialEntries]);
 
   useEffect(() => {
-    if (!entries.some((entry) => entry.pending)) return;
+    const pending = entries.filter((entry) => entry.pending);
+    if (pending.length === 0) return;
 
     let stop = false;
     const timer = setInterval(async () => {
       try {
-        const res = await fetch("/api/reviews");
-        const data = (await res.json()) as { reviews?: ServerReview[] };
-        if (stop || !Array.isArray(data.reviews)) return;
-        const next = mergeServerReviews(data.reviews);
-        setEntries(next);
-        if (!next.some((entry) => entry.pending)) clearInterval(timer);
+        for (const entry of pending) {
+          const res = await fetch(`/api/queue/${entry.id}`);
+          const data = (await res.json()) as { status?: string; verdict?: Verdict };
+          if (stop) return;
+          if (data.status === "done" && data.verdict) {
+            saveVerdict(data.verdict);
+          }
+        }
+        if (stop) return;
+        setEntries(getHistory());
       } catch {
         /* keep polling */
       }

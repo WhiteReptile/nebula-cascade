@@ -5,11 +5,14 @@ import { useRouter } from "next/navigation";
 import { loadDraft, persistDraft } from "@/components/HeroDraft";
 import {
   getDailyUsage,
+  getPaidPack,
   incrementDailyUsage,
   savePendingJob,
   saveVerdict,
+  spendPaidCredit,
 } from "@/lib/storage";
 import { isJobId, VIDEO_CAP_SECONDS } from "@/lib/queue-shared";
+import { isPrivatePack } from "@/lib/share-policy";
 import type { SubmitCategoryId } from "@/lib/submit-categories";
 import { QUEUE_CATEGORY_IDS } from "@/lib/submit-form-slots";
 
@@ -46,10 +49,12 @@ export function SubmitFormEnhancer({
   category,
   revisionOf,
   longVideoAllowed = false,
+  pack,
 }: {
   category: SubmitCategoryId;
   revisionOf?: string;
   longVideoAllowed?: boolean;
+  pack?: string;
 }) {
   const router = useRouter();
   const queueSelected = QUEUE_CATEGORY_IDS.includes(category);
@@ -88,6 +93,12 @@ export function SubmitFormEnhancer({
       const errorEl = document.getElementById("submit-form-error");
       errorEl?.classList.add("hidden");
 
+      const accept = form.querySelector<HTMLInputElement>('input[name="acceptTerms"]');
+      if (!accept?.checked) {
+        showError("Accept the Terms and Content Policy to continue.");
+        return;
+      }
+
       const submitBtn = form.querySelector<HTMLButtonElement>('button[type="submit"]');
       if (submitBtn) {
         submitBtn.disabled = true;
@@ -101,16 +112,25 @@ export function SubmitFormEnhancer({
           if (!file) throw new Error("Choose a file first.");
           if (!context) throw new Error("Add context for your file.");
 
+          const paid = getPaidPack();
+          const effectivePack = pack || paid?.tier || "";
+          const privateForced = isPrivatePack(effectivePack) || isPrivatePack(paid?.tier);
+          const shareBox = form.querySelector<HTMLInputElement>('input[name="share"]');
+          const shareOn = privateForced ? false : Boolean(shareBox?.checked);
+
           const body = new FormData();
           body.append("category", category);
           body.append("context", context);
           body.append("file", file);
+          body.append("acceptTerms", "1");
+          body.append("share", shareOn ? "1" : "0");
+          if (effectivePack) body.append("pack", effectivePack);
           const model = form.querySelector<HTMLSelectElement>('select[name="model"]')?.value;
           if (model) body.append("model", model);
 
           if (file.type.startsWith("video/")) {
             const duration = await videoDuration(file);
-            if (duration > VIDEO_CAP_SECONDS && !longVideoAllowed) {
+            if (duration > VIDEO_CAP_SECONDS && !longVideoAllowed && !isPrivatePack(effectivePack)) {
               throw new Error("Video over 2 minutes needs HUMAN + AI PRO.");
             }
             body.append("durationSeconds", String(duration));
@@ -120,6 +140,8 @@ export function SubmitFormEnhancer({
           const data = await res.json();
           if (!res.ok) throw new Error(data.error ?? "Upload failed");
           if (typeof data.id !== "string" || !isJobId(data.id)) throw new Error("Upload failed");
+
+          if (paid && paid.credits > 0) spendPaidCredit();
 
           savePendingJob({
             id: data.id,
@@ -135,10 +157,12 @@ export function SubmitFormEnhancer({
         const pdfFile = pdfInput?.files?.[0] ?? null;
         if (!content && !pdfFile) throw new Error("Paste your text or upload a PDF.");
 
-        const model = form.querySelector<HTMLSelectElement>('select[name="model"]')?.value ?? "pro-examiner-v2";
+        const model =
+          form.querySelector<HTMLSelectElement>('select[name="model"]')?.value ?? "pro-examiner-v2";
         const body = new FormData();
         body.append("content", content);
         body.append("category", "text");
+        body.append("acceptTerms", "1");
         if (revisionOf) body.append("revisionOf", revisionOf);
         body.append("model", model);
         if (pdfFile) body.append("pdf", pdfFile);
@@ -163,7 +187,7 @@ export function SubmitFormEnhancer({
 
     form.addEventListener("submit", onSubmit);
     return () => form.removeEventListener("submit", onSubmit);
-  }, [category, longVideoAllowed, queueSelected, revisionOf, router, textSelected]);
+  }, [category, longVideoAllowed, pack, queueSelected, revisionOf, router, textSelected]);
 
   return null;
 }

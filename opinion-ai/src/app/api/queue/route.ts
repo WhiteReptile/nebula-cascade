@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { hasAcceptedTerms } from "@/lib/accept-terms";
 import {
   addJob,
   isExaminerModel,
@@ -9,6 +10,7 @@ import {
   VIDEO_CAP_SECONDS,
   type QueueJob,
 } from "@/lib/queue";
+import { isPrivatePack, resolveShareFlag } from "@/lib/share-policy";
 
 export const runtime = "nodejs";
 
@@ -26,6 +28,14 @@ export async function POST(request: Request) {
     const contextRaw = form.get("context");
     const fileRaw = form.get("file");
     const modelRaw = form.get("model");
+    const packRaw = typeof form.get("pack") === "string" ? String(form.get("pack")) : "";
+
+    if (!hasAcceptedTerms(form.get("acceptTerms"))) {
+      return NextResponse.json(
+        { error: "Accept the Terms and Content Policy to continue." },
+        { status: 400 },
+      );
+    }
 
     if (!isHumanJobCategory(categoryRaw)) {
       return NextResponse.json({ error: "Choose a slot that takes a file." }, { status: 400 });
@@ -50,11 +60,12 @@ export async function POST(request: Request) {
 
     const durationSeconds = parseDuration(form.get("durationSeconds"));
     const isVideo = category === "video" || (fileRaw.type || "").startsWith("video/");
+    const proPack = isPrivatePack(packRaw);
     if (isVideo) {
       if (durationSeconds == null) {
         return NextResponse.json({ error: "Could not read video length." }, { status: 400 });
       }
-      if (durationSeconds > VIDEO_CAP_SECONDS && !longVideoAllowed()) {
+      if (durationSeconds > VIDEO_CAP_SECONDS && !longVideoAllowed() && !proPack) {
         return NextResponse.json(
           { error: "Video over 2 minutes needs HUMAN + AI PRO." },
           { status: 400 },
@@ -62,7 +73,7 @@ export async function POST(request: Request) {
       }
     }
 
-    const share = form.get("share") === "1";
+    const share = resolveShareFlag({ pack: packRaw, shareRaw: form.get("share") });
     const examinerModel = isExaminerModel(modelRaw) ? modelRaw : "pro-examiner-v2";
 
     const buffer = Buffer.from(await fileRaw.arrayBuffer());

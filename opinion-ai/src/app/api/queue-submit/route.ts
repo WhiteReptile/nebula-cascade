@@ -1,5 +1,7 @@
+import { hasAcceptedTerms } from "@/lib/accept-terms";
 import { addJob, isExaminerModel, isHumanJobCategory, longVideoAllowed, MAX_QUEUE_FILE_BYTES, normalizeQueueCategory, VIDEO_CAP_SECONDS, type QueueJob } from "@/lib/queue";
 import { publicRedirect } from "@/lib/public-origin";
+import { isPrivatePack, resolveShareFlag } from "@/lib/share-policy";
 
 export const runtime = "nodejs";
 
@@ -17,6 +19,11 @@ export async function POST(request: Request) {
     const contextRaw = form.get("context");
     const fileRaw = form.get("file");
     const modelRaw = form.get("model");
+    const packRaw = typeof form.get("pack") === "string" ? String(form.get("pack")) : "";
+
+    if (!hasAcceptedTerms(form.get("acceptTerms"))) {
+      return publicRedirect(request, "/submit?error=terms");
+    }
 
     if (!isHumanJobCategory(categoryRaw)) {
       return publicRedirect(request, "/submit?error=category");
@@ -38,7 +45,14 @@ export async function POST(request: Request) {
 
     const durationSeconds = parseDuration(form.get("durationSeconds"));
     const isVideo = category === "video" || (fileRaw.type || "").startsWith("video/");
-    if (isVideo && durationSeconds != null && durationSeconds > VIDEO_CAP_SECONDS && !longVideoAllowed()) {
+    const proPack = isPrivatePack(packRaw);
+    if (
+      isVideo &&
+      durationSeconds != null &&
+      durationSeconds > VIDEO_CAP_SECONDS &&
+      !longVideoAllowed() &&
+      !proPack
+    ) {
       return publicRedirect(request, "/submit?error=longvideo");
     }
 
@@ -53,7 +67,7 @@ export async function POST(request: Request) {
       context,
       status: "UPLOADED",
       createdAt: new Date().toISOString(),
-      share: form.get("share") === "1",
+      share: resolveShareFlag({ pack: packRaw, shareRaw: form.get("share") }),
       examinerModel,
       ...(durationSeconds != null ? { durationSeconds } : {}),
     };
