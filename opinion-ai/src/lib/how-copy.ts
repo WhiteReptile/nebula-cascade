@@ -18,39 +18,52 @@ export const HOW_PAGE = {
     {
       type: "p",
       parts: [
-        "YourTruths is designed to provide ",
-        { key: "honest, focused feedback on your work" },
-        " — whether it’s an idea, business plan, writing, artwork, music, video, or something else.",
-      ],
-    },
-    {
-      type: "p",
-      parts: [
-        "For ",
-        { key: "music, video, and images" },
-        ", YourTruths uses a ",
-        { key: "human-AI hybrid evaluation system" },
-        ". Real people independently listen to or watch your work and give their immediate, genuine opinion based on what they experienced.",
-      ],
-    },
-    {
-      type: "p",
-      parts: [
-        "They don’t write a long review or spend time trying to sound professional. They simply tell us what they thought — usually in ",
-        { key: "3–4 sentences" },
+        "YourTruths is an ",
+        {
+          key: "AI system designed to generate objective, independent opinions about creative work, ideas, and decisions",
+        },
         ".",
       ],
     },
     {
       type: "p",
-      parts: ["Their identity remains anonymous."],
+      parts: [
+        "Instead of simply telling you what sounds good, YourTruths analyzes what you submit and produces a structured evaluation based on defined criteria, identifying strengths, weaknesses, potential issues, and the overall impression of the work.",
+      ],
     },
     {
       type: "p",
       parts: [
-        "YourTruths AI then processes that raw human perspective and turns it into a ",
-        { key: "clear, structured evaluation" },
-        ", preserving the reviewer’s actual opinion while providing additional analysis and context.",
+        "The goal is simple: ",
+        { key: "reduce bias, remove yes-men, and give you an independent perspective." },
+      ],
+    },
+    {
+      type: "p",
+      parts: [
+        "YourTruths can evaluate ",
+        { key: "ideas, business concepts, writing, artwork, images, music, video, and more" },
+        ".",
+      ],
+    },
+    {
+      type: "p",
+      parts: [
+        "For music and video, YourTruths can also incorporate ",
+        { key: "real human perspectives" },
+        ". Independent reviewers experience the work and provide their immediate, genuine reactions. Their feedback remains anonymous and is then processed by the YourTruths AI system.",
+      ],
+    },
+    {
+      type: "p",
+      parts: [
+        "The AI transforms these raw perspectives into a consistent, structured evaluation, separating personal reaction from broader analysis while preserving what the reviewer actually experienced.",
+      ],
+    },
+    {
+      type: "p",
+      parts: [
+        "YourTruths is not designed to tell you what you want to hear. It is designed to tell you what the work communicates.",
       ],
     },
     {
