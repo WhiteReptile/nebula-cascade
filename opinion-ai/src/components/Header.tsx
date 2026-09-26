@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { BackArrow } from "@/components/BackArrow";
 import { BrandMark } from "@/components/BrandMark";
+import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 import { PricingNav } from "@/components/PricingNav";
 
 export function Header() {
@@ -14,7 +15,7 @@ export function Header() {
           <BrandMark size="nav" />
         </Link>
       </div>
-      <nav className="flex items-center gap-4 sm:gap-8 text-xs sm:text-sm shrink-0">
+      <nav className="flex items-center gap-3 sm:gap-6 text-xs sm:text-sm shrink-0">
         <Link href="/submit" className="nav-white">
           Submit
         </Link>
@@ -22,6 +23,7 @@ export function Header() {
           History
         </Link>
         <PricingNav />
+        <GoogleSignInButton />
       </nav>
     </header>
   );
