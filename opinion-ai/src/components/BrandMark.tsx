@@ -4,7 +4,7 @@ type BrandMarkProps = {
 };
 
 const SIZE: Record<NonNullable<BrandMarkProps["size"]>, string> = {
-  nav: "brand-wordmark text-[1.05rem] font-medium",
+  nav: "brand-wordmark text-[1.21rem] font-medium",
   hero: "brand-wordmark text-4xl sm:text-5xl",
   inline: "brand-wordmark text-[0.95em] font-medium inline",
 };
