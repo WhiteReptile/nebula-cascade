@@ -786,6 +786,80 @@ body {
   animation: nebulaDrift 22s ease-in-out infinite reverse;
 }
 
+/* Main menu box */
+.site-nav {
+  display: inline-flex;
+  align-items: stretch;
+  gap: 0.15rem;
+  padding: 0.22rem;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+  border: 1px solid rgba(78, 196, 255, 0.28);
+  background: linear-gradient(
+    145deg,
+    rgba(12, 16, 36, 0.92) 0%,
+    rgba(6, 8, 22, 0.78) 100%
+  );
+  backdrop-filter: blur(14px);
+  box-shadow:
+    0 0 0 1px rgba(78, 196, 255, 0.06) inset,
+    0 6px 24px rgba(0, 0, 0, 0.35),
+    0 0 28px rgba(30, 144, 255, 0.1);
+}
+
+.site-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.site-nav-item,
+.site-nav .how-wrap {
+  display: inline-flex;
+}
+
+.site-nav-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.42rem 0.7rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.78);
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+  border: 1px solid transparent;
+  transition:
+    color 0.25s ease,
+    background 0.25s ease,
+    border-color 0.25s ease,
+    text-shadow 0.25s ease;
+  white-space: nowrap;
+}
+
+@media (min-width: 640px) {
+  .site-nav-link {
+    padding: 0.48rem 0.95rem;
+    font-size: 0.75rem;
+  }
+}
+
+.site-nav-link:hover {
+  color: #4ec4ff;
+  background: rgba(78, 196, 255, 0.08);
+  text-shadow:
+    0 0 8px rgba(78, 196, 255, 0.85),
+    0 0 18px rgba(30, 144, 255, 0.4);
+}
+
+.site-nav-link.is-active {
+  color: #ffffff;
+  background: rgba(78, 196, 255, 0.16);
+  border-color: rgba(78, 196, 255, 0.45);
+  text-shadow:
+    0 0 10px rgba(78, 196, 255, 0.75),
+    0 0 22px rgba(30, 144, 255, 0.35);
+}
+
 /* Google sign-in — visual only until OAuth is wired */
 .google-signin {
   display: inline-flex;
