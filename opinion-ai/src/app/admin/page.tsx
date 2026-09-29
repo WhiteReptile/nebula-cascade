@@ -10,14 +10,25 @@ import { AdminUsagePanel } from "@/components/AdminUsagePanel";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminPage() {
+export default async function AdminPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const params = await searchParams;
   if (!(await isAdmin())) {
+    const error =
+      params.error === "wrong"
+        ? "Wrong password."
+        : params.error === "failed"
+          ? "Login failed."
+          : null;
     return (
       <div className="px-6 py-16 sm:py-20">
         <div className="max-w-xl mx-auto mb-12 text-center">
           <h1 className="cosmic-title font-light text-[1.5625rem]">Admin</h1>
         </div>
-        <AdminLogin />
+        <AdminLogin error={error} />
       </div>
     );
   }
