@@ -13,7 +13,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Wrong password." }, { status: 401 });
     }
     const res = NextResponse.json({ ok: true });
-    setAdminCookie(res);
+    setAdminCookie(res, request);
     return res;
   } catch {
     return NextResponse.json({ error: "Login failed." }, { status: 500 });

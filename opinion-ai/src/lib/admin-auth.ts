@@ -37,15 +37,17 @@ export async function isAdmin(): Promise<boolean> {
   return same(got, expected);
 }
 
-export function setAdminCookie(res: NextResponse): void {
+export function setAdminCookie(res: NextResponse, request?: Request): void {
   const token = adminSessionToken();
   if (!token) return;
+  const proto = request?.headers.get("x-forwarded-proto")?.split(",")[0]?.trim();
+  const https = proto === "https" || process.env.NODE_ENV === "production";
   res.cookies.set(ADMIN_COOKIE, token, {
     httpOnly: true,
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 24 * 30,
-    secure: process.env.NODE_ENV === "production",
+    secure: https,
   });
 }
 
