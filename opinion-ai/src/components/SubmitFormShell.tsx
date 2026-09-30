@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { HybridSubmitHint } from "@/components/HybridSubmitHint";
 import { QueueWait } from "@/components/QueueWait";
+import { ShareControls } from "@/components/ShareControls";
 import {
   QUEUE_CATEGORY_IDS,
   SUBMIT_SLOTS,
@@ -7,7 +9,7 @@ import {
 } from "@/lib/submit-form-slots";
 import type { SubmitCategoryId } from "@/lib/submit-categories";
 import type { ExaminerModel } from "@/lib/queue-shared";
-import { isPrivatePack, parsePackTier } from "@/lib/share-policy";
+import { parsePackTier } from "@/lib/share-policy";
 import { MAX_CONTENT_CHARS, MAX_CONTENT_WORDS } from "@/lib/content-limits";
 
 const EXAMINER_MODELS: { id: ExaminerModel; label: string }[] = [
@@ -34,7 +36,6 @@ export function SubmitFormShell({
   const queueSelected = QUEUE_CATEGORY_IDS.includes(category);
   const textSelected = category === "text";
   const packTier = parsePackTier(pack);
-  const privateForced = isPrivatePack(packTier);
 
   return (
     <form
@@ -163,32 +164,7 @@ export function SubmitFormShell({
 
       {queueSelected && (
         <div className="cosmic-glass p-4 mb-4">
-          {privateForced ? (
-            <>
-              <input type="hidden" name="share" value="0" />
-              <p className="label-white text-[10px] mb-2">Sharing</p>
-              <p className="text-dynamic text-sm leading-relaxed">
-                Hybrid PRO is private. Your opinion is not shared on the public feed.
-              </p>
-            </>
-          ) : (
-            <label className="flex items-start gap-3 cursor-pointer">
-              <input
-                id="share-toggle"
-                name="share"
-                type="checkbox"
-                value="1"
-                defaultChecked
-                className="mt-1 accent-[#4ec4ff]"
-              />
-              <span>
-                <span className="label-white text-[10px] block mb-1">Share opinion</span>
-                <span className="text-dynamic text-sm leading-relaxed">
-                  Allow this completed opinion on the public shared feed. Turn off to keep it private.
-                </span>
-              </span>
-            </label>
-          )}
+          <ShareControls packFromUrl={packTier ?? undefined} />
         </div>
       )}
 
@@ -222,12 +198,8 @@ export function SubmitFormShell({
             <span className="text-dynamic text-xs tracking-wide">
               Free instant AI · max {MAX_CONTENT_WORDS.toLocaleString()} words · longer → PDF
             </span>
-          ) : privateForced ? (
-            <span className="text-dynamic text-xs tracking-wide">Human review · private PRO</span>
           ) : (
-            <span className="text-dynamic text-xs tracking-wide">
-              Human review · 20 credits/min · 5-minute blocks
-            </span>
+            <HybridSubmitHint packFromUrl={packTier ?? undefined} />
           )}
         </div>
         <button type="submit" className="cosmic-cta text-sm px-8 py-2.5">
