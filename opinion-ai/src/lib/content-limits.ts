@@ -1,5 +1,5 @@
 /** Max user text for the AI engine (home chat + Submit text/PDF). */
-export const MAX_CONTENT_WORDS = 20_000;
+export const MAX_CONTENT_WORDS = 8_000;
 /** Hard character cap (~8 chars/word) so paste cannot explode memory. */
 export const MAX_CONTENT_CHARS = MAX_CONTENT_WORDS * 8;
 
