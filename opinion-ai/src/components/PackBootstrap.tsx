@@ -9,7 +9,7 @@ export function PackBootstrap({ pack }: { pack?: string }) {
   useEffect(() => {
     const tier = parsePackTier(pack);
     if (!tier) return;
-    setPaidPack({ tier, credits: packCredits(tier) });
+    setPaidPack({ tier, credits: packCredits(tier), scale: "v2" });
   }, [pack]);
 
   return null;

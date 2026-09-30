@@ -64,7 +64,7 @@ export const TERMS_OF_SERVICE: LegalDoc = {
       heading: "5. Credits, purchases, and subscriptions",
       paragraphs: [
         "Paid features may require purchase of credits or packages. Purchases are subject to these Terms and our Refund & Cancellation Policy.",
-        "Credits are for use of the Service as described at purchase and are not transferable unless we expressly allow it. Unused credits do not create an ownership interest in YourTruths.",
+        "Credits are for use of the Service as described at purchase and on the Pricing page (including per-minute billing in time blocks for music and video, and a standard credit amount for images and long documents). Credits are not transferable unless we expressly allow it. Unused credits do not create an ownership interest in YourTruths.",
         "Payments are processed by third-party payment processors. Their terms may also apply to the payment transaction. YourTruths does not store full payment card numbers on its own systems when a processor handles checkout.",
       ],
     },
@@ -315,8 +315,8 @@ export const REFUND_POLICY: LegalDoc = {
     {
       heading: "2. Hybrid credits",
       paragraphs: [
-        "Hybrid packages provide credits for human review of music, video, images, and other supported files, as described on the Pricing page. A real person experiences the work; YourTruths AI structures the reviewer’s notes into the final opinion.",
-        "Once a credit is consumed to submit a Hybrid job, that credit is generally considered used—even if you later disagree with the opinion—because reviewer time and processing have been allocated.",
+        "Hybrid packages provide credits for human review of music, video, images, long PDFs, and other supported files, as described on the Pricing page. A real person experiences the work; YourTruths AI structures the reviewer’s notes into the final opinion.",
+        "Credit amounts are billed as described at purchase and on Pricing: music and video use credits per minute in 5-minute blocks; images and long documents use a standard credit amount. Once credits are consumed to submit a Hybrid job, those credits are generally considered used—even if you later disagree with the opinion—because reviewer time and processing have been allocated.",
       ],
     },
     {
@@ -347,7 +347,7 @@ export const REFUND_POLICY: LegalDoc = {
     {
       heading: "6. Service issues",
       paragraphs: [
-        "If a paid Hybrid job cannot be completed due to a clear failure on our side (for example, a paid submission permanently cannot be reviewed because of an internal fault), contact us. We may, at our discretion, restore a credit, provide a replacement review, or issue a refund where our payment systems support it.",
+        "If a paid Hybrid job cannot be completed due to a clear failure on our side (for example, a paid submission permanently cannot be reviewed because of an internal fault), contact us. We may, at our discretion, restore the credits billed for that job, provide a replacement review, or issue a refund where our payment systems support it.",
         "We do not promise refunds for third-party AI outages, your device or network issues, or content we refuse because it violates our Terms or Content Policy.",
       ],
     },

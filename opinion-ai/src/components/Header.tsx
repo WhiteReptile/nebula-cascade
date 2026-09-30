@@ -4,6 +4,7 @@ import Link from "next/link";
 import { BackArrow } from "@/components/BackArrow";
 import { BrandMark } from "@/components/BrandMark";
 import { GoogleSignInButton } from "@/components/GoogleSignInButton";
+import { HybridCreditsBar } from "@/components/HybridCreditsBar";
 import { SiteNav } from "@/components/SiteNav";
 
 export function Header() {
@@ -17,6 +18,7 @@ export function Header() {
       </div>
       <div className="flex items-center gap-2.5 sm:gap-3 shrink-0 min-w-0">
         <SiteNav />
+        <HybridCreditsBar />
         <GoogleSignInButton />
       </div>
     </header>

@@ -1,17 +1,26 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { loadDraft, persistDraft } from "@/components/HeroDraft";
 import { PdfNeedModal } from "@/components/PdfNeedModal";
 import { OpinionWorkingModal } from "@/components/OpinionWorkingModal";
+import { CreditConfirmModal } from "@/components/CreditConfirmModal";
+import {
+  billedMinutes,
+  creditNoun,
+  creditsForHybridJob,
+  formatClock,
+  hybridJobKindForCategory,
+  type CreditConfirmState,
+} from "@/lib/hybrid-credits";
 import {
   getDailyUsage,
   getPaidPack,
   incrementDailyUsage,
   savePendingJob,
   saveVerdict,
-  spendPaidCredit,
+  spendPaidCredits,
 } from "@/lib/storage";
 import { isJobId, VIDEO_CAP_SECONDS } from "@/lib/queue-shared";
 import { isPrivatePack } from "@/lib/share-policy";
@@ -25,10 +34,10 @@ import {
 import type { SubmitCategoryId } from "@/lib/submit-categories";
 import { QUEUE_CATEGORY_IDS } from "@/lib/submit-form-slots";
 
-function videoDuration(file: File): Promise<number> {
+function mediaDuration(file: File, kind: "video" | "audio"): Promise<number> {
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file);
-    const el = document.createElement("video");
+    const el = document.createElement(kind);
     el.preload = "metadata";
     const finish = (fn: () => void) => {
       URL.revokeObjectURL(url);
@@ -37,12 +46,12 @@ function videoDuration(file: File): Promise<number> {
     el.onloadedmetadata = () => {
       const duration = el.duration;
       if (!Number.isFinite(duration) || duration <= 0) {
-        finish(() => reject(new Error("Could not read video length.")));
+        finish(() => reject(new Error(`Could not read ${kind} length.`)));
         return;
       }
       finish(() => resolve(duration));
     };
-    el.onerror = () => finish(() => reject(new Error("Could not read video length.")));
+    el.onerror = () => finish(() => reject(new Error(`Could not read ${kind} length.`)));
     el.src = url;
   });
 }
@@ -59,6 +68,17 @@ function updateWordCount(text: string) {
   if (!el) return;
   const words = countWords(text);
   el.textContent = `${words.toLocaleString()} / ${MAX_CONTENT_WORDS.toLocaleString()} words`;
+}
+
+function askCredits(
+  setConfirm: (state: CreditConfirmState | null) => void,
+  resolver: { current: ((ok: boolean) => void) | null },
+  state: CreditConfirmState,
+): Promise<boolean> {
+  return new Promise((resolve) => {
+    resolver.current = resolve;
+    setConfirm(state);
+  });
 }
 
 export function SubmitFormEnhancer({
@@ -79,6 +99,15 @@ export function SubmitFormEnhancer({
   const textSelected = category === "text";
   const [needPdf, setNeedPdf] = useState(initialNeedPdf);
   const [working, setWorking] = useState(false);
+  const [creditState, setCreditState] = useState<CreditConfirmState | null>(null);
+  const creditResolver = useRef<((ok: boolean) => void) | null>(null);
+
+  function closeCredits(ok: boolean) {
+    const resolve = creditResolver.current;
+    creditResolver.current = null;
+    setCreditState(null);
+    resolve?.(ok);
+  }
 
   useEffect(() => {
     function onNeed() {
@@ -127,6 +156,30 @@ export function SubmitFormEnhancer({
       wasOver = over;
     });
 
+    async function confirmHybrid(opts: {
+      category: string;
+      durationSeconds?: number;
+      pdf?: boolean;
+    }): Promise<{ cost: number; ok: boolean }> {
+      const kind = hybridJobKindForCategory(opts.category, { pdf: opts.pdf });
+      const cost = creditsForHybridJob(kind, opts.durationSeconds);
+      const paid = getPaidPack();
+      const balance = paid?.credits ?? 0;
+      const billed = kind === "timed" ? billedMinutes(opts.durationSeconds ?? 0) : undefined;
+      const clock =
+        kind === "timed" && opts.durationSeconds != null
+          ? formatClock(opts.durationSeconds)
+          : undefined;
+      const ok = await askCredits(setCreditState, creditResolver, {
+        noun: creditNoun(opts.category, { pdf: opts.pdf }),
+        clock,
+        cost,
+        balance,
+        billedMinutes: billed,
+      });
+      return { cost, ok };
+    }
+
     async function onSubmit(event: SubmitEvent) {
       event.preventDefault();
       if (!form) return;
@@ -150,19 +203,55 @@ export function SubmitFormEnhancer({
         if (slowTimer) clearTimeout(slowTimer);
       };
 
+      const resetBtn = () => {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = "Submit";
+        }
+      };
+
       try {
         if (queueSelected) {
           const file = fileInput?.files?.[0];
           const context = textarea instanceof HTMLTextAreaElement ? textarea.value.trim() : "";
           if (!file) throw new Error("Choose a file first.");
           if (!context) throw new Error("Add context for your file.");
-          setWorking(true);
 
           const paid = getPaidPack();
           const effectivePack = pack || paid?.tier || "";
           const privateForced = isPrivatePack(effectivePack) || isPrivatePack(paid?.tier);
           const shareBox = form.querySelector<HTMLInputElement>('input[name="share"]');
           const shareOn = privateForced ? false : Boolean(shareBox?.checked);
+
+          let duration: number | undefined;
+          try {
+            if (file.type.startsWith("video/") || category === "video") {
+              duration = await mediaDuration(file, "video");
+              if (duration > VIDEO_CAP_SECONDS && !longVideoAllowed && !isPrivatePack(effectivePack)) {
+                throw new Error("Video over 2 minutes needs Hybrid PRO.");
+              }
+            } else if (file.type.startsWith("audio/") || category === "music") {
+              duration = await mediaDuration(file, "audio");
+            }
+          } catch (err) {
+            if (err instanceof Error && err.message.includes("Hybrid PRO")) throw err;
+            duration = 0;
+          }
+
+          const { cost, ok } = await confirmHybrid({
+            category,
+            durationSeconds: duration,
+          });
+          if (!ok) {
+            resetBtn();
+            return;
+          }
+          const packNow = getPaidPack();
+          if (!packNow || packNow.credits < cost) {
+            throw new Error("Not enough Hybrid credits. Open Pricing.");
+          }
+
+          setWorking(true);
 
           const body = new FormData();
           body.append("category", category);
@@ -173,21 +262,14 @@ export function SubmitFormEnhancer({
           if (effectivePack) body.append("pack", effectivePack);
           const model = form.querySelector<HTMLSelectElement>('select[name="model"]')?.value;
           if (model) body.append("model", model);
-
-          if (file.type.startsWith("video/")) {
-            const duration = await videoDuration(file);
-            if (duration > VIDEO_CAP_SECONDS && !longVideoAllowed && !isPrivatePack(effectivePack)) {
-              throw new Error("Video over 2 minutes needs Hybrid PRO.");
-            }
-            body.append("durationSeconds", String(duration));
-          }
+          if (duration != null) body.append("durationSeconds", String(duration));
 
           const res = await fetch("/api/queue", { method: "POST", body });
           const data = await res.json();
           if (!res.ok) throw new Error(data.error ?? "Upload failed");
           if (typeof data.id !== "string" || !isJobId(data.id)) throw new Error("Upload failed");
 
-          if (paid && paid.credits > 0) spendPaidCredit();
+          spendPaidCredits(cost);
 
           savePendingJob({
             id: data.id,
@@ -205,6 +287,21 @@ export function SubmitFormEnhancer({
         if (isOverWordLimit(content) && !pdfFile) {
           dispatchNeedPdf();
           throw new Error("Over 8,000 words — add a PDF on this Text tab.");
+        }
+
+        const willQueuePdf = Boolean(pdfFile && isOverWordLimit(content));
+        let pdfCost = 0;
+        if (willQueuePdf) {
+          const { cost, ok } = await confirmHybrid({ category: "documents", pdf: true });
+          if (!ok) {
+            resetBtn();
+            return;
+          }
+          const packNow = getPaidPack();
+          if (!packNow || packNow.credits < cost) {
+            throw new Error("Long PDFs need Hybrid credits. Open Pricing.");
+          }
+          pdfCost = cost;
         }
 
         if (pdfFile) {
@@ -235,6 +332,13 @@ export function SubmitFormEnhancer({
         }
 
         if (data.queued && typeof data.id === "string" && isJobId(data.id)) {
+          const cost =
+            pdfCost ||
+            creditsForHybridJob(hybridJobKindForCategory("documents", { pdf: true }));
+          const packNow = getPaidPack();
+          if (packNow && packNow.credits >= cost) {
+            spendPaidCredits(cost);
+          }
           persistDraft("");
           savePendingJob({
             id: data.id,
@@ -255,10 +359,7 @@ export function SubmitFormEnhancer({
         stopSlow();
         setWorking(false);
         showError(err instanceof Error ? err.message : "Something went wrong");
-        if (submitBtn) {
-          submitBtn.disabled = false;
-          submitBtn.textContent = "Submit";
-        }
+        resetBtn();
       }
     }
 
@@ -269,6 +370,12 @@ export function SubmitFormEnhancer({
   return (
     <>
       <PdfNeedModal open={needPdf} onClose={() => setNeedPdf(false)} variant="submit" />
+      <CreditConfirmModal
+        open={Boolean(creditState)}
+        state={creditState}
+        onCancel={() => closeCredits(false)}
+        onConfirm={() => closeCredits(true)}
+      />
       <OpinionWorkingModal open={working} />
     </>
   );

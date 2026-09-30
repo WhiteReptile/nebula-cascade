@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { QueueWait } from "@/components/QueueWait";
 import {
   QUEUE_CATEGORY_IDS,
@@ -224,7 +225,9 @@ export function SubmitFormShell({
           ) : privateForced ? (
             <span className="text-dynamic text-xs tracking-wide">Human review · private PRO</span>
           ) : (
-            <span className="text-dynamic text-xs tracking-wide">Human review · credits may apply</span>
+            <span className="text-dynamic text-xs tracking-wide">
+              Human review · 20 credits/min · 5-minute blocks
+            </span>
           )}
         </div>
         <button type="submit" className="cosmic-cta text-sm px-8 py-2.5">

@@ -1,3 +1,5 @@
+import { packCreditsForTier } from "@/lib/hybrid-credits";
+
 export type PaidTier = "human-ai" | "human-ai-pro";
 
 /** PRO packages are always private — opinion is not shared. */
@@ -15,7 +17,7 @@ export function resolveShareFlag(input: {
 }
 
 export function packCredits(tier: PaidTier): number {
-  return tier === "human-ai-pro" ? 10 : 5;
+  return packCreditsForTier(tier);
 }
 
 export function parsePackTier(value: string | null | undefined): PaidTier | null {

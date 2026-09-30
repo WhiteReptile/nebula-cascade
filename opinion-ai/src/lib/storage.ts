@@ -1,5 +1,6 @@
 "use client";
 
+import { migrateLegacyCredits, PACK_SCALE_V2 } from "@/lib/hybrid-credits";
 import type { PaidTier } from "@/lib/share-policy";
 import type { HistoryEntry, Verdict } from "./types";
 
@@ -118,9 +119,16 @@ export function incrementDailyUsage(): void {
 export type PaidPack = {
   tier: PaidTier;
   credits: number;
+  scale?: typeof PACK_SCALE_V2;
 };
 
 const PACK_KEY = "opinion-ai-paid-pack";
+export const PACK_CHANGED_EVENT = "oa-pack-changed";
+
+function notifyPackChanged() {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new Event(PACK_CHANGED_EVENT));
+}
 
 export function getPaidPack(): PaidPack | null {
   if (typeof window === "undefined") return null;
@@ -130,7 +138,12 @@ export function getPaidPack(): PaidPack | null {
     const parsed = JSON.parse(raw) as PaidPack;
     if (parsed.tier !== "human-ai" && parsed.tier !== "human-ai-pro") return null;
     if (!Number.isInteger(parsed.credits) || parsed.credits < 0) return null;
-    return parsed;
+    const credits = migrateLegacyCredits(parsed.credits, parsed.scale);
+    const next: PaidPack = { tier: parsed.tier, credits, scale: PACK_SCALE_V2 };
+    if (credits !== parsed.credits || parsed.scale !== PACK_SCALE_V2) {
+      setPaidPack(next);
+    }
+    return next;
   } catch {
     return null;
   }
@@ -138,13 +151,22 @@ export function getPaidPack(): PaidPack | null {
 
 export function setPaidPack(pack: PaidPack): void {
   if (typeof window === "undefined") return;
-  localStorage.setItem(PACK_KEY, JSON.stringify(pack));
+  localStorage.setItem(
+    PACK_KEY,
+    JSON.stringify({ ...pack, scale: PACK_SCALE_V2 } satisfies PaidPack),
+  );
+  notifyPackChanged();
 }
 
 export function spendPaidCredit(): PaidPack | null {
+  return spendPaidCredits(1);
+}
+
+export function spendPaidCredits(amount: number): PaidPack | null {
+  const n = Math.max(0, Math.floor(amount));
   const pack = getPaidPack();
-  if (!pack || pack.credits < 1) return null;
-  const next = { ...pack, credits: pack.credits - 1 };
+  if (!pack || n < 1 || pack.credits < n) return null;
+  const next = { ...pack, credits: pack.credits - n, scale: PACK_SCALE_V2 };
   setPaidPack(next);
   return next;
 }
