@@ -31,19 +31,21 @@ export default async function SubmitPage({
   const errorMessage =
     params.error === "empty"
       ? "Paste your text first."
-      : params.error === "long"
-        ? "Submission too long (max 8,000 words)."
-        : params.error === "file"
-          ? "Choose a file first."
-          : params.error === "filesize"
-            ? "File is too large."
-            : params.error === "longvideo"
-              ? "Video over 2 minutes needs HUMAN + AI PRO."
-              : params.error === "terms"
-                ? "Accept the Terms and Content Policy to continue."
-                : params.error === "failed"
-                  ? "Submission failed. Try again."
-                  : null;
+      : params.error === "needpdf"
+        ? "Over 8,000 words — upload a PDF on the Text tab."
+        : params.error === "long"
+          ? "Submission too long (max 8,000 words)."
+          : params.error === "file"
+            ? "Choose a file first."
+            : params.error === "filesize"
+              ? "File is too large."
+              : params.error === "longvideo"
+                ? "Video over 2 minutes needs HUMAN + AI PRO."
+                : params.error === "terms"
+                  ? "Accept the Terms and Content Policy to continue."
+                  : params.error === "failed"
+                    ? "Submission failed. Try again."
+                    : null;
 
   return (
     <div className="px-6 py-16 sm:py-20">
@@ -78,6 +80,7 @@ export default async function SubmitPage({
           revisionOf={revisionOf}
           longVideoAllowed={process.env.PRO_LONG_VIDEO === "1" || isPrivatePack(pack)}
           pack={pack}
+          initialNeedPdf={params.error === "needpdf"}
         />
       )}
     </div>

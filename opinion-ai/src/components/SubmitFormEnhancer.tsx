@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { loadDraft, persistDraft } from "@/components/HeroDraft";
+import { PdfNeedModal } from "@/components/PdfNeedModal";
 import {
   getDailyUsage,
   getPaidPack,
@@ -13,7 +14,13 @@ import {
 } from "@/lib/storage";
 import { isJobId, VIDEO_CAP_SECONDS } from "@/lib/queue-shared";
 import { isPrivatePack } from "@/lib/share-policy";
-import { contentLimitError } from "@/lib/content-limits";
+import {
+  countWords,
+  dispatchNeedPdf,
+  isOverWordLimit,
+  MAX_CONTENT_WORDS,
+  NEED_PDF_EVENT,
+} from "@/lib/content-limits";
 import type { SubmitCategoryId } from "@/lib/submit-categories";
 import { QUEUE_CATEGORY_IDS } from "@/lib/submit-form-slots";
 
@@ -46,20 +53,38 @@ function showError(message: string) {
   el.classList.remove("hidden");
 }
 
+function updateWordCount(text: string) {
+  const el = document.getElementById("submit-word-count");
+  if (!el) return;
+  const words = countWords(text);
+  el.textContent = `${words.toLocaleString()} / ${MAX_CONTENT_WORDS.toLocaleString()} words`;
+}
+
 export function SubmitFormEnhancer({
   category,
   revisionOf,
   longVideoAllowed = false,
   pack,
+  initialNeedPdf = false,
 }: {
   category: SubmitCategoryId;
   revisionOf?: string;
   longVideoAllowed?: boolean;
   pack?: string;
+  initialNeedPdf?: boolean;
 }) {
   const router = useRouter();
   const queueSelected = QUEUE_CATEGORY_IDS.includes(category);
   const textSelected = category === "text";
+  const [needPdf, setNeedPdf] = useState(initialNeedPdf);
+
+  useEffect(() => {
+    function onNeed() {
+      setNeedPdf(true);
+    }
+    window.addEventListener(NEED_PDF_EVENT, onNeed);
+    return () => window.removeEventListener(NEED_PDF_EVENT, onNeed);
+  }, []);
 
   useEffect(() => {
     const form = document.getElementById("submit-form") as HTMLFormElement | null;
@@ -69,6 +94,12 @@ export function SubmitFormEnhancer({
     const textarea = form.querySelector("textarea");
     if (draft && textarea instanceof HTMLTextAreaElement && !textarea.value) {
       textarea.value = draft;
+    }
+    if (textarea instanceof HTMLTextAreaElement) {
+      updateWordCount(textarea.value);
+      if (textSelected && isOverWordLimit(textarea.value)) {
+        dispatchNeedPdf();
+      }
     }
 
     const fileInput = form.querySelector<HTMLInputElement>('input[name="file"]');
@@ -82,10 +113,16 @@ export function SubmitFormEnhancer({
       if (pdfName) pdfName.textContent = pdfInput.files?.[0]?.name ?? "No PDF chosen";
     });
 
+    let wasOver = textarea instanceof HTMLTextAreaElement && isOverWordLimit(textarea.value);
     textarea?.addEventListener("input", () => {
-      if (textSelected && textarea instanceof HTMLTextAreaElement) {
-        persistDraft(textarea.value);
+      if (!(textarea instanceof HTMLTextAreaElement)) return;
+      if (textSelected) persistDraft(textarea.value);
+      updateWordCount(textarea.value);
+      const over = isOverWordLimit(textarea.value);
+      if (textSelected && over && !wasOver && !pdfInput?.files?.[0]) {
+        dispatchNeedPdf();
       }
+      wasOver = over;
     });
 
     async function onSubmit(event: SubmitEvent) {
@@ -157,9 +194,9 @@ export function SubmitFormEnhancer({
         const content = textarea instanceof HTMLTextAreaElement ? textarea.value.trim() : "";
         const pdfFile = pdfInput?.files?.[0] ?? null;
         if (!content && !pdfFile) throw new Error("Paste your text or upload a PDF.");
-        if (content) {
-          const over = contentLimitError(content);
-          if (over) throw new Error(over);
+        if (isOverWordLimit(content) && !pdfFile) {
+          dispatchNeedPdf();
+          throw new Error("Over 8,000 words — add a PDF on this Text tab.");
         }
 
         const model =
@@ -174,7 +211,25 @@ export function SubmitFormEnhancer({
 
         const res = await fetch("/api/evaluate", { method: "POST", body });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error ?? "Evaluation failed");
+        if (!res.ok) {
+          if (data.code === "need_pdf") {
+            dispatchNeedPdf();
+            throw new Error(data.error ?? "Over 8,000 words — add a PDF on this Text tab.");
+          }
+          throw new Error(data.error ?? "Evaluation failed");
+        }
+
+        if (data.queued && typeof data.id === "string" && isJobId(data.id)) {
+          persistDraft("");
+          savePendingJob({
+            id: data.id,
+            categoryLabel: "documents",
+            scoreContext: "for professional documents",
+            createdAt: new Date().toISOString(),
+          });
+          router.push(`/submit?queued=${data.id}`);
+          return;
+        }
 
         incrementDailyUsage();
         getDailyUsage();
@@ -194,5 +249,5 @@ export function SubmitFormEnhancer({
     return () => form.removeEventListener("submit", onSubmit);
   }, [category, longVideoAllowed, pack, queueSelected, revisionOf, router, textSelected]);
 
-  return null;
+  return <PdfNeedModal open={needPdf} onClose={() => setNeedPdf(false)} variant="submit" />;
 }

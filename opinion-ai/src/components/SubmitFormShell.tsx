@@ -138,11 +138,16 @@ export function SubmitFormShell({
           maxLength={MAX_CONTENT_CHARS}
           className="w-full bg-transparent px-5 py-4 text-sm text-white placeholder:text-white/40 focus:outline-none resize-y"
         />
+        {textSelected && (
+          <p id="submit-word-count" className="text-dynamic text-xs px-5 pb-3">
+            0 / {MAX_CONTENT_WORDS.toLocaleString()} words
+          </p>
+        )}
         {revisionOf && <input type="hidden" name="revisionOf" value={revisionOf} />}
       </div>
 
       {textSelected && (
-        <div className="file-pick mb-4">
+        <div className="file-pick mb-4" id="submit-pdf-pick">
           <input
             id="submit-pdf"
             name="pdf"
@@ -236,7 +241,7 @@ export function SubmitFormShell({
         <div className="flex flex-col items-start gap-2">
           {textSelected ? (
             <span className="text-dynamic text-xs tracking-wide">
-              Free · no credits needed · max {MAX_CONTENT_WORDS.toLocaleString()} words
+              Free instant AI · max {MAX_CONTENT_WORDS.toLocaleString()} words · longer → PDF
             </span>
           ) : privateForced ? (
             <span className="text-dynamic text-xs tracking-wide">Human review · private PRO</span>

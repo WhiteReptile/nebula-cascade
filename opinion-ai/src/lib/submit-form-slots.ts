@@ -35,7 +35,7 @@ export const SUBMIT_SLOTS: SubmitSlot[] = [
   {
     id: "text",
     label: "Text",
-    note: "Words and PDFs. Paste writing or upload a PDF — poems, essays, homework, reports, screenplays. Instant AI opinion. Free for everyone.",
+    note: "Words and PDFs. Paste writing for an instant AI opinion (max 8,000 words). Over that, upload a PDF on this tab — a person reads the file.",
   },
 ];
 

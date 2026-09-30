@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import { hasAcceptedTerms } from "@/lib/accept-terms";
 import { getDailyLimit } from "@/lib/constants";
-import { contentLimitError } from "@/lib/content-limits";
+import { contentLimitError, isOverWordLimit } from "@/lib/content-limits";
 import { evaluateSubmission, getLlmConfig } from "@/lib/evaluate/pipeline";
 import { isCategoryId } from "@/lib/categories";
 import { recordOpinion } from "@/lib/opinion-count";
 import { recordLlmUsage } from "@/lib/llm-usage";
 import { resolveTextSubmission } from "@/lib/resolve-text-content";
 import { isExaminerModel, isQueueCategory, type ExaminerModel } from "@/lib/queue-shared";
+import { queueLongPdfJob } from "@/lib/queue-long-pdf";
 import { saveVerdictRecord } from "@/lib/verdict-store";
 
 export const runtime = "nodejs";
@@ -72,16 +73,45 @@ export async function POST(request: Request) {
       const modelRaw = form.get("model");
       const model = isExaminerModel(modelRaw) ? modelRaw : "pro-examiner-v2";
       const pdfRaw = form.get("pdf");
+      const pdfFile = pdfRaw instanceof File && pdfRaw.size > 0 ? pdfRaw : null;
+
+      if (isOverWordLimit(pasted) && pdfFile) {
+        const id = await queueLongPdfJob({ file: pdfFile, notes: pasted, model });
+        return NextResponse.json({ id, queued: true });
+      }
+      if (isOverWordLimit(pasted) && !pdfFile) {
+        return NextResponse.json(
+          {
+            error: "Over 8,000 words. Upload a PDF on the Text tab.",
+            code: "need_pdf",
+          },
+          { status: 400 },
+        );
+      }
 
       let resolved;
       try {
         resolved = await resolveTextSubmission({
           pasted,
-          pdfFile: pdfRaw instanceof File ? pdfRaw : null,
+          pdfFile,
         });
       } catch (err) {
         const message = err instanceof Error ? err.message : "Add your text or a PDF.";
         return NextResponse.json({ error: message }, { status: 400 });
+      }
+
+      if (isOverWordLimit(resolved.content)) {
+        if (pdfFile) {
+          const id = await queueLongPdfJob({ file: pdfFile, notes: pasted, model });
+          return NextResponse.json({ id, queued: true });
+        }
+        return NextResponse.json(
+          {
+            error: "Over 8,000 words. Upload a PDF on the Text tab.",
+            code: "need_pdf",
+          },
+          { status: 400 },
+        );
       }
 
       return evaluateFromFields({
@@ -108,6 +138,16 @@ export async function POST(request: Request) {
 
     if (isQueueCategory(category)) {
       return NextResponse.json({ error: "That slot needs a file and a human." }, { status: 400 });
+    }
+
+    if (isOverWordLimit(content)) {
+      return NextResponse.json(
+        {
+          error: "Over 8,000 words. Upload a PDF on the Text tab.",
+          code: "need_pdf",
+        },
+        { status: 400 },
+      );
     }
 
     return evaluateFromFields({

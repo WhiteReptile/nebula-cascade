@@ -59,7 +59,7 @@ export const LAUNCH_CATEGORIES: CategoryFramework[] = [
   {
     id: "documents",
     label: "Documents",
-    blurb: "Legacy category — use Text for PDFs and Images for visual work.",
+    blurb: "Long PDFs over 8,000 words. A person opens the file in Admin.",
     placeholder: "Paste the document text, or describe what’s in the file…",
     contextHint: "What’s this document for? Who reads it? What decision should it drive?",
     scoreContext: "for professional documents",

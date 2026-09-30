@@ -2,7 +2,7 @@ import type { JobStatus } from "./job-lifecycle";
 
 export type { JobStatus } from "./job-lifecycle";
 
-export const QUEUE_CATEGORIES = ["music", "images", "video", "physical_appearance"] as const;
+export const QUEUE_CATEGORIES = ["music", "images", "video", "physical_appearance", "documents"] as const;
 export const LEGACY_QUEUE_CATEGORIES = ["documents"] as const;
 export type QueueCategory = (typeof QUEUE_CATEGORIES)[number];
 
@@ -53,7 +53,6 @@ export function isTemporaryUploadCategory(value: unknown): value is QueueCategor
 }
 
 export function normalizeQueueCategory(value: unknown): QueueCategory | null {
-  if (value === "documents") return "images";
   return isQueueCategory(value) ? value : null;
 }
 
