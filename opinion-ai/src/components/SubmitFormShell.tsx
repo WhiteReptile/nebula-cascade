@@ -8,6 +8,7 @@ import {
 import type { SubmitCategoryId } from "@/lib/submit-categories";
 import type { ExaminerModel } from "@/lib/queue-shared";
 import { isPrivatePack, parsePackTier } from "@/lib/share-policy";
+import { MAX_CONTENT_CHARS, MAX_CONTENT_WORDS } from "@/lib/content-limits";
 
 const EXAMINER_MODELS: { id: ExaminerModel; label: string }[] = [
   { id: "pro-examiner-v1", label: "Pro Examiner V1" },
@@ -134,6 +135,7 @@ export function SubmitFormShell({
                   : "Context for the human reviewer…"
           }
           rows={14}
+          maxLength={MAX_CONTENT_CHARS}
           className="w-full bg-transparent px-5 py-4 text-sm text-white placeholder:text-white/40 focus:outline-none resize-y"
         />
         {revisionOf && <input type="hidden" name="revisionOf" value={revisionOf} />}
@@ -233,7 +235,9 @@ export function SubmitFormShell({
       <div className="mt-6 flex items-start justify-between">
         <div className="flex flex-col items-start gap-2">
           {textSelected ? (
-            <span className="text-dynamic text-xs tracking-wide">Free · no credits needed</span>
+            <span className="text-dynamic text-xs tracking-wide">
+              Free · no credits needed · max {MAX_CONTENT_WORDS.toLocaleString()} words
+            </span>
           ) : privateForced ? (
             <span className="text-dynamic text-xs tracking-wide">Human review · private PRO</span>
           ) : (

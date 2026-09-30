@@ -1,4 +1,5 @@
 import { hasAcceptedTerms } from "@/lib/accept-terms";
+import { contentLimitError } from "@/lib/content-limits";
 import { resolveTextSubmission } from "@/lib/resolve-text-content";
 import { evaluateSubmission, getLlmConfig } from "@/lib/evaluate/pipeline";
 import { recordOpinion } from "@/lib/opinion-count";
@@ -35,7 +36,8 @@ export async function POST(request: Request) {
       return publicRedirect(request, "/submit?error=empty");
     }
 
-    if (resolved.content.length > 50000) {
+    const over = contentLimitError(resolved.content);
+    if (over) {
       return publicRedirect(request, "/submit?error=long");
     }
 

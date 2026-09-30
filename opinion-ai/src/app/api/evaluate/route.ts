@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { hasAcceptedTerms } from "@/lib/accept-terms";
 import { getDailyLimit } from "@/lib/constants";
+import { contentLimitError } from "@/lib/content-limits";
 import { evaluateSubmission, getLlmConfig } from "@/lib/evaluate/pipeline";
 import { isCategoryId } from "@/lib/categories";
 import { recordOpinion } from "@/lib/opinion-count";
@@ -28,8 +29,9 @@ async function evaluateFromFields(input: {
   if (!input.content) {
     return NextResponse.json({ error: "Add the work or a PDF." }, { status: 400 });
   }
-  if (input.content.length > 50000) {
-    return NextResponse.json({ error: "Submission too long (max 50,000 characters)." }, { status: 400 });
+  const over = contentLimitError(input.content);
+  if (over) {
+    return NextResponse.json({ error: over }, { status: 400 });
   }
   if (input.context.length > 8000) {
     return NextResponse.json({ error: "Context is too long." }, { status: 400 });

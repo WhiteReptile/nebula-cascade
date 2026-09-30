@@ -32,7 +32,7 @@ export default async function SubmitPage({
     params.error === "empty"
       ? "Paste your text first."
       : params.error === "long"
-        ? "Submission too long (max 50,000 characters)."
+        ? "Submission too long (max 20,000 words)."
         : params.error === "file"
           ? "Choose a file first."
           : params.error === "filesize"

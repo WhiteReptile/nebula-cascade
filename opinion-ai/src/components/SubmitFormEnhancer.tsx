@@ -13,6 +13,7 @@ import {
 } from "@/lib/storage";
 import { isJobId, VIDEO_CAP_SECONDS } from "@/lib/queue-shared";
 import { isPrivatePack } from "@/lib/share-policy";
+import { contentLimitError } from "@/lib/content-limits";
 import type { SubmitCategoryId } from "@/lib/submit-categories";
 import { QUEUE_CATEGORY_IDS } from "@/lib/submit-form-slots";
 
@@ -156,6 +157,10 @@ export function SubmitFormEnhancer({
         const content = textarea instanceof HTMLTextAreaElement ? textarea.value.trim() : "";
         const pdfFile = pdfInput?.files?.[0] ?? null;
         if (!content && !pdfFile) throw new Error("Paste your text or upload a PDF.");
+        if (content) {
+          const over = contentLimitError(content);
+          if (over) throw new Error(over);
+        }
 
         const model =
           form.querySelector<HTMLSelectElement>('select[name="model"]')?.value ?? "pro-examiner-v2";
