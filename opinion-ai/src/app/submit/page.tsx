@@ -39,7 +39,7 @@ export default async function SubmitPage({
             : params.error === "filesize"
               ? "File is too large."
               : params.error === "longvideo"
-                ? "Video over 2 minutes needs HUMAN + AI PRO."
+                ? "Video over 2 minutes needs Hybrid PRO."
                 : params.error === "terms"
                   ? "Accept the Terms and Content Policy to continue."
                   : params.error === "failed"

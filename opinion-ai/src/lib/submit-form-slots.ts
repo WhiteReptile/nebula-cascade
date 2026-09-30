@@ -24,7 +24,7 @@ export const SUBMIT_SLOTS: SubmitSlot[] = [
     id: "video",
     label: "Video",
     fileAccept: "video/*",
-    note: "A person watches it move. Film, clips, anything that lives in time. Send the file, then a little context. Over 2 minutes needs HUMAN + AI PRO.",
+    note: "A person watches it move. Film, clips, anything that lives in time. Send the file, then a little context. Over 2 minutes needs Hybrid PRO.",
   },
   {
     id: "physical_appearance",

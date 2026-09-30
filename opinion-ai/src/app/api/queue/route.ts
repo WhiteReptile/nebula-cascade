@@ -67,7 +67,7 @@ export async function POST(request: Request) {
       }
       if (durationSeconds > VIDEO_CAP_SECONDS && !longVideoAllowed() && !proPack) {
         return NextResponse.json(
-          { error: "Video over 2 minutes needs HUMAN + AI PRO." },
+          { error: "Video over 2 minutes needs Hybrid PRO." },
           { status: 400 },
         );
       }

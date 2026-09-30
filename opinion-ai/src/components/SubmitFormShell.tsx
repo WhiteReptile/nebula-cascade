@@ -167,7 +167,7 @@ export function SubmitFormShell({
               <input type="hidden" name="share" value="0" />
               <p className="label-white text-[10px] mb-2">Sharing</p>
               <p className="text-dynamic text-sm leading-relaxed">
-                HUMAN + AI PRO is private. Your opinion is not shared on the public feed.
+                Hybrid PRO is private. Your opinion is not shared on the public feed.
               </p>
             </>
           ) : (

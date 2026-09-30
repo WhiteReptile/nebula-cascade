@@ -177,7 +177,7 @@ export function SubmitFormEnhancer({
           if (file.type.startsWith("video/")) {
             const duration = await videoDuration(file);
             if (duration > VIDEO_CAP_SECONDS && !longVideoAllowed && !isPrivatePack(effectivePack)) {
-              throw new Error("Video over 2 minutes needs HUMAN + AI PRO.");
+              throw new Error("Video over 2 minutes needs Hybrid PRO.");
             }
             body.append("durationSeconds", String(duration));
           }
