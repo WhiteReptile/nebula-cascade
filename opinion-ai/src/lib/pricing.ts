@@ -4,14 +4,15 @@ export const PRICING_PACKAGES = [
     name: "FREE",
     price: "$0",
     cardTone: "yellow",
-    headline: "5 AI opinions every day",
+    headline: "20 AI opinions every day",
     description: [
-      "Straightforward AI opinions on text, images, artwork, ideas, social posts, and other short-form content.",
-      "No human reviewer. No credits. No share switch.",
+      "AI opinions on text: social posts, marketing plans, job descriptions, and artwork that lives in words — poetry, screenplays, and other writing.",
+      "No images, video, or music. No human reviewer. No credits. No share switch.",
     ],
     features: [
-      "5 AI opinions every day",
-      "Text and other short-form work",
+      "20 AI opinions every day",
+      "Text only — including poetry and screenplays",
+      "Social posts, marketing plans, job descriptions",
       "YourTruths scoring system",
       "Strengths and weaknesses",
       "Clear final verdict",
@@ -21,25 +22,26 @@ export const PRICING_PACKAGES = [
   },
   {
     id: "human-ai",
-    name: "HUMAN + AI",
+    name: "HYBRID",
     price: "$5",
     cardTone: "blue",
-    headline: "5 AI + human opinions",
+    headline: "5 AI-enhanced human evaluations.",
     description: [
-      "For music, video, images, and other supported files.",
-      "A real person watches, listens to, or reads the work. Groq rewrites their notes into an 8-sentence review.",
-      "Use the 5 credits when you want. On Submit, switch Human + AI on or off, and switch share on or off.",
+      "Submit music, video, images, or other creative work. A real reviewer independently experiences your work and provides their raw perspective. YourTruths AI then transforms that human input into a concise, structured 8-sentence evaluation.",
+      "Real perspective. AI evaluation. One focused opinion.",
     ],
     features: [
-      "5 AI + human opinions",
-      "Use a credit when you want (on/off at Submit)",
-      "Share this opinion: on or off at Submit",
-      "8-sentence review (human notes, AI rewritten)",
-      "Human review included",
+      "5 evaluation credits",
+      "Real human perspective",
+      "AI-powered analysis & rewrite",
       "Anonymous reviewers",
-      "YourTruths score + ranking",
+      "0–100 YourTruths Score",
+      "Strengths & weaknesses",
+      "Structured verdict",
+      "Share results on or off",
+      "Use your credits whenever you want",
     ],
-    cta: { label: "Get 5 Premium Opinions", href: "/submit?pack=human-ai" },
+    cta: { label: "Get 5 Hybrid evaluations", href: "/submit?pack=human-ai" },
   },
   {
     id: "human-ai-pro",
@@ -49,7 +51,7 @@ export const PRICING_PACKAGES = [
     headline: "10 AI + human opinions",
     description: [
       "More evaluations, and longer work, including music and video over 2 minutes.",
-      "Same human + AI review as the $5 tier, including the 8-sentence rewrite.",
+      "Same human + AI review as Hybrid, including the 8-sentence rewrite.",
       "Use the 10 credits when you want. On Submit, switch Human + AI on or off.",
     ],
     features: [
@@ -95,8 +97,8 @@ export const PRICING_PACKAGES = [
 export const PRICING_PROMISE = {
   title: "The YourTruths Promise",
   lines: [
-    "FREE = AI opinions. 5 every day. 8 sentences. No share switch.",
-    "HUMAN + AI = 5 credits. Use them when you want. Human notes rewritten into 8 sentences. Share on or off at Submit.",
+    "FREE = AI opinions on text. 20 every day. 8 sentences. No share switch. No images, video, or music.",
+    "HYBRID = 5 credits. A real person experiences the work. AI rewrites that into 8 sentences. Share on or off at Submit.",
     "HUMAN + AI PRO = 10 credits. Use them when you want. Human notes rewritten into 8 sentences. Private. Your opinion is not shared.",
     "No fake humans. No simulated feedback. No telling you what you want to hear.",
     "Just an independent opinion.",
@@ -104,8 +106,8 @@ export const PRICING_PROMISE = {
 } as const;
 
 export const PRICING_NAV_COPY = [
-  "FREE — $0. 5 AI opinions every day.",
-  "HUMAN + AI — $5. 5 AI + human opinions. Use when you want. Share on or off.",
+  "FREE — $0. 20 AI opinions every day on text.",
+  "HYBRID — $5. 5 AI-enhanced human evaluations. Share on or off.",
   "HUMAN + AI PRO — $10. 10 AI + human opinions. Private — your opinion is not shared.",
   "EXTENDED PREMIUM — Contact Sales.",
 ] as const;
