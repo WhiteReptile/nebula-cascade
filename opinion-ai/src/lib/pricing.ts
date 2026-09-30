@@ -23,7 +23,7 @@ export const PRICING_PACKAGES = [
   {
     id: "human-ai",
     name: "HYBRID",
-    price: "$5",
+    price: "$15",
     cardTone: "blue",
     headline: "5 AI-enhanced human evaluations.",
     description: [
@@ -46,7 +46,7 @@ export const PRICING_PACKAGES = [
   {
     id: "human-ai-pro",
     name: "HYBRID PRO",
-    price: "$10",
+    price: "$35",
     cardTone: "red",
     headline: "10 AI-enhanced human evaluations.",
     description: [
@@ -109,7 +109,7 @@ export const PRICING_PROMISE = {
 
 export const PRICING_NAV_COPY = [
   "FREE — $0. 20 AI opinions every day on text.",
-  "HYBRID — $5. 5 AI-enhanced human evaluations. Share on or off.",
-  "HYBRID PRO — $10. 10 AI-enhanced human evaluations. Private — your opinion is not shared.",
+  "HYBRID — $15. 5 AI-enhanced human evaluations. Share on or off.",
+  "HYBRID PRO — $35. 10 AI-enhanced human evaluations. Private — your opinion is not shared.",
   "EXTENDED PREMIUM — Contact Sales.",
 ] as const;

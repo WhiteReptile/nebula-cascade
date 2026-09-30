@@ -48,7 +48,7 @@ Without an LLM key the evaluate path still returns a **demo** verdict (hash-base
 | `/submit` | Text (instant AI) or file slots (human queue) |
 | `/result/[id]` | Verdict view |
 | `/history` | Client history + server review sync |
-| `/pricing` | Free / $5 / $10 / Extended copy (no checkout yet) |
+| `/pricing` | Free / $15 / $35 / Extended copy (no checkout yet) |
 | `/how` | How-it-works copy |
 | `/admin` | Human review login + job queue |
 
