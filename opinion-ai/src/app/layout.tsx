@@ -4,6 +4,7 @@ import { PublicShell } from "@/components/PublicShell";
 import { SiteFooter } from "@/components/SiteFooter";
 import { BRAND_NAME } from "@/components/BrandMark";
 import { getOpinionTotal } from "@/lib/opinion-count";
+import { SITE_ORIGIN } from "@/lib/site";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
@@ -11,6 +12,7 @@ const space = Space_Grotesk({ subsets: ["latin"], variable: "--font-space" });
 const orbitron = Orbitron({ subsets: ["latin"], variable: "--font-orbitron" });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_ORIGIN),
   title: BRAND_NAME,
   description: "An AI designed to give unbiased, real opinions of your work.",
 };
