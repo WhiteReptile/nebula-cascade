@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { loadDraft, persistDraft } from "@/components/HeroDraft";
 import { PdfNeedModal } from "@/components/PdfNeedModal";
+import { OpinionWorkingModal } from "@/components/OpinionWorkingModal";
 import {
   getDailyUsage,
   getPaidPack,
@@ -77,6 +78,7 @@ export function SubmitFormEnhancer({
   const queueSelected = QUEUE_CATEGORY_IDS.includes(category);
   const textSelected = category === "text";
   const [needPdf, setNeedPdf] = useState(initialNeedPdf);
+  const [working, setWorking] = useState(false);
 
   useEffect(() => {
     function onNeed() {
@@ -143,12 +145,18 @@ export function SubmitFormEnhancer({
         submitBtn.textContent = "Submitting…";
       }
 
+      let slowTimer: ReturnType<typeof setTimeout> | undefined;
+      const stopSlow = () => {
+        if (slowTimer) clearTimeout(slowTimer);
+      };
+
       try {
         if (queueSelected) {
           const file = fileInput?.files?.[0];
           const context = textarea instanceof HTMLTextAreaElement ? textarea.value.trim() : "";
           if (!file) throw new Error("Choose a file first.");
           if (!context) throw new Error("Add context for your file.");
+          setWorking(true);
 
           const paid = getPaidPack();
           const effectivePack = pack || paid?.tier || "";
@@ -199,6 +207,12 @@ export function SubmitFormEnhancer({
           throw new Error("Over 8,000 words — add a PDF on this Text tab.");
         }
 
+        if (pdfFile) {
+          setWorking(true);
+        } else {
+          slowTimer = setTimeout(() => setWorking(true), 8000);
+        }
+
         const model =
           form.querySelector<HTMLSelectElement>('select[name="model"]')?.value ?? "pro-examiner-v2";
         const body = new FormData();
@@ -211,6 +225,7 @@ export function SubmitFormEnhancer({
 
         const res = await fetch("/api/evaluate", { method: "POST", body });
         const data = await res.json();
+        stopSlow();
         if (!res.ok) {
           if (data.code === "need_pdf") {
             dispatchNeedPdf();
@@ -237,6 +252,8 @@ export function SubmitFormEnhancer({
         persistDraft("");
         router.push(`/result/${data.verdict.id}`);
       } catch (err) {
+        stopSlow();
+        setWorking(false);
         showError(err instanceof Error ? err.message : "Something went wrong");
         if (submitBtn) {
           submitBtn.disabled = false;
@@ -249,5 +266,10 @@ export function SubmitFormEnhancer({
     return () => form.removeEventListener("submit", onSubmit);
   }, [category, longVideoAllowed, pack, queueSelected, revisionOf, router, textSelected]);
 
-  return <PdfNeedModal open={needPdf} onClose={() => setNeedPdf(false)} variant="submit" />;
+  return (
+    <>
+      <PdfNeedModal open={needPdf} onClose={() => setNeedPdf(false)} variant="submit" />
+      <OpinionWorkingModal open={working} />
+    </>
+  );
 }

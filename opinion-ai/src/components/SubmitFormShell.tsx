@@ -67,8 +67,8 @@ export function SubmitFormShell({
 
       {queueSelected && (
         <p className="warning-red sentence text-xs sm:text-sm mb-4">
-          Music, images, video, and physical appearance need a human, so a review can take about 10
-          minutes. Uploaded files are not kept — only the final opinion and score.
+          Music, images, video, and physical appearance need a human. Uploaded files are not kept —
+          only the final opinion and score.
         </p>
       )}
 
