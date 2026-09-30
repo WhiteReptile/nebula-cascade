@@ -20,7 +20,7 @@ export async function GET(
   }
 
   if (!isJobComplete(job)) {
-    return NextResponse.json({ status: "pending" });
+    return NextResponse.json({ status: "pending", category: job.category });
   }
 
   const verdict = jobToVerdict(job);

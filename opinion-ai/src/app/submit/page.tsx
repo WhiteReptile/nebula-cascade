@@ -1,6 +1,5 @@
 import { DraftHydrateScript } from "@/components/DraftHydrateScript";
 import { PackBootstrap } from "@/components/PackBootstrap";
-import { QueueStatusPoller } from "@/components/QueueStatusPoller";
 import { SubmitFormEnhancer } from "@/components/SubmitFormEnhancer";
 import { SubmitFormShell } from "@/components/SubmitFormShell";
 import { getLlmConfig } from "@/lib/evaluate/pipeline";
@@ -73,7 +72,6 @@ export default async function SubmitPage({
         queuedId={queued ? queuedId : undefined}
         pack={pack}
       />
-      {queued && queuedId ? <QueueStatusPoller jobId={queuedId} /> : null}
       {!queued && (
         <SubmitFormEnhancer
           category={category}

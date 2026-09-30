@@ -1,5 +1,4 @@
-import Link from "next/link";
-import { BackArrow } from "@/components/BackArrow";
+import { QueueWait } from "@/components/QueueWait";
 import {
   QUEUE_CATEGORY_IDS,
   SUBMIT_SLOTS,
@@ -27,28 +26,7 @@ export function SubmitFormShell({
   pack?: string;
 }) {
   if (queuedId) {
-    return (
-      <div className="max-w-xl mx-auto w-full">
-        <div className="mb-8">
-          <BackArrow href="/submit" hideOnHome={false} />
-        </div>
-        <div className="cosmic-glass p-8 text-center">
-          <div className="work-spin" aria-hidden />
-          <p className="label-white text-[10px] mt-4 mb-8">Loading</p>
-          <p className="text-white text-base leading-relaxed mb-4">A person will look at your file.</p>
-          <p className="text-dynamic text-sm leading-relaxed mb-4">
-            They write how they feel, then we turn that into a short opinion.
-          </p>
-          <p className="text-dynamic text-sm leading-relaxed mb-6">This is not instant like text.</p>
-          <p className="warning-red sentence text-xs sm:text-sm">A review can take 5 to 10 minutes.</p>
-          <p className="text-dynamic text-xs mt-6">
-            <Link href={`/result/${queuedId}`} className="nav-white">
-              Check status
-            </Link>
-          </p>
-        </div>
-      </div>
-    );
+    return <QueueWait jobId={queuedId} />;
   }
 
   const slot = SUBMIT_SLOTS.find((s) => s.id === category);
@@ -89,7 +67,7 @@ export function SubmitFormShell({
 
       {queueSelected && (
         <p className="warning-red sentence text-xs sm:text-sm mb-4">
-          Music, images, video, and physical appearance need a human, so a review can take 5 to 10
+          Music, images, video, and physical appearance need a human, so a review can take about 10
           minutes. Uploaded files are not kept — only the final opinion and score.
         </p>
       )}
