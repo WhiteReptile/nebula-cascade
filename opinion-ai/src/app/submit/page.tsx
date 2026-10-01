@@ -4,6 +4,7 @@ import { PackBootstrap } from "@/components/PackBootstrap";
 import { SubmitFormEnhancer } from "@/components/SubmitFormEnhancer";
 import { SubmitFormShell } from "@/components/SubmitFormShell";
 import { getLlmConfig } from "@/lib/evaluate/pipeline";
+import { hybridQueueOpen } from "@/lib/gates";
 import { isJobId } from "@/lib/queue-shared";
 import { isPrivatePack, parsePackTier } from "@/lib/share-policy";
 import { parseSubmitCategory } from "@/lib/submit-categories";
@@ -34,6 +35,7 @@ export default async function SubmitPage({
   }
 
   const demoMode = !getLlmConfig();
+  const filesOpen = hybridQueueOpen();
   const category = parseSubmitCategory(params.category);
   const revisionOf = params.revision?.trim() || undefined;
   const queuedId = params.queued?.trim();
@@ -53,6 +55,16 @@ export default async function SubmitPage({
                 ? "Video over 2 minutes needs Hybrid PRO."
                 : params.error === "terms"
                   ? "Accept the Terms and Content Policy to continue."
+                  : params.error === "limit"
+                    ? "Free limit is 20 AI opinions today. Come back tomorrow."
+                    : params.error === "llm"
+                      ? "AI is at today’s cap. Try again tomorrow."
+                      : params.error === "hybrid"
+                        ? "Hybrid uploads are closed. Text AI is still open."
+                        : params.error === "queuelimit"
+                          ? "Too many file uploads this hour. Try later."
+                          : params.error === "closed"
+                            ? "Free AI is closed right now."
                   : params.error === "failed"
                     ? "Submission failed. Try again."
                     : null;
@@ -73,6 +85,11 @@ export default async function SubmitPage({
             PRO pack active — submissions stay private (not shared).
           </p>
         )}
+        {!filesOpen && (
+          <p className="text-dynamic text-xs sm:text-sm mt-4">
+            Hybrid file uploads are closed. Free text AI is still open (20 today).
+          </p>
+        )}
         {errorMessage && (
           <p className="warning-red sentence text-xs sm:text-sm mt-4">{errorMessage}</p>
         )}
@@ -82,6 +99,7 @@ export default async function SubmitPage({
         revisionOf={revisionOf}
         queuedId={queued ? queuedId : undefined}
         pack={pack}
+        hybridQueueOpen={filesOpen}
       />
       {!queued && (
         <SubmitFormEnhancer
@@ -90,6 +108,7 @@ export default async function SubmitPage({
           longVideoAllowed={process.env.PRO_LONG_VIDEO === "1" || isPrivatePack(pack)}
           pack={pack}
           initialNeedPdf={params.error === "needpdf"}
+          hybridQueueOpen={filesOpen}
         />
       )}
     </div>

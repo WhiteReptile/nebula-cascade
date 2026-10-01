@@ -22,11 +22,13 @@ export function SubmitFormShell({
   revisionOf,
   queuedId,
   pack,
+  hybridQueueOpen = true,
 }: {
   category: SubmitCategoryId;
   revisionOf?: string;
   queuedId?: string;
   pack?: string;
+  hybridQueueOpen?: boolean;
 }) {
   if (queuedId) {
     return <QueueWait jobId={queuedId} />;
@@ -69,8 +71,9 @@ export function SubmitFormShell({
 
       {queueSelected && (
         <p className="warning-red sentence text-xs sm:text-sm mb-4">
-          Music, images, video, and physical appearance need a human. Uploaded files are not kept —
-          only the final opinion and score.
+          {hybridQueueOpen
+            ? "Music, images, video, and physical appearance need a human. Uploaded files are not kept — only the final opinion and score."
+            : "Hybrid file uploads are closed. Use the Text tab for free AI (20 today)."}
         </p>
       )}
 
@@ -202,7 +205,11 @@ export function SubmitFormShell({
             <HybridSubmitHint packFromUrl={packTier ?? undefined} />
           )}
         </div>
-        <button type="submit" className="cosmic-cta text-sm px-8 py-2.5">
+        <button
+          type="submit"
+          className="cosmic-cta text-sm px-8 py-2.5"
+          disabled={queueSelected && !hybridQueueOpen}
+        >
           Submit
         </button>
       </div>

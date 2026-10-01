@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getCategory } from "@/lib/categories";
 import { isJobComplete } from "@/lib/job-lifecycle";
 import { jobToVerdict } from "@/lib/job-verdict";
+import { publicReviewsOpen } from "@/lib/gates";
 import { listJobs } from "@/lib/queue";
 
 export const dynamic = "force-dynamic";
@@ -13,6 +14,9 @@ export const runtime = "nodejs";
  * Private / PRO / opted-out jobs are never listed.
  */
 export async function GET() {
+  if (!publicReviewsOpen()) {
+    return NextResponse.json({ reviews: [] });
+  }
   const jobs = await listJobs();
   const reviews = jobs
     .filter((job) => job.share === true && isJobComplete(job))

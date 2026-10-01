@@ -44,11 +44,12 @@ It sits beside Nebula Cascade in the same git repo but is **not** wired to Nebul
 | Blocker | Severity | Detail |
 |---------|----------|--------|
 | No Stripe / real checkout | Critical | `?pack=hybrid` invents credits in localStorage |
-| No user accounts | Critical | History and free limits are per-browser |
+| No user accounts | Critical | History is still per-browser |
 | Local disk storage | Critical | `data/jobs.json` + uploads won’t persist on serverless |
-| Client-only free limit | Critical | `5/day` in localStorage; API is open |
-| Client-only credits | Critical | Queue API does not check payment |
-| Public reviews feed | High | `/api/reviews` exposes shareable jobs without auth |
+| Server 20/day + Groq cap | Done | IP + cookie on evaluate; `LLM_DAILY_MAX_CALLS` (set a Groq dashboard spend cap too) |
+| Client-only credits | Critical | Queue API does not check payment (until Stripe) |
+| File queue | Done | Closed in production unless `HYBRID_QUEUE_OPEN=1`; 5 uploads/hour/IP |
+| Public reviews feed | Done | Empty in production unless `PUBLIC_REVIEWS=1` |
 | Demo LLM mode silent | Medium | Missing key → fake verdict; UI doesn’t warn |
 | Human capacity | Ops | File reviews need a real person (~minutes each) |
 
@@ -73,9 +74,8 @@ See prior product notes: store results in Postgres; do **not** keep media long-t
 2. **Durable jobs** — Postgres (e.g. Supabase) for jobs/results; blob with TTL for uploads
 3. **Auth** — Google + email magic link; bind history and quotas to `userId`
 4. **Stripe** — Real packs; webhooks mint credits server-side
-5. **Server rate limits** — Enforce free 5/day and paid credits on the API
-6. **Tighten `/api/reviews`** — Only the user’s jobs + explicitly public feed
-7. **Deploy** — Long-lived Node or Vercel + external storage (not local `data/`)
+5. **Groq dashboard spend cap** — Code already limits 20/day + `LLM_DAILY_MAX_CALLS`
+6. **Deploy** — Long-lived Node or Vercel + external storage (not local `data/`)
 
 ---
 

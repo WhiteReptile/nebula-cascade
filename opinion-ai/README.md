@@ -37,6 +37,11 @@ npm run dev                  # http://localhost:3000
 | `OPENAI_API_KEY` | Optional | Fallback if `LLM_API_KEY` empty |
 | `ADMIN_PASSWORD` | For `/admin` | Shared password for the human review queue |
 | `PRO_LONG_VIDEO` | No | Set `1` to allow video uploads over 2 minutes |
+| `PUBLIC_OPEN` | No | `1` (default) free text AI. `0` closes it except admin |
+| `HYBRID_QUEUE_OPEN` | No | `1` file queue on. Default: on in dev, **off in production** |
+| `PUBLIC_REVIEWS` | No | `1` public shared feed. Default off in production |
+| `LLM_DAILY_MAX_CALLS` | No | Guest Groq cap per day (default 1000) |
+| `QUEUE_PER_HOUR` | No | File uploads per IP per hour (default 5) |
 
 Without an LLM key the evaluate path still returns a **demo** verdict (hash-based). Submit does not surface that in the UI yet.
 
@@ -71,11 +76,10 @@ Local data lives under `data/` (gitignored). That path does **not** survive serv
 
 ## Launch blockers (summary)
 
-1. **Payments** — Pricing CTAs grant fake localStorage credits via `?pack=`
-2. **Accounts** — No auth; history and free-tier limits are browser-only
+1. **Payments** — Fake `?pack=` credits until Stripe. Hybrid file queue is **closed in production** unless `HYBRID_QUEUE_OPEN=1`.
+2. **Accounts** — No auth; history is still browser-only
 3. **Durable storage** — Need Postgres + blob storage before cloud deploy
-4. **Server enforcement** — Free daily limit and credits are client-side only
-5. **Privacy** — `GET /api/reviews` is a public shared feed without user scoping
+4. **Groq dashboard** — Set a spend cap there too (code cap is `LLM_DAILY_MAX_CALLS`)
 
 ## Repo layout
 

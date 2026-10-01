@@ -1,3 +1,4 @@
+import { NextResponse } from "next/server";
 import { hasAcceptedTerms } from "@/lib/accept-terms";
 import { isOverWordLimit } from "@/lib/content-limits";
 import { resolveTextSubmission } from "@/lib/resolve-text-content";
@@ -7,9 +8,34 @@ import { recordLlmUsage } from "@/lib/llm-usage";
 import { publicRedirect } from "@/lib/public-origin";
 import { isExaminerModel } from "@/lib/queue-shared";
 import { queueLongPdfJob } from "@/lib/queue-long-pdf";
+import {
+  attachGuestCookie,
+  GUEST_COOKIE,
+  guardFreeEvaluate,
+  guardHybridQueue,
+} from "@/lib/rate-limit";
 import { saveVerdictRecord } from "@/lib/verdict-store";
 
 export const runtime = "nodejs";
+
+async function blockedRedirect(request: Request, gate: NextResponse | { guestId: string }) {
+  if (!(gate instanceof NextResponse)) return null;
+  const data = (await gate.clone().json()) as { code?: string };
+  const path =
+    data.code === "free_limit"
+      ? "/submit?error=limit"
+      : data.code === "llm_cap"
+        ? "/submit?error=llm"
+        : data.code === "queue_limit"
+          ? "/submit?error=queuelimit"
+          : data.code === "hybrid_closed"
+            ? "/submit?error=hybrid"
+            : "/submit?error=closed";
+  const next = publicRedirect(request, path);
+  const guest = gate.cookies.get(GUEST_COOKIE)?.value;
+  if (guest) attachGuestCookie(next, guest, request);
+  return next;
+}
 
 export async function POST(request: Request) {
   try {
@@ -25,8 +51,13 @@ export async function POST(request: Request) {
     const pdfFile = pdfRaw instanceof File && pdfRaw.size > 0 ? pdfRaw : null;
 
     if (isOverWordLimit(pasted) && pdfFile) {
+      const gate = await guardHybridQueue(request);
+      const blocked = await blockedRedirect(request, gate);
+      if (blocked) return blocked;
       const id = await queueLongPdfJob({ file: pdfFile, notes: pasted, model });
-      return publicRedirect(request, `/submit?queued=${id}`);
+      const next = publicRedirect(request, `/submit?queued=${id}`);
+      if (!(gate instanceof NextResponse)) attachGuestCookie(next, gate.guestId, request);
+      return next;
     }
     if (isOverWordLimit(pasted) && !pdfFile) {
       return publicRedirect(request, "/submit?error=needpdf");
@@ -48,11 +79,20 @@ export async function POST(request: Request) {
 
     if (isOverWordLimit(resolved.content)) {
       if (pdfFile) {
+        const gate = await guardHybridQueue(request);
+        const blocked = await blockedRedirect(request, gate);
+        if (blocked) return blocked;
         const id = await queueLongPdfJob({ file: pdfFile, notes: pasted, model });
-        return publicRedirect(request, `/submit?queued=${id}`);
+        const next = publicRedirect(request, `/submit?queued=${id}`);
+        if (!(gate instanceof NextResponse)) attachGuestCookie(next, gate.guestId, request);
+        return next;
       }
       return publicRedirect(request, "/submit?error=needpdf");
     }
+
+    const gate = await guardFreeEvaluate(request);
+    const blocked = await blockedRedirect(request, gate);
+    if (blocked) return blocked;
 
     const demoMode = !getLlmConfig();
     const verdict = await evaluateSubmission(
@@ -66,7 +106,9 @@ export async function POST(request: Request) {
     await recordOpinion(verdict.id);
     await recordLlmUsage(demoMode ? "demo" : "evaluate", demoMode);
 
-    return publicRedirect(request, `/result/${verdict.id}`);
+    const next = publicRedirect(request, `/result/${verdict.id}`);
+    if (!(gate instanceof NextResponse)) attachGuestCookie(next, gate.guestId, request);
+    return next;
   } catch {
     return publicRedirect(request, "/submit?error=failed");
   }

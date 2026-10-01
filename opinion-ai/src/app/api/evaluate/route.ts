@@ -9,6 +9,7 @@ import { recordLlmUsage } from "@/lib/llm-usage";
 import { resolveTextSubmission } from "@/lib/resolve-text-content";
 import { isExaminerModel, isQueueCategory, type ExaminerModel } from "@/lib/queue-shared";
 import { queueLongPdfJob } from "@/lib/queue-long-pdf";
+import { attachGuestCookie, guardFreeEvaluate, guardHybridQueue } from "@/lib/rate-limit";
 import { saveVerdictRecord } from "@/lib/verdict-store";
 
 export const runtime = "nodejs";
@@ -76,8 +77,10 @@ export async function POST(request: Request) {
       const pdfFile = pdfRaw instanceof File && pdfRaw.size > 0 ? pdfRaw : null;
 
       if (isOverWordLimit(pasted) && pdfFile) {
+        const gate = await guardHybridQueue(request);
+        if (gate instanceof NextResponse) return gate;
         const id = await queueLongPdfJob({ file: pdfFile, notes: pasted, model });
-        return NextResponse.json({ id, queued: true });
+        return attachGuestCookie(NextResponse.json({ id, queued: true }), gate.guestId, request);
       }
       if (isOverWordLimit(pasted) && !pdfFile) {
         return NextResponse.json(
@@ -102,8 +105,10 @@ export async function POST(request: Request) {
 
       if (isOverWordLimit(resolved.content)) {
         if (pdfFile) {
+          const gate = await guardHybridQueue(request);
+          if (gate instanceof NextResponse) return gate;
           const id = await queueLongPdfJob({ file: pdfFile, notes: pasted, model });
-          return NextResponse.json({ id, queued: true });
+          return attachGuestCookie(NextResponse.json({ id, queued: true }), gate.guestId, request);
         }
         return NextResponse.json(
           {
@@ -114,13 +119,16 @@ export async function POST(request: Request) {
         );
       }
 
-      return evaluateFromFields({
+      const gate = await guardFreeEvaluate(request);
+      if (gate instanceof NextResponse) return gate;
+      const evaluated = await evaluateFromFields({
         content: resolved.content,
         context: resolved.context ?? "",
         revisionOf,
         category,
         model,
       });
+      return attachGuestCookie(evaluated, gate.guestId, request);
     }
 
     const body = await request.json();
@@ -150,13 +158,16 @@ export async function POST(request: Request) {
       );
     }
 
-    return evaluateFromFields({
+    const gate = await guardFreeEvaluate(request);
+    if (gate instanceof NextResponse) return gate;
+    const evaluated = await evaluateFromFields({
       content,
       context,
       revisionOf,
       category: category ?? "text",
       model,
     });
+    return attachGuestCookie(evaluated, gate.guestId, request);
   } catch {
     return NextResponse.json({ error: "Evaluation failed." }, { status: 500 });
   }

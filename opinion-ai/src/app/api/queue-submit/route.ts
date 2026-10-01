@@ -2,6 +2,8 @@ import { hasAcceptedTerms } from "@/lib/accept-terms";
 import { addJob, isExaminerModel, isHumanJobCategory, longVideoAllowed, MAX_QUEUE_FILE_BYTES, normalizeQueueCategory, VIDEO_CAP_SECONDS, type QueueJob } from "@/lib/queue";
 import { publicRedirect } from "@/lib/public-origin";
 import { isPrivatePack, resolveShareFlag } from "@/lib/share-policy";
+import { NextResponse } from "next/server";
+import { attachGuestCookie, GUEST_COOKIE, guardHybridQueue } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -23,6 +25,16 @@ export async function POST(request: Request) {
 
     if (!hasAcceptedTerms(form.get("acceptTerms"))) {
       return publicRedirect(request, "/submit?error=terms");
+    }
+
+    const gate = await guardHybridQueue(request);
+    if (gate instanceof NextResponse) {
+      const data = (await gate.clone().json()) as { code?: string };
+      const path = data.code === "queue_limit" ? "/submit?error=queuelimit" : "/submit?error=hybrid";
+      const next = publicRedirect(request, path);
+      const guest = gate.cookies.get(GUEST_COOKIE)?.value;
+      if (guest) attachGuestCookie(next, guest, request);
+      return next;
     }
 
     if (!isHumanJobCategory(categoryRaw)) {
@@ -73,7 +85,9 @@ export async function POST(request: Request) {
     };
 
     await addJob(job, buffer);
-    return publicRedirect(request, `/submit?queued=${job.id}`);
+    const next = publicRedirect(request, `/submit?queued=${job.id}`);
+    attachGuestCookie(next, gate.guestId, request);
+    return next;
   } catch {
     return publicRedirect(request, "/submit?error=failed");
   }

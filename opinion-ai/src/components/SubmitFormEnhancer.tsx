@@ -31,6 +31,7 @@ import {
   MAX_CONTENT_WORDS,
   NEED_PDF_EVENT,
 } from "@/lib/content-limits";
+import { getDailyLimit } from "@/lib/constants";
 import type { SubmitCategoryId } from "@/lib/submit-categories";
 import { QUEUE_CATEGORY_IDS } from "@/lib/submit-form-slots";
 
@@ -87,12 +88,14 @@ export function SubmitFormEnhancer({
   longVideoAllowed = false,
   pack,
   initialNeedPdf = false,
+  hybridQueueOpen = true,
 }: {
   category: SubmitCategoryId;
   revisionOf?: string;
   longVideoAllowed?: boolean;
   pack?: string;
   initialNeedPdf?: boolean;
+  hybridQueueOpen?: boolean;
 }) {
   const router = useRouter();
   const queueSelected = QUEUE_CATEGORY_IDS.includes(category);
@@ -212,6 +215,9 @@ export function SubmitFormEnhancer({
 
       try {
         if (queueSelected) {
+          if (!hybridQueueOpen) {
+            throw new Error("Hybrid uploads are closed. Use the Text tab for free AI.");
+          }
           const file = fileInput?.files?.[0];
           const context = textarea instanceof HTMLTextAreaElement ? textarea.value.trim() : "";
           if (!file) throw new Error("Choose a file first.");
@@ -290,6 +296,12 @@ export function SubmitFormEnhancer({
         }
 
         const willQueuePdf = Boolean(pdfFile && isOverWordLimit(content));
+        if (!willQueuePdf && getDailyUsage() >= getDailyLimit()) {
+          throw new Error(`Free limit is ${getDailyLimit()} AI opinions today. Come back tomorrow.`);
+        }
+        if (willQueuePdf && !hybridQueueOpen) {
+          throw new Error("Long PDFs need Hybrid. Uploads are closed right now.");
+        }
         let pdfCost = 0;
         if (willQueuePdf) {
           const { cost, ok } = await confirmHybrid({ category: "documents", pdf: true });
@@ -365,7 +377,7 @@ export function SubmitFormEnhancer({
 
     form.addEventListener("submit", onSubmit);
     return () => form.removeEventListener("submit", onSubmit);
-  }, [category, longVideoAllowed, pack, queueSelected, revisionOf, router, textSelected]);
+  }, [category, hybridQueueOpen, longVideoAllowed, pack, queueSelected, revisionOf, router, textSelected]);
 
   return (
     <>

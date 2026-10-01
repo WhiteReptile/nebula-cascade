@@ -11,6 +11,7 @@ import {
   type QueueJob,
 } from "@/lib/queue";
 import { isPrivatePack, resolveShareFlag } from "@/lib/share-policy";
+import { attachGuestCookie, guardHybridQueue } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -36,6 +37,9 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
+
+    const gate = await guardHybridQueue(request);
+    if (gate instanceof NextResponse) return gate;
 
     if (!isHumanJobCategory(categoryRaw)) {
       return NextResponse.json({ error: "Choose a slot that takes a file." }, { status: 400 });
@@ -92,7 +96,7 @@ export async function POST(request: Request) {
     };
 
     await addJob(job, buffer);
-    return NextResponse.json({ id: job.id });
+    return attachGuestCookie(NextResponse.json({ id: job.id }), gate.guestId, request);
   } catch (err) {
     console.error("queue POST", err);
     return NextResponse.json({ error: "Upload failed." }, { status: 500 });
