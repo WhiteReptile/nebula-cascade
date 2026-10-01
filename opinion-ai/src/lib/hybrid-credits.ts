@@ -11,7 +11,7 @@ export const HYBRID_PRO_PACK_CREDITS = 1000;
 export const PACK_SCALE_V2 = "v2" as const;
 
 export function packCreditsForTier(tier: PaidTier): number {
-  return tier === "human-ai-pro" ? HYBRID_PRO_PACK_CREDITS : HYBRID_PACK_CREDITS;
+  return tier === "hybrid-pro" ? HYBRID_PRO_PACK_CREDITS : HYBRID_PACK_CREDITS;
 }
 
 export function formatClock(seconds: number): string {

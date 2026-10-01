@@ -1,10 +1,17 @@
 import { packCreditsForTier } from "@/lib/hybrid-credits";
 
-export type PaidTier = "human-ai" | "human-ai-pro";
+export type PaidTier = "hybrid" | "hybrid-pro";
+
+/** Map current and leftover pack ids onto Hybrid / Hybrid PRO. */
+export function canonicalizePaidTier(value: string | null | undefined): PaidTier | null {
+  if (value === "hybrid" || value === "human-ai") return "hybrid";
+  if (value === "hybrid-pro" || value === "human-ai-pro") return "hybrid-pro";
+  return null;
+}
 
 /** PRO packages are always private — opinion is not shared. */
 export function isPrivatePack(tier: string | null | undefined): boolean {
-  return tier === "human-ai-pro";
+  return canonicalizePaidTier(tier) === "hybrid-pro";
 }
 
 /** Parse share intent from form + pack. PRO always false. */
@@ -21,6 +28,5 @@ export function packCredits(tier: PaidTier): number {
 }
 
 export function parsePackTier(value: string | null | undefined): PaidTier | null {
-  if (value === "human-ai" || value === "human-ai-pro") return value;
-  return null;
+  return canonicalizePaidTier(value);
 }

@@ -43,7 +43,7 @@ It sits beside Nebula Cascade in the same git repo but is **not** wired to Nebul
 
 | Blocker | Severity | Detail |
 |---------|----------|--------|
-| No Stripe / real checkout | Critical | `?pack=human-ai` invents credits in localStorage |
+| No Stripe / real checkout | Critical | `?pack=hybrid` invents credits in localStorage |
 | No user accounts | Critical | History and free limits are per-browser |
 | Local disk storage | Critical | `data/jobs.json` + uploads won’t persist on serverless |
 | Client-only free limit | Critical | `5/day` in localStorage; API is open |

@@ -14,7 +14,7 @@ export function HybridCreditsBar() {
         setLabel(null);
         return;
       }
-      const name = pack.tier === "human-ai-pro" ? "Hybrid PRO" : "Hybrid";
+      const name = pack.tier === "hybrid-pro" ? "Hybrid PRO" : "Hybrid";
       setLabel(`${name} · ${pack.credits.toLocaleString()} credits`);
     }
     read();

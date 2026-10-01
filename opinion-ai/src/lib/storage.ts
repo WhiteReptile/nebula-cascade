@@ -1,7 +1,7 @@
 "use client";
 
 import { migrateLegacyCredits, PACK_SCALE_V2 } from "@/lib/hybrid-credits";
-import type { PaidTier } from "@/lib/share-policy";
+import { canonicalizePaidTier, type PaidTier } from "@/lib/share-policy";
 import type { HistoryEntry, Verdict } from "./types";
 
 export type { PaidTier };
@@ -135,12 +135,13 @@ export function getPaidPack(): PaidPack | null {
   try {
     const raw = localStorage.getItem(PACK_KEY);
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as PaidPack;
-    if (parsed.tier !== "human-ai" && parsed.tier !== "human-ai-pro") return null;
+    const parsed = JSON.parse(raw) as PaidPack & { tier: string };
+    const tier = canonicalizePaidTier(parsed.tier);
+    if (!tier) return null;
     if (!Number.isInteger(parsed.credits) || parsed.credits < 0) return null;
     const credits = migrateLegacyCredits(parsed.credits, parsed.scale);
-    const next: PaidPack = { tier: parsed.tier, credits, scale: PACK_SCALE_V2 };
-    if (credits !== parsed.credits || parsed.scale !== PACK_SCALE_V2) {
+    const next: PaidPack = { tier, credits, scale: PACK_SCALE_V2 };
+    if (credits !== parsed.credits || parsed.scale !== PACK_SCALE_V2 || parsed.tier !== tier) {
       setPaidPack(next);
     }
     return next;

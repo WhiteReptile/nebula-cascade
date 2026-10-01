@@ -21,7 +21,7 @@ export const PRICING_PACKAGES = [
     cta: { label: "Start free", href: "/submit" },
   },
   {
-    id: "human-ai",
+    id: "hybrid",
     name: "HYBRID",
     price: "$15",
     cardTone: "blue",
@@ -42,10 +42,10 @@ export const PRICING_PACKAGES = [
       "Share results on or off",
       "Use your credits whenever you want",
     ],
-    cta: { label: "Get Hybrid", href: "/submit?pack=human-ai" },
+    cta: { label: "Get Hybrid", href: "/submit?pack=hybrid" },
   },
   {
-    id: "human-ai-pro",
+    id: "hybrid-pro",
     name: "HYBRID PRO",
     price: "$35",
     cardTone: "red",
@@ -68,7 +68,7 @@ export const PRICING_PACKAGES = [
     ],
     privateLabel: "Private use",
     privateFeatures: ["Your opinion is not shared"],
-    cta: { label: "Get Hybrid PRO", href: "/submit?pack=human-ai-pro" },
+    cta: { label: "Get Hybrid PRO", href: "/submit?pack=hybrid-pro" },
   },
   {
     id: "extended",

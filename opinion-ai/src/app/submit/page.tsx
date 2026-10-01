@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { DraftHydrateScript } from "@/components/DraftHydrateScript";
 import { PackBootstrap } from "@/components/PackBootstrap";
 import { SubmitFormEnhancer } from "@/components/SubmitFormEnhancer";
@@ -21,12 +22,22 @@ export default async function SubmitPage({
   searchParams: Promise<SubmitSearchParams>;
 }) {
   const params = await searchParams;
+  const pack = parsePackTier(params.pack) ?? undefined;
+  if (params.pack && pack && params.pack !== pack) {
+    const next = new URLSearchParams();
+    for (const [key, value] of Object.entries(params)) {
+      if (key === "pack" || value == null || value === "") continue;
+      next.set(key, value);
+    }
+    next.set("pack", pack);
+    redirect(`/submit?${next.toString()}`);
+  }
+
   const demoMode = !getLlmConfig();
   const category = parseSubmitCategory(params.category);
   const revisionOf = params.revision?.trim() || undefined;
   const queuedId = params.queued?.trim();
   const queued = Boolean(queuedId && isJobId(queuedId));
-  const pack = parsePackTier(params.pack) ?? undefined;
   const errorMessage =
     params.error === "empty"
       ? "Paste your text first."
