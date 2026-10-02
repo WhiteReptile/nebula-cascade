@@ -1,0 +1,220 @@
+import Link from "next/link";
+import { HybridSubmitHint } from "@/components/HybridSubmitHint";
+import { QueueWait } from "@/components/QueueWait";
+import { ShareControls } from "@/components/ShareControls";
+import {
+  QUEUE_CATEGORY_IDS,
+  SUBMIT_SLOTS,
+  submitTabHref,
+} from "@/lib/submit-form-slots";
+import type { SubmitCategoryId } from "@/lib/submit-categories";
+import type { ExaminerModel } from "@/lib/queue-shared";
+import { parsePackTier } from "@/lib/share-policy";
+import { MAX_CONTENT_CHARS, MAX_CONTENT_WORDS } from "@/lib/content-limits";
+
+const EXAMINER_MODELS: { id: ExaminerModel; label: string }[] = [
+  { id: "pro-examiner-v1", label: "Pro Examiner V1" },
+  { id: "pro-examiner-v2", label: "Pro Examiner V2" },
+];
+
+export function SubmitFormShell({
+  category,
+  revisionOf,
+  queuedId,
+  pack,
+  hybridQueueOpen = true,
+}: {
+  category: SubmitCategoryId;
+  revisionOf?: string;
+  queuedId?: string;
+  pack?: string;
+  hybridQueueOpen?: boolean;
+}) {
+  if (queuedId) {
+    return <QueueWait jobId={queuedId} />;
+  }
+
+  const slot = SUBMIT_SLOTS.find((s) => s.id === category);
+  const queueSelected = QUEUE_CATEGORY_IDS.includes(category);
+  const textSelected = category === "text";
+  const packTier = parsePackTier(pack);
+
+  return (
+    <form
+      id="submit-form"
+      method="POST"
+      action={textSelected ? "/api/submit-text" : "/api/queue-submit"}
+      encType="multipart/form-data"
+      className="max-w-xl mx-auto w-full"
+    >
+      {revisionOf && (
+        <p className="text-dynamic text-sm mb-4">Revising a previous submission.</p>
+      )}
+      {packTier && <input type="hidden" name="pack" value={packTier} />}
+
+      <div className="hud-row mb-3" role="listbox" aria-label="Category">
+        {SUBMIT_SLOTS.map((s) => {
+          const on = category === s.id;
+          return (
+            <Link
+              key={s.id}
+              href={submitTabHref(s.id, revisionOf, packTier ?? undefined)}
+              role="option"
+              aria-selected={on}
+              className={`hud-slot ${on ? "hud-slot-on" : ""}`}
+            >
+              {s.label}
+            </Link>
+          );
+        })}
+      </div>
+
+      {queueSelected && (
+        <p className="warning-red sentence text-xs sm:text-sm mb-4">
+          {hybridQueueOpen
+            ? "Music, images, video, and physical appearance need a human. Uploaded files are not kept — only the final opinion and score."
+            : "Hybrid file uploads are closed. Use the Text tab for free AI (20 today)."}
+        </p>
+      )}
+
+      {slot && (
+        <div className="cosmic-glass p-5 mb-4">
+          <p className="text-dynamic text-sm leading-relaxed">{slot.note}</p>
+        </div>
+      )}
+
+      {queueSelected && (
+        <>
+          <input type="hidden" name="category" value={category} />
+          <div className="file-pick mb-4">
+            <input
+              id="submit-file"
+              name="file"
+              type="file"
+              accept={slot?.fileAccept}
+              className="sr-only"
+            />
+            <label htmlFor="submit-file" className="file-pick-btn">
+              Choose file
+            </label>
+            <span className="file-pick-name" id="submit-file-name">
+              No file chosen
+            </span>
+          </div>
+        </>
+      )}
+
+      <div className="cosmic-glass p-1 mb-4">
+        <textarea
+          name={textSelected ? "content" : "context"}
+          defaultValue=""
+          placeholder={
+            category === "text"
+              ? "Paste a poem, essay, homework, report, or screenplay…"
+              : category === "physical_appearance"
+                ? "Hair loss, a procedure, what you want judged…"
+                : category === "images"
+                  ? "What should we look at? Poster, ad, artwork, photo…"
+                  : "Context for the human reviewer…"
+          }
+          rows={14}
+          maxLength={MAX_CONTENT_CHARS}
+          className="w-full bg-transparent px-5 py-4 text-sm text-white placeholder:text-white/40 focus:outline-none resize-y"
+        />
+        {textSelected && (
+          <p id="submit-word-count" className="text-dynamic text-xs px-5 pb-3">
+            0 / {MAX_CONTENT_WORDS.toLocaleString()} words
+          </p>
+        )}
+        {revisionOf && <input type="hidden" name="revisionOf" value={revisionOf} />}
+      </div>
+
+      {textSelected && (
+        <div className="file-pick mb-4" id="submit-pdf-pick">
+          <input
+            id="submit-pdf"
+            name="pdf"
+            type="file"
+            accept=".pdf,application/pdf"
+            className="sr-only"
+          />
+          <label htmlFor="submit-pdf" className="file-pick-btn">
+            Or upload PDF
+          </label>
+          <span className="file-pick-name" id="submit-pdf-name">
+            No PDF chosen
+          </span>
+        </div>
+      )}
+
+      <div className="cosmic-glass p-4 mb-4">
+        <label htmlFor="model-select" className="label-white text-[10px] block mb-2">
+          Model
+        </label>
+        <select
+          id="model-select"
+          name="model"
+          defaultValue="pro-examiner-v2"
+          className="w-full bg-transparent border border-white/20 px-3 py-2 text-sm text-white focus:outline-none"
+        >
+          {EXAMINER_MODELS.map((item) => (
+            <option key={item.id} value={item.id} className="bg-[#060814] text-white">
+              {item.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {queueSelected && (
+        <div className="cosmic-glass p-4 mb-4">
+          <ShareControls packFromUrl={packTier ?? undefined} />
+        </div>
+      )}
+
+      <div className="cosmic-glass p-4 mb-4">
+        <label className="flex items-start gap-3 cursor-pointer">
+          <input
+            id="accept-terms"
+            name="acceptTerms"
+            type="checkbox"
+            value="1"
+            required
+            className="mt-1 accent-[#4ec4ff]"
+          />
+          <span className="text-dynamic text-sm leading-relaxed">
+            I agree to the{" "}
+            <Link href="/terms" className="nav-white" target="_blank" rel="noreferrer">
+              Terms of Service
+            </Link>{" "}
+            and{" "}
+            <Link href="/content-policy" className="nav-white" target="_blank" rel="noreferrer">
+              User Content &amp; Copyright Policy
+            </Link>
+            .
+          </span>
+        </label>
+      </div>
+
+      <div className="mt-6 flex items-start justify-between">
+        <div className="flex flex-col items-start gap-2">
+          {textSelected ? (
+            <span className="text-dynamic text-xs tracking-wide">
+              Free instant AI · max {MAX_CONTENT_WORDS.toLocaleString()} words · longer → PDF
+            </span>
+          ) : (
+            <HybridSubmitHint packFromUrl={packTier ?? undefined} />
+          )}
+        </div>
+        <button
+          type="submit"
+          className="cosmic-cta text-sm px-8 py-2.5"
+          disabled={queueSelected && !hybridQueueOpen}
+        >
+          Submit
+        </button>
+      </div>
+
+      <p id="submit-form-error" className="mt-4 text-sm warning-red sentence hidden" />
+    </form>
+  );
+}

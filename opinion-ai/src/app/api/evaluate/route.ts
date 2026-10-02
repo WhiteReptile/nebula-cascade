@@ -1,0 +1,174 @@
+import { NextResponse } from "next/server";
+import { hasAcceptedTerms } from "@/lib/accept-terms";
+import { getDailyLimit } from "@/lib/constants";
+import { contentLimitError, isOverWordLimit } from "@/lib/content-limits";
+import { evaluateSubmission, getLlmConfig } from "@/lib/evaluate/pipeline";
+import { isCategoryId } from "@/lib/categories";
+import { recordOpinion } from "@/lib/opinion-count";
+import { recordLlmUsage } from "@/lib/llm-usage";
+import { resolveTextSubmission } from "@/lib/resolve-text-content";
+import { isExaminerModel, isQueueCategory, type ExaminerModel } from "@/lib/queue-shared";
+import { queueLongPdfJob } from "@/lib/queue-long-pdf";
+import { attachGuestCookie, guardFreeEvaluate, guardHybridQueue } from "@/lib/rate-limit";
+import { saveVerdictRecord } from "@/lib/verdict-store";
+
+export const runtime = "nodejs";
+
+async function evaluateFromFields(input: {
+  content: string;
+  context: string;
+  revisionOf?: string;
+  category: string;
+  model: ExaminerModel;
+}) {
+  const resolved = isCategoryId(input.category) ? input.category : "text";
+  if (!isCategoryId(resolved)) {
+    return NextResponse.json({ error: "Choose a category." }, { status: 400 });
+  }
+  if (isQueueCategory(resolved)) {
+    return NextResponse.json({ error: "That slot needs a file and a human." }, { status: 400 });
+  }
+  if (!input.content) {
+    return NextResponse.json({ error: "Add the work or a PDF." }, { status: 400 });
+  }
+  const over = contentLimitError(input.content);
+  if (over) {
+    return NextResponse.json({ error: over }, { status: 400 });
+  }
+  if (input.context.length > 8000) {
+    return NextResponse.json({ error: "Context is too long." }, { status: 400 });
+  }
+
+  const demoMode = !getLlmConfig();
+  const verdict = await evaluateSubmission(
+    input.content,
+    input.revisionOf,
+    resolved,
+    input.context,
+    input.model,
+  );
+  await saveVerdictRecord(verdict);
+  await recordOpinion(verdict.id);
+  await recordLlmUsage(demoMode ? "demo" : "evaluate", demoMode);
+  return NextResponse.json({
+    verdict,
+    meta: { dailyLimit: getDailyLimit(), demoMode },
+  });
+}
+
+export async function POST(request: Request) {
+  try {
+    const contentType = request.headers.get("content-type") ?? "";
+
+    if (contentType.includes("multipart/form-data")) {
+      const form = await request.formData();
+      if (!hasAcceptedTerms(form.get("acceptTerms"))) {
+        return NextResponse.json(
+          { error: "Accept the Terms and Content Policy to continue." },
+          { status: 400 },
+        );
+      }
+      const pasted = typeof form.get("content") === "string" ? String(form.get("content")).trim() : "";
+      const revisionOf = typeof form.get("revisionOf") === "string" ? String(form.get("revisionOf")) : undefined;
+      const category = typeof form.get("category") === "string" ? String(form.get("category")) : "text";
+      const modelRaw = form.get("model");
+      const model = isExaminerModel(modelRaw) ? modelRaw : "pro-examiner-v2";
+      const pdfRaw = form.get("pdf");
+      const pdfFile = pdfRaw instanceof File && pdfRaw.size > 0 ? pdfRaw : null;
+
+      if (isOverWordLimit(pasted) && pdfFile) {
+        const gate = await guardHybridQueue(request);
+        if (gate instanceof NextResponse) return gate;
+        const id = await queueLongPdfJob({ file: pdfFile, notes: pasted, model });
+        return attachGuestCookie(NextResponse.json({ id, queued: true }), gate.guestId, request);
+      }
+      if (isOverWordLimit(pasted) && !pdfFile) {
+        return NextResponse.json(
+          {
+            error: "Over 8,000 words. Upload a PDF on the Text tab.",
+            code: "need_pdf",
+          },
+          { status: 400 },
+        );
+      }
+
+      let resolved;
+      try {
+        resolved = await resolveTextSubmission({
+          pasted,
+          pdfFile,
+        });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Add your text or a PDF.";
+        return NextResponse.json({ error: message }, { status: 400 });
+      }
+
+      if (isOverWordLimit(resolved.content)) {
+        if (pdfFile) {
+          const gate = await guardHybridQueue(request);
+          if (gate instanceof NextResponse) return gate;
+          const id = await queueLongPdfJob({ file: pdfFile, notes: pasted, model });
+          return attachGuestCookie(NextResponse.json({ id, queued: true }), gate.guestId, request);
+        }
+        return NextResponse.json(
+          {
+            error: "Over 8,000 words. Upload a PDF on the Text tab.",
+            code: "need_pdf",
+          },
+          { status: 400 },
+        );
+      }
+
+      const gate = await guardFreeEvaluate(request);
+      if (gate instanceof NextResponse) return gate;
+      const evaluated = await evaluateFromFields({
+        content: resolved.content,
+        context: resolved.context ?? "",
+        revisionOf,
+        category,
+        model,
+      });
+      return attachGuestCookie(evaluated, gate.guestId, request);
+    }
+
+    const body = await request.json();
+    if (!hasAcceptedTerms(body.acceptTerms)) {
+      return NextResponse.json(
+        { error: "Accept the Terms and Content Policy to continue." },
+        { status: 400 },
+      );
+    }
+    const content = typeof body.content === "string" ? body.content.trim() : "";
+    const context = typeof body.context === "string" ? body.context.trim() : "";
+    const revisionOf = typeof body.revisionOf === "string" ? body.revisionOf : undefined;
+    const category = isCategoryId(body.category) ? body.category : undefined;
+    const model = isExaminerModel(body.model) ? body.model : "pro-examiner-v2";
+
+    if (isQueueCategory(category)) {
+      return NextResponse.json({ error: "That slot needs a file and a human." }, { status: 400 });
+    }
+
+    if (isOverWordLimit(content)) {
+      return NextResponse.json(
+        {
+          error: "Over 8,000 words. Upload a PDF on the Text tab.",
+          code: "need_pdf",
+        },
+        { status: 400 },
+      );
+    }
+
+    const gate = await guardFreeEvaluate(request);
+    if (gate instanceof NextResponse) return gate;
+    const evaluated = await evaluateFromFields({
+      content,
+      context,
+      revisionOf,
+      category: category ?? "text",
+      model,
+    });
+    return attachGuestCookie(evaluated, gate.guestId, request);
+  } catch {
+    return NextResponse.json({ error: "Evaluation failed." }, { status: 500 });
+  }
+}
